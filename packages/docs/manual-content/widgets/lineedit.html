@@ -166,6 +166,66 @@ main() {
       </div>
     </div>
 
+    <!-- Section 3a -->
+    <div class="docs-section">
+      <h2>Событие <code>on_enter_pressed</code></h2>
+      <p>Кнопка «Поздороваться» рядом с полем нужна не всегда: человек набрал имя и нажал Enter — этого достаточно.
+      Событие <code>on_enter_pressed</code> срабатывает ровно в этот момент; текст к этому времени уже лежит в <code>text</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 120;
+    win.title = "Приветствие без кнопки";
+
+    gui.LineEdit name;
+    name.x = 20;
+    name.y = 20;
+    name.width = 310;
+    name.placeholder = "Имя и Enter";
+
+    gui.Label reply;
+    reply.x = 20;
+    reply.y = 70;
+    reply.text = "";
+
+    name.on_enter_pressed = void function() {
+        if (name.text == "") {
+            reply.text = "Вы не представились!";
+        } else {
+            reply.text = "Привет, " + name.text + "!";
+        }
+    };
+
+    win.add_child(name);
+    win.add_child(reply);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="text" class="idyl-lineedit" style="width: 310px;" placeholder="Имя и Enter" id="enterInput">
+            </div>
+            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="enterLabel"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ⏎ Наберите имя и нажмите Enter — кнопка не нужна.
+        </div>
+      </div>
+
+      <p>Чем это отличается от <code>on_change</code>? Тот срабатывает на каждую букву — удобно для счётчиков и живой подсказки.
+      <code>on_enter_pressed</code> — один раз, когда человек сказал «готово». Часто нужны оба: <code>on_change</code> подсказывает
+      по ходу, <code>on_enter_pressed</code> действует. У многострочного <code>TextEdit</code> такого события нет: там Enter —
+      это перенос строки.</p>
+    </div>
+
     <!-- Section 4 -->
     <div class="docs-section">
       <h2>Свойства <code>font_size</code> и <code>placeholder</code></h2>
@@ -483,6 +543,7 @@ main() {
           <tr><td><code>text_color</code>, <code>background_color</code>, <code>border_color</code></td><td>цвета — как у других виджетов</td><td>да</td></tr>
           <tr><td><code>echo_mode</code> (<code>string</code>)</td><td>режим отображения: <code>"normal"</code>, <code>"password"</code>, <code>"no_echo"</code></td><td>только у LineEdit</td></tr>
           <tr><td><code>on_change</code></td><td>событие: текст изменился</td><td>да</td></tr>
+          <tr><td><code>on_enter_pressed</code></td><td>событие: в поле нажали Enter — «ввод закончен»</td><td>только у LineEdit</td></tr>
         </tbody>
       </table>
     </div>
@@ -504,6 +565,17 @@ main() {
         } else {
           greetLabel.textContent = 'Привет, ' + name + '!';
         }
+      });
+    }
+
+    // Пример 3a: приветствие по Enter
+    const enterInput = document.getElementById('enterInput');
+    const enterLabel = document.getElementById('enterLabel');
+    if (enterInput && enterLabel) {
+      enterInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        const name = enterInput.value;
+        enterLabel.textContent = name === '' ? 'Вы не представились!' : 'Привет, ' + name + '!';
       });
     }
 

@@ -121,7 +121,7 @@ import { createQrModule } from './runtime-qr';
 import { StoredBitmap, initializeImageObject, imageResourceUri, imageService, readRuntimeBytes, runtimeImageResource, storedAnimation, storedBitmap, storedStaticImage, svgPassport, imageRuntimeError, resolveImageInputPath , setImageMetadata, ensureImageSize, writeRuntimeImageBytes, StoredStaticImage, createGeneratedStaticImage } from './runtime-image';
 import { COLOR_CONSTANTS } from './color-constants';
 import { RuntimeFontFormat, attachDrawableGeometry, createDefaultDrawableFont, detectFontFormat, drawableCollisionShape, drawableTextMetrics, drawableTransform, fontMimeType, initializeDrawableObject, initializeFontObject, isDrawableObject, runtimeFontBytes } from './runtime-drawable';
-import { applyGuiEventPayload, canvasKeepsProgramAlive, closeModal, defaultGuiWidgetSize, eventFloat, eventNumber, guiCallbackName, guiEventObject, guiObjectUsesFontSize, initializeGuiChild, initializeGuiObject, isGuiWidget, refuseWidgetCycle, selectRadioButton, showModal, widgetEventsBlocked } from './runtime-gui';
+import { applyGuiEventPayload, canvasKeepsProgramAlive, closeModal, defaultGuiWidgetSize, eventFloat, eventNumber, guiCallbackName, guiEventObject, guiObjectUsesFontSize, initializeGuiChild, initializeGuiObject, isGuiWidget, refuseWidgetCycle, selectRadioButton, showModal, widgetEventsBlocked, guiEventCarriesObject, guiKeyEventBubbles, guiWindowOf } from './runtime-gui';
 import { audioSnapshot, canvasCaptureRegion, canvasSnapshot, canvasToSvg, withKnownCanvases, drawableSnapshot, modalSnapshot, objectPropertiesSnapshot, runtimeObjectId, snapshotValue, widgetSnapshot, windowSnapshot } from './runtime-snapshots';
 import { createTurtleModule, ensureTurtleField, initializeTurtleObject, rebuildTurtleFieldCommands, turtleAnimationSteps, turtleSvg , TURTLE_FRAME_MS, normalizeTurtleHeading, turtleCss, turtleFrame, turtleTravel, turtleTurn } from './runtime-turtle';
 
@@ -2152,12 +2152,17 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       if (callbackName) {
         const callback = target[callbackName];
         if (typeof callback === 'function') {
-          if (target.__idylliumType === 'gui.Canvas') {
-            await callback(target, guiEventObject(eventName, payload));
-            return;
-          }
-          await callback(target);
+          // Формы (), (sender), (sender, evt): лишние аргументы функция просто не читает.
+          if (guiEventCarriesObject(eventName)) await callback(target, guiEventObject(eventName, payload));
+          else await callback(target);
         }
+      }
+      // Клавиши всплывают к окну, как в Qt (вердикт владельца 2026-09-26): после кнопки, флажка,
+      // ползунка, таблицы или холста — их окно; из полей ввода клавиши окну не отдаются.
+      if ((eventName === 'key_pressed' || eventName === 'key_released') && target.__idylliumType !== 'gui.Window' && guiKeyEventBubbles(target)) {
+        const owner = guiWindowOf(target);
+        const handler = owner ? owner[`on_${eventName}`] : undefined;
+        if (owner && typeof handler === 'function') await handler(owner, guiEventObject(eventName, payload));
       }
 
       // Выбор радиокнопки снимает выбор с соседей по группе — их on_change

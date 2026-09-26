@@ -444,6 +444,12 @@ var Idyllium = (() => {
         const guiKeyboardEvent = (0, types_1.qualified)("gui", "KeyboardEvent");
         const guiMouseEvent = (0, types_1.qualified)("gui", "MouseEvent");
         const guiMouseScrollEvent = (0, types_1.qualified)("gui", "MouseScrollEvent");
+        const guiImageBox = (0, types_1.qualified)("gui", "ImageBox");
+        const guiIcon = (0, types_1.qualified)("gui", "Icon");
+        const guiTabWidget = (0, types_1.qualified)("gui", "TabWidget");
+        const guiBarChart = (0, types_1.qualified)("gui", "BarChart");
+        const guiLineChart = (0, types_1.qualified)("gui", "LineChart");
+        const guiPieChart = (0, types_1.qualified)("gui", "PieChart");
         const guiChildParameter = {
           name: "child",
           type: guiWidget,
@@ -492,6 +498,27 @@ var Idyllium = (() => {
             callbackSpec([]),
             callbackSpec([widget])
           ])
+        ];
+        const pointerEventsFor = (widget) => [
+          callbackPropertySpec("on_mouse_enter", [callbackSpec([]), callbackSpec([widget])], "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает."),
+          callbackPropertySpec("on_mouse_leave", [callbackSpec([]), callbackSpec([widget])], "Курсор вышел из виджета. Парное к on_mouse_enter."),
+          callbackPropertySpec("on_mouse_pressed", [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])], 'Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button ("LEFT", "RIGHT", "MIDDLE"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с "RIGHT" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.'),
+          callbackPropertySpec("on_mouse_released", [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])], "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили."),
+          callbackPropertySpec("on_mouse_move", [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])], "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.")
+        ];
+        const focusEventsFor = (widget) => [
+          callbackPropertySpec("on_focus_in", [callbackSpec([]), callbackSpec([widget])], "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком."),
+          callbackPropertySpec("on_focus_out", [callbackSpec([]), callbackSpec([widget])], "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.")
+        ];
+        const keyEventsFor = (widget) => [
+          callbackPropertySpec("on_key_pressed", [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiKeyboardEvent])], 'Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: "W", "7", "ArrowLeft", "Enter", "Escape"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.'),
+          callbackPropertySpec("on_key_released", [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiKeyboardEvent])], "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.")
+        ];
+        const clickableFor = (widget) => [
+          callbackPropertySpec("on_click", [callbackSpec([]), callbackSpec([widget])], "Щелчок по виджету — по его собственной поверхности: щелчки по виджетам внутри контейнера ему не достаются.")
+        ];
+        const doubleClickableFor = (widget) => [
+          callbackPropertySpec("on_double_click", [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])], "Двойной щелчок. Перед ним уже пришли два одиночных (у таблицы — on_select, строка в selected_row). Данные — как у on_mouse_pressed.")
         ];
         const inheritableColorRoles = [
           propertySpec("text_color", types_1.COLOR),
@@ -1637,6 +1664,10 @@ var Idyllium = (() => {
             propertySpec("title", types_1.STRING),
             propertySpec("theme", types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
             ...styleable,
+            ...pointerEventsFor(guiWindow),
+            ...focusEventsFor(guiWindow),
+            ...keyEventsFor(guiWindow),
+            callbackPropertySpec("on_move", [callbackSpec([]), callbackSpec([guiWindow])], "Окно перетащили за шапку; x и y к этому моменту уже новые."),
             // Вопрос «закрывать ли?»: bool-обработчик отвечает, void-обработчик
             // просто успевает сделать своё (сохранить файл) — окно закроется.
             callbackPropertySpec("on_close", [
@@ -1663,14 +1694,18 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             propertySpec("framerate_limit", types_1.INT),
-            callbackPropertySpec("on_init", [callbackSpec([guiCanvas])]),
-            callbackPropertySpec("on_key_pressed", [callbackSpec([guiCanvas, guiKeyboardEvent])]),
-            callbackPropertySpec("on_key_released", [callbackSpec([guiCanvas, guiKeyboardEvent])]),
-            callbackPropertySpec("on_mouse_pressed", [callbackSpec([guiCanvas, guiMouseEvent])]),
-            callbackPropertySpec("on_mouse_released", [callbackSpec([guiCanvas, guiMouseEvent])]),
-            callbackPropertySpec("on_mouse_move", [callbackSpec([guiCanvas, guiMouseEvent])]),
-            callbackPropertySpec("on_mouse_scroll", [callbackSpec([guiCanvas, guiMouseScrollEvent])]),
-            callbackPropertySpec("on_update", [callbackSpec([guiCanvas, types_1.FLOAT])], "Вызывается каждый кадр; второй параметр — время кадра в секундах. Кадр сам ничего не стирает: нарисованное раньше остаётся на холсте, пока его не закрасит fill() или не уберёт clear(). Поэтому обычный кадр начинается с canvas.fill(цвет); без него за движущейся фигурой потянется шлейф.")
+            // Формы — как у остальных виджетов: без параметров, с холстом, с холстом и событием.
+            callbackPropertySpec("on_init", [callbackSpec([]), callbackSpec([guiCanvas])]),
+            callbackPropertySpec("on_key_pressed", [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiKeyboardEvent])], 'Клавишу нажали, когда холст активен (над ним была мышь или по нему щёлкнули). evt.key — "W", "7", "ArrowLeft", "Enter"; evt.ctrl, evt.shift, evt.alt — модификаторы. После холста событие получает его окно.'),
+            callbackPropertySpec("on_key_released", [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiKeyboardEvent])]),
+            callbackPropertySpec("on_mouse_pressed", [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseEvent])], 'Кнопку мыши нажали над холстом. evt.x, evt.y — в координатах холста; evt.mouse_button — "LEFT", "RIGHT", "MIDDLE"; evt.ctrl, evt.shift, evt.alt.'),
+            callbackPropertySpec("on_mouse_released", [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseEvent])]),
+            callbackPropertySpec("on_mouse_move", [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseEvent])]),
+            callbackPropertySpec("on_mouse_scroll", [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseScrollEvent])]),
+            callbackPropertySpec("on_mouse_enter", [callbackSpec([]), callbackSpec([guiCanvas])], "Курсор вошёл на холст."),
+            callbackPropertySpec("on_mouse_leave", [callbackSpec([]), callbackSpec([guiCanvas])], "Курсор ушёл с холста."),
+            callbackPropertySpec("on_click", [callbackSpec([]), callbackSpec([guiCanvas])], "Щелчок по холсту (нажали и отпустили на месте). Координаты — в on_mouse_pressed."),
+            callbackPropertySpec("on_update", [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, types_1.FLOAT])], "Вызывается каждый кадр; второй параметр — время кадра в секундах. Кадр сам ничего не стирает: нарисованное раньше остаётся на холсте, пока его не закрасит fill() или не уберёт clear(). Поэтому обычный кадр начинается с canvas.fill(цвет); без него за движущейся фигурой потянется шлейф.")
           ], [
             functionSpec("clear", [], types_1.VOID, {
               documentation: "Стирает весь рисунок: холст возвращается к своему background_color (если он не задан — к чёрному)."
@@ -1725,6 +1760,8 @@ var Idyllium = (() => {
               callbackSpec([]),
               callbackSpec([guiLabel])
             ]),
+            ...doubleClickableFor(guiLabel),
+            ...pointerEventsFor(guiLabel),
             propertySpec("text", types_1.STRING)
           ], [], guiWidget),
           typeSpec("Button", [
@@ -1734,6 +1771,9 @@ var Idyllium = (() => {
             ...colorRoles,
             ...fontSized,
             ...buttonClickable,
+            ...pointerEventsFor(guiButton),
+            ...focusEventsFor(guiButton),
+            ...keyEventsFor(guiButton),
             propertySpec("text", types_1.STRING)
           ], [
             functionSpec("click", [], types_1.VOID, {
@@ -1748,6 +1788,8 @@ var Idyllium = (() => {
             propertySpec("border_color", types_1.COLOR),
             propertySpec("border_width", types_1.INT),
             ...fontSized,
+            ...clickableFor(guiFrame),
+            ...pointerEventsFor(guiFrame),
             propertySpec("title", types_1.STRING)
           ], [
             functionSpec("add_child", [guiChildParameter], types_1.VOID, { documentation: "Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет." })
@@ -1756,6 +1798,9 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
+            ...clickableFor(guiImageBox),
+            ...doubleClickableFor(guiImageBox),
+            ...pointerEventsFor(guiImageBox),
             propertySpec("resize_mode", types_1.STRING, false, "Режим вписывания картинки: 'fit' (вписать целиком), 'fill' (заполнить с обрезкой), 'stretch' (растянуть), 'original' (без масштабирования). Другое значение — ошибка выполнения.")
           ], [
             functionSpec("set_image", [{ name: "image", type: imageImage }], types_1.VOID)
@@ -1764,6 +1809,9 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
+            ...clickableFor(guiIcon),
+            ...doubleClickableFor(guiIcon),
+            ...pointerEventsFor(guiIcon),
             propertySpec("icon", types_1.STRING, false, `Имя значка из единого набора Idyllium (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`)
           ], [], guiWidget),
           typeSpec("LineEdit", [
@@ -1771,6 +1819,11 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiLineEdit),
+            callbackPropertySpec("on_enter_pressed", [callbackSpec([]), callbackSpec([guiLineEdit])], "В поле нажали Enter — «ввод закончен, считай». Текст к этому моменту уже в text. После него срабатывает on_editing_finished."),
+            callbackPropertySpec("on_editing_finished", [callbackSpec([]), callbackSpec([guiLineEdit])], "Правку закончили: нажали Enter или ушли из поля, изменив текст. В отличие от on_change (каждая буква) срабатывает один раз на правку."),
+            ...focusEventsFor(guiLineEdit),
+            ...keyEventsFor(guiLineEdit),
+            ...pointerEventsFor(guiLineEdit),
             ...colorRoles,
             ...fontSized,
             propertySpec("text", types_1.STRING),
@@ -1783,6 +1836,10 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiTextEdit),
+            callbackPropertySpec("on_editing_finished", [callbackSpec([]), callbackSpec([guiTextEdit])], "Правку закончили: ушли из поля, изменив текст. Enter в многострочном поле — перенос строки, а не конец правки."),
+            ...focusEventsFor(guiTextEdit),
+            ...keyEventsFor(guiTextEdit),
+            ...pointerEventsFor(guiTextEdit),
             ...colorRoles,
             ...fontSized,
             propertySpec("text", types_1.STRING),
@@ -1798,6 +1855,7 @@ var Idyllium = (() => {
             propertySpec("max", types_1.INT),
             propertySpec("text_color", types_1.COLOR),
             propertySpec("background_color", types_1.COLOR),
+            ...pointerEventsFor(guiProgressBar),
             propertySpec("foreground_color", types_1.COLOR),
             propertySpec("border_color", types_1.COLOR),
             ...fontSized,
@@ -1808,6 +1866,9 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiSpinBox),
+            ...focusEventsFor(guiSpinBox),
+            ...keyEventsFor(guiSpinBox),
+            ...pointerEventsFor(guiSpinBox),
             propertySpec("value", types_1.INT),
             propertySpec("min", types_1.INT),
             propertySpec("max", types_1.INT),
@@ -1819,6 +1880,9 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiFloatSpinBox),
+            ...focusEventsFor(guiFloatSpinBox),
+            ...keyEventsFor(guiFloatSpinBox),
+            ...pointerEventsFor(guiFloatSpinBox),
             propertySpec("value", types_1.FLOAT),
             propertySpec("min", types_1.FLOAT),
             propertySpec("max", types_1.FLOAT),
@@ -1830,6 +1894,11 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiSlider),
+            callbackPropertySpec("on_grab", [callbackSpec([]), callbackSpec([guiSlider])], "Маркер ползунка захватили мышью — начали тянуть. Пока тянут, on_change приходит на каждое движение."),
+            callbackPropertySpec("on_release", [callbackSpec([]), callbackSpec([guiSlider])], "Маркер отпустили — значение устоялось; тяжёлое действие (пересчитать, перерисовать) лучше делать здесь, а не в on_change. Изменение клавишами on_grab и on_release не даёт."),
+            ...focusEventsFor(guiSlider),
+            ...keyEventsFor(guiSlider),
+            ...pointerEventsFor(guiSlider),
             propertySpec("value", types_1.INT),
             propertySpec("min", types_1.INT),
             propertySpec("max", types_1.INT),
@@ -1841,6 +1910,9 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiCheckBox),
+            ...focusEventsFor(guiCheckBox),
+            ...keyEventsFor(guiCheckBox),
+            ...pointerEventsFor(guiCheckBox),
             ...fontSized,
             propertySpec("text", types_1.STRING),
             propertySpec("is_checked", types_1.BOOL)
@@ -1850,6 +1922,9 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiRadioButton),
+            ...focusEventsFor(guiRadioButton),
+            ...keyEventsFor(guiRadioButton),
+            ...pointerEventsFor(guiRadioButton),
             ...fontSized,
             propertySpec("text", types_1.STRING),
             propertySpec("is_selected", types_1.BOOL),
@@ -1860,6 +1935,9 @@ var Idyllium = (() => {
             ...widgetState,
             ...styleable,
             ...changeableFor(guiComboBox),
+            ...focusEventsFor(guiComboBox),
+            ...keyEventsFor(guiComboBox),
+            ...pointerEventsFor(guiComboBox),
             ...fontSized,
             propertySpec("selected_index", types_1.INT),
             propertySpec("selected_text", types_1.STRING, true, "Текст выбранного пункта; изменяется через selected_index.")
@@ -1877,7 +1955,11 @@ var Idyllium = (() => {
             callbackPropertySpec("on_select", [
               callbackSpec([]),
               callbackSpec([guiTable])
-            ], "Срабатывает при клике по строке; номер выбранной — в selected_row.")
+            ], "Срабатывает при клике по строке; номер выбранной — в selected_row."),
+            ...doubleClickableFor(guiTable),
+            ...focusEventsFor(guiTable),
+            ...keyEventsFor(guiTable),
+            ...pointerEventsFor(guiTable)
           ], [
             functionSpec("set_columns", [], types_1.VOID, {
               variadic: true,
@@ -1909,6 +1991,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
+            ...pointerEventsFor(guiBarChart),
             propertySpec("bar_color", types_1.COLOR, false, "Цвет столбиков — один на всех, чтобы сравнение было честным. Не задан — акцентный цвет темы."),
             propertySpec("show_values", types_1.BOOL, false, "Печатать ли числа над столбиками (по умолчанию true)."),
             propertySpec("min_value", types_1.FLOAT, false, "Нижняя граница шкалы. Не задана — шкала начинается с нуля."),
@@ -1932,6 +2015,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
+            ...pointerEventsFor(guiLineChart),
             propertySpec("line_color", types_1.COLOR, false, "Цвет линии. Не задан — акцентный цвет темы."),
             propertySpec("show_dots", types_1.BOOL, false, "Рисовать ли кружки в точках (по умолчанию true)."),
             propertySpec("min_value", types_1.FLOAT, false, "Нижняя граница шкалы. Для приборов шкалу фиксируют, иначе ось «дышит»."),
@@ -1947,6 +2031,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
+            ...pointerEventsFor(guiPieChart),
             propertySpec("show_legend", types_1.BOOL, false, "Показывать ли легенду сбоку (по умолчанию true)."),
             propertySpec("show_percents", types_1.BOOL, false, "Подписывать ли проценты на дольках (по умолчанию true).")
           ], [
@@ -1968,7 +2053,9 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeableFor((0, types_1.qualified)("gui", "TabWidget")),
+            ...changeableFor(guiTabWidget),
+            ...clickableFor(guiTabWidget),
+            ...pointerEventsFor(guiTabWidget),
             ...fontSized,
             propertySpec("selected_index", types_1.INT, false, "Номер открытой вкладки, начиная с 0. У пустого шкафа -1 — «ничего не выбрано», как у ComboBox; первая add_tab() делает его 0."),
             propertySpec("selected_title", types_1.STRING, true, "Заголовок открытой вкладки; меняется через selected_index."),
@@ -2020,17 +2107,26 @@ var Idyllium = (() => {
             })
           ]),
           typeSpec("KeyboardEvent", [
+            propertySpec("ctrl", types_1.BOOL, true, "Зажат ли Ctrl в момент нажатия — для сочетаний вроде Ctrl+S."),
+            propertySpec("shift", types_1.BOOL, true, "Зажат ли Shift."),
+            propertySpec("alt", types_1.BOOL, true, "Зажат ли Alt."),
             propertySpec("key", types_1.STRING, true, 'Имя клавиши строкой. Одиночные символы приходят ЗАГЛАВНЫМИ — "W", "Д"; цифры — тоже строками: "7"; пробел — " ". Служебные клавиши названы словами, как в браузере: "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Escape". Сравнивайте с заглавной буквой: pressed_keys.contains("W"), не "w".')
           ]),
           typeSpec("MouseEvent", [
-            propertySpec("x", types_1.INT, true),
+            propertySpec("x", types_1.INT, true, "Координата от левого верхнего угла холста или виджета, в пикселях."),
             propertySpec("y", types_1.INT, true),
-            propertySpec("mouse_button", types_1.STRING, true)
+            propertySpec("mouse_button", types_1.STRING, true, 'Какую кнопку нажали: "LEFT", "RIGHT", "MIDDLE" (иная — "UNKNOWN").'),
+            propertySpec("ctrl", types_1.BOOL, true, "Зажат ли Ctrl в момент события."),
+            propertySpec("shift", types_1.BOOL, true, "Зажат ли Shift."),
+            propertySpec("alt", types_1.BOOL, true, "Зажат ли Alt.")
           ]),
           typeSpec("MouseScrollEvent", [
             propertySpec("x", types_1.INT, true),
             propertySpec("y", types_1.INT, true),
-            propertySpec("delta", types_1.INT, true)
+            propertySpec("delta", types_1.INT, true, "Направление колеса: 1 — от себя (вверх), -1 — к себе (вниз)."),
+            propertySpec("ctrl", types_1.BOOL, true, "Зажат ли Ctrl в момент события."),
+            propertySpec("shift", types_1.BOOL, true, "Зажат ли Shift."),
+            propertySpec("alt", types_1.BOOL, true, "Зажат ли Alt.")
           ])
         ]));
         registry.registerModule(moduleSpec("drawable", [], [], [
@@ -36463,6 +36559,7 @@ ${outerPadding}${close}`;
       var runtime_shared_12 = require_runtime_shared();
       var runtime_values_12 = require_runtime_values();
       var runtime_state_12 = require_runtime_state();
+      var runtime_gui_12 = require_runtime_gui();
       var runtime_audio_12 = require_runtime_audio();
       var image_service_1 = require_image_service();
       var style_1 = require_style();
@@ -36681,7 +36778,8 @@ ${outerPadding}${close}`;
           id: runtimeObjectId(window2),
           type: "gui.Window",
           properties: objectPropertiesSnapshot(window2),
-          children: widgetChildrenSnapshot(window2)
+          children: widgetChildrenSnapshot(window2),
+          events: (0, runtime_gui_12.listenedGuiEvents)(window2)
         };
       }
       function modalSnapshot(modal) {
@@ -36700,6 +36798,7 @@ ${outerPadding}${close}`;
           type,
           properties: objectPropertiesSnapshot(widget),
           children: widgetChildrenSnapshot(widget),
+          events: (0, runtime_gui_12.listenedGuiEvents)(widget),
           canvas: type === "gui.Canvas" ? canvasSnapshot(widget) : void 0,
           items: type === "gui.ComboBox" && Array.isArray(widget.__items) ? [...widget.__items] : void 0,
           columns: type === "gui.Table" && Array.isArray(widget.__columns) ? [...widget.__columns] : void 0,
@@ -36800,6 +36899,10 @@ ${outerPadding}${close}`;
       exports2.selectRadioButton = selectRadioButton;
       exports2.closeModal = closeModal;
       exports2.guiCallbackName = guiCallbackName;
+      exports2.guiEventCarriesObject = guiEventCarriesObject;
+      exports2.guiKeyEventBubbles = guiKeyEventBubbles;
+      exports2.guiWindowOf = guiWindowOf;
+      exports2.listenedGuiEvents = listenedGuiEvents;
       exports2.guiEventObject = guiEventObject;
       exports2.eventNumber = eventNumber;
       exports2.eventFloat = eventFloat;
@@ -37398,11 +37501,54 @@ ${outerPadding}${close}`;
         }
         target.__modalMode = "";
       }
+      var GENERIC_GUI_EVENTS = /* @__PURE__ */ new Set([
+        "click",
+        "double_click",
+        "change",
+        "mouse_enter",
+        "mouse_leave",
+        "mouse_pressed",
+        "mouse_released",
+        "mouse_move",
+        "mouse_scroll",
+        "focus_in",
+        "focus_out",
+        "key_pressed",
+        "key_released",
+        "enter_pressed",
+        "editing_finished",
+        "grab",
+        "release"
+      ]);
+      var GUI_EVENTS_WITH_OBJECT = /* @__PURE__ */ new Set([
+        "double_click",
+        "mouse_pressed",
+        "mouse_released",
+        "mouse_move",
+        "mouse_scroll",
+        "key_pressed",
+        "key_released"
+      ]);
+      var KEY_SINK_TYPES = /* @__PURE__ */ new Set(["gui.LineEdit", "gui.TextEdit", "gui.SpinBox", "gui.FloatSpinBox", "gui.ComboBox"]);
+      var LISTENED_GUI_EVENTS = [
+        "click",
+        "double_click",
+        "mouse_enter",
+        "mouse_leave",
+        "mouse_pressed",
+        "mouse_released",
+        "mouse_move",
+        "focus_in",
+        "focus_out",
+        "key_pressed",
+        "key_released",
+        "enter_pressed",
+        "editing_finished",
+        "grab",
+        "release",
+        "move"
+      ];
       function guiCallbackName(target, eventName) {
-        if (eventName === "click")
-          return "on_click";
-        if (eventName === "change")
-          return "on_change";
         if (target.__idylliumType === "gui.Table" && eventName === "select")
           return "on_select";
         if (target.__idylliumType === "gui.Modal" && eventName === "modal_confirm")
@@ -37411,30 +37557,41 @@ ${outerPadding}${close}`;
           return "on_cancel";
         if (target.__idylliumType === "audio.Music" && eventName === "finished")
           return "on_finished";
-        if (target.__idylliumType !== "gui.Canvas")
-          return null;
-        switch (eventName) {
-          case "key_pressed":
-            return "on_key_pressed";
-          case "key_released":
-            return "on_key_released";
-          case "mouse_pressed":
-            return "on_mouse_pressed";
-          case "mouse_released":
-            return "on_mouse_released";
-          case "mouse_move":
-            return "on_mouse_move";
-          case "mouse_scroll":
-            return "on_mouse_scroll";
-          default:
-            return null;
+        if (target.__idylliumType === "gui.Window" && eventName === "window_move")
+          return "on_move";
+        if (GENERIC_GUI_EVENTS.has(eventName))
+          return `on_${eventName}`;
+        return null;
+      }
+      function guiEventCarriesObject(eventName) {
+        return GUI_EVENTS_WITH_OBJECT.has(eventName);
+      }
+      function guiKeyEventBubbles(target) {
+        return !KEY_SINK_TYPES.has(String(target.__idylliumType));
+      }
+      function guiWindowOf(target) {
+        let current = target.__parent;
+        const seen = /* @__PURE__ */ new Set();
+        while ((0, runtime_shared_12.isRuntimeObject)(current) && !seen.has(current)) {
+          if (current.__idylliumType === "gui.Window")
+            return current;
+          seen.add(current);
+          current = current.__parent;
         }
+        return null;
+      }
+      function listenedGuiEvents(target) {
+        return LISTENED_GUI_EVENTS.filter((name) => typeof target[`on_${name}`] === "function");
+      }
+      function eventModifiers(payload) {
+        return { ctrl: payload.ctrl === true, shift: payload.shift === true, alt: payload.alt === true };
       }
       function guiEventObject(eventName, payload) {
         if (eventName === "key_pressed" || eventName === "key_released") {
           return {
             __idylliumType: "gui.KeyboardEvent",
-            key: typeof payload.key === "string" ? payload.key : ""
+            key: typeof payload.key === "string" ? payload.key : "",
+            ...eventModifiers(payload)
           };
         }
         if (eventName === "mouse_scroll") {
@@ -37442,14 +37599,16 @@ ${outerPadding}${close}`;
             __idylliumType: "gui.MouseScrollEvent",
             x: eventNumber(payload.x),
             y: eventNumber(payload.y),
-            delta: eventNumber(payload.delta)
+            delta: eventNumber(payload.delta),
+            ...eventModifiers(payload)
           };
         }
         return {
           __idylliumType: "gui.MouseEvent",
           x: eventNumber(payload.x),
           y: eventNumber(payload.y),
-          mouse_button: typeof payload.mouse_button === "string" ? payload.mouse_button : ""
+          mouse_button: typeof payload.mouse_button === "string" ? payload.mouse_button : "",
+          ...eventModifiers(payload)
         };
       }
       function eventNumber(value) {
@@ -58249,12 +58408,17 @@ ${outerPadding}${close}`;
             if (callbackName) {
               const callback = target[callbackName];
               if (typeof callback === "function") {
-                if (target.__idylliumType === "gui.Canvas") {
+                if ((0, runtime_gui_1.guiEventCarriesObject)(eventName))
                   await callback(target, (0, runtime_gui_1.guiEventObject)(eventName, payload));
-                  return;
-                }
-                await callback(target);
+                else
+                  await callback(target);
               }
+            }
+            if ((eventName === "key_pressed" || eventName === "key_released") && target.__idylliumType !== "gui.Window" && (0, runtime_gui_1.guiKeyEventBubbles)(target)) {
+              const owner = (0, runtime_gui_1.guiWindowOf)(target);
+              const handler = owner ? owner[`on_${eventName}`] : void 0;
+              if (owner && typeof handler === "function")
+                await handler(owner, (0, runtime_gui_1.guiEventObject)(eventName, payload));
             }
             for (const sibling of deselectedRadios) {
               if (sibling.is_selected !== false)

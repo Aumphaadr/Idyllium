@@ -293,7 +293,9 @@ function createRendererHarness() {
 
   const headChildren = () => styleHost.children.map((c: any) => ({ tag: c && c.tagName, id: c && c.id, text: c && c.textContent }));
 
-  return { canvasContexts, postedMessages, sendSnapshot, stage: elements.get('stage'), stateRulesText, headChildren };
+  const dispatchDocument = (name: string, event: any) => { for (const listener of documentListeners.get(name) ?? []) listener(event); };
+
+  return { canvasContexts, postedMessages, sendSnapshot, stage: elements.get('stage'), stateRulesText, headChildren, dispatchDocument };
 }
 
 function findElement(root: any, predicate: (element: any) => boolean): any | null {
@@ -1556,6 +1558,69 @@ test('state stickers build the same transform as the base sticker', () => {
     `the hover transform must merge base rotate with hover scale: ${rules}`,
   );
   assert(rules.includes('background-color'), `other declarations must stay: ${rules}`);
+});
+
+// События виджетов (спека some_widget_events/01): слушатели общей семьи вешаются только по
+// списку snapshot.events; Enter в поле даёт enter_pressed → editing_finished; клавиши окна
+// идут окну, когда фокус не в текстовом поле; правая кнопка — mouse_pressed с "RIGHT" и ctrl.
+test('widget events follow the listened-events list and keep their order', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { x: 0, y: 0, width: 400, height: 300, title: 'T' },
+      events: ['key_pressed'],
+      children: [
+        { id: 2, type: 'gui.Button', properties: { x: 0, y: 0, width: 100, height: 40, text: 'жми' }, events: ['mouse_enter', 'mouse_pressed', 'double_click'], children: [] },
+        { id: 3, type: 'gui.LineEdit', properties: { x: 0, y: 50, width: 100, height: 28, text: '' }, events: ['enter_pressed', 'editing_finished'], children: [] },
+        { id: 4, type: 'gui.Label', properties: { x: 0, y: 100, width: 100, height: 20, text: 'тихая' }, children: [] },
+      ],
+    }],
+    canvases: [],
+    modals: [],
+    audio: [],
+  });
+  const gui = () => harness.postedMessages.filter((m: any) => m && m.type === 'guiEvent').map((m: any) => `${m.objectId}:${m.eventName}`);
+  const button = findElement(harness.stage, (element) => element.dataset?.widgetId === '2' && element.tagName === 'button');
+  const edit = findElement(harness.stage, (element) => element.dataset?.widgetId === '3' && element.tagName === 'input');
+  const label = findElement(harness.stage, (element) => element.dataset?.widgetId === '4');
+  assert(button && edit && label, 'widgets are rendered');
+  const target = { closest: () => null };
+
+  button.dispatch('pointerenter', {});
+  button.dispatch('pointerenter', {});
+  assert(gui().filter((entry) => entry === '2:mouse_enter').length === 1, `mouse_enter once, even when the element is re-entered without leaving: ${gui()}`);
+  button.dispatch('pointerdown', { clientX: 10, clientY: 5, button: 2, ctrlKey: true, target });
+  const pressed: any = harness.postedMessages.find((m: any) => m && m.eventName === 'mouse_pressed');
+  assert(pressed && pressed.payload.x === 10 && pressed.payload.y === 5 && pressed.payload.mouse_button === 'RIGHT' && pressed.payload.ctrl === true && pressed.payload.shift === false,
+    `mouse_pressed carries widget coordinates, the button and modifiers: ${JSON.stringify(pressed && pressed.payload)}`);
+  button.dispatch('pointermove', { clientX: 1, clientY: 1, target });
+  assert(!gui().includes('2:mouse_move'), 'mouse_move is not listened → not posted');
+  button.dispatch('dblclick', { clientX: 3, clientY: 4, button: 0, target });
+  assert(gui().includes('2:double_click'), 'double_click is listened → posted');
+  label.dispatch('pointerenter', {});
+  label.dispatch('dblclick', { target });
+  assert(!gui().some((entry) => entry.startsWith('4:')), `a widget without handlers posts nothing: ${gui()}`);
+
+  edit.value = '42';
+  edit.dispatch('input', {});
+  edit.dispatch('keydown', { key: 'Enter', target: edit });
+  const editEvents = gui().filter((entry) => entry.startsWith('3:'));
+  assert(JSON.stringify(editEvents) === JSON.stringify(['3:change', '3:enter_pressed', '3:editing_finished']), `Enter: enter_pressed then editing_finished: ${editEvents}`);
+  edit.dispatch('blur', {});
+  assert(gui().filter((entry) => entry === '3:editing_finished').length === 1, 'leaving the field after Enter does not finish the editing twice');
+
+  // Клавиши окна: с кнопки в фокусе — кнопке (рантайм всплывёт к окну); из поля ввода — не окну.
+  harness.dispatchDocument('keydown', { key: 'Escape', target: button, preventDefault() {} });
+  assert(gui().includes('2:key_pressed'), `a key on a focused button is posted to the button so the runtime can bubble it to the window: ${gui()}`);
+  harness.dispatchDocument('keydown', { key: 'Escape', target: edit, preventDefault() {} });
+  assert(!gui().includes('3:key_pressed') && gui().filter((entry) => entry.endsWith(':key_pressed')).length === 1, `keys typed in a text field do not go to the window: ${gui()}`);
+  const stageTarget = { tagName: 'DIV', dataset: {}, closest: () => null };
+  harness.dispatchDocument('keydown', { key: 'a', target: stageTarget, preventDefault() {} });
+  const windowKey: any = harness.postedMessages.find((m: any) => m && m.eventName === 'key_pressed' && m.objectId === 1);
+  assert(windowKey && windowKey.payload.key === 'A', `with focus nowhere the active window gets the key, normalised: ${JSON.stringify(windowKey && windowKey.payload)}`);
 });
 
 // text-align у кнопок и надписей работает через justify-content (flex): база

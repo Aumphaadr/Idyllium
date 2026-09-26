@@ -719,12 +719,12 @@
       "kind": "valid",
       "reason": "Lesson now teaches text_color with the colors library; the removed string-based color API is rejected by the compiler (covered by smoke tests)."
     },
-    "widgets.lineedit.007": {
+    "widgets.lineedit.008": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "cannot assign 'int' value to 'string' variable"
       ],
-      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции. Перенумеровано 2026-09-26: перед примером встал раздел «Событие on_enter_pressed»."
     },
     "widgets.links.004": {
       "kind": "runtime_error",

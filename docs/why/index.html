@@ -6,7 +6,10 @@
   <meta name="robots" content="noindex">
   <title>Почему Idyllium — Idyllium</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
-  <link rel="stylesheet" href="../book/fonts/fonts.css">
+  <script src="../assets/site-theme.js" data-density="prose"></script>
+  <link rel="stylesheet" href="../assets/site-tokens.css">
+  <link rel="stylesheet" href="../fonts/fonts.css">
+  <link rel="stylesheet" href="../assets/site-base.css">
   <link rel="stylesheet" href="../assets/site-nav.css">
   <script src="../assets/site-nav.js" defer></script>
   <link rel="stylesheet" href="../book/app.css">
@@ -44,30 +47,5 @@
       <a href="../ai/ru/idyllium-contrast-libraries-ai-reference.md">библиотеки</a>. В каждой есть раздел
       «честный остаток» — чего Idyllium не ловит.</p>
   </main>
-  <script>
-    (function () {
-      var KEY = 'idyllium-docs-theme';
-      function apply(light) {
-        document.body.classList.toggle('light-theme', light);
-        var toggle = document.getElementById('theme-toggle');
-        if (toggle) {
-          var hint = light ? 'Тёмная тема' : 'Светлая тема';
-          toggle.title = hint;
-          toggle.setAttribute('aria-label', hint);
-        }
-      }
-      var saved = null;
-      try { saved = localStorage.getItem(KEY); } catch (error) {}
-      apply(saved === 'light');
-      var toggle = document.getElementById('theme-toggle');
-      if (toggle) {
-        toggle.addEventListener('click', function onToggle() {
-          var next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
-          try { localStorage.setItem(KEY, next); } catch (error) {}
-          apply(next === 'light');
-        });
-      }
-    })();
-  </script>
 </body>
 </html>

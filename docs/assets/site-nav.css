@@ -2,42 +2,33 @@
    «Материалы / Инструменты / О проекте», главное действие справа, переключатель темы.
    Разметку собирает tools/site-nav.ts — один источник на Web IDE, учебник, задачник,
    проекты, справочник, «Авторам», «О проекте», раздатку и заглушки новых страниц.
-   Цвета заданы числами (эталон — учебник), светлая тема — body.light-theme (разделы)
-   и body.theme-light (IDE). Подключать ДО стилей раздела: их мобильные правила
-   (например, показать гамбургер) должны перекрывать базовые отсюда. */
-
-:root {
-  --site-topbar-height: 56px;
-}
+   Цвета, тени, слои и длительности — только из токенов (assets/site-tokens.css, источник
+   packages/design/tokens.js; стилевая база 1.6.4): светлая тема приходит сама через
+   html[data-theme], своих правил темы у шапки нет (кроме смены значка солнце/луна).
+   Подключать ДО стилей раздела: их мобильные правила (например, показать гамбургер)
+   должны перекрывать базовые отсюда. */
 
 /* ── шапка страницы-документа (у IDE своя сетка .topbar, ей достаются только части ниже) ── */
 .site-topbar {
   position: sticky;
   top: 0;
-  z-index: 50;
-  height: var(--site-topbar-height);
+  z-index: var(--z-topbar);
+  height: var(--topbar-height);
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 0 20px;
-  border-bottom: 1px solid #342846;
-  background: rgba(12, 5, 21, 0.92);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-topbar-bg);
   backdrop-filter: blur(18px);
-  color: #f2eaf7;
+  color: var(--color-text);
   /* Своя типографика: у страниц разные body (18px/1.68 в документах, 17px/1.6 в раздатке…),
      и без этого одна и та же кнопка шапки получалась разной высоты (находка владельца 2026-09-26). */
-  font-family: "Geologica", Inter, "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.3;
   font-weight: 500;
   letter-spacing: normal;
-}
-
-body.light-theme .site-topbar,
-body.theme-light .site-topbar {
-  border-color: #c8bed5;
-  background: rgba(246, 242, 251, 0.92);
-  color: #211a2e;
 }
 
 /* ── слева: гамбургер (у страниц с боковой колонкой), лого, версия, бейдж ── */
@@ -58,10 +49,10 @@ body.theme-light .site-topbar {
   justify-content: center;
   gap: 4px;
   padding: 0;
-  border: 1px solid #342846;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #1c1629;
-  color: #c9bdd6;
+  background: var(--color-panel-raised);
+  color: var(--color-text-soft);
   cursor: pointer;
 }
 
@@ -75,7 +66,7 @@ body.theme-light .site-topbar {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #f2eaf7;
+  color: var(--color-text);
   text-decoration: none;
   white-space: nowrap;
   font-size: 17px;
@@ -105,7 +96,7 @@ a.brand:hover .brand-text {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #8e819d;
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 20px;
   font-weight: 600;
@@ -114,40 +105,15 @@ a.brand:hover .brand-text {
 
 .topbar-badge {
   padding: 3px 9px;
-  border: 1px solid #342846;
+  border: 1px solid var(--color-border);
   border-radius: 999px;
   background: transparent;
-  color: #8e819d;
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 20px;
   font-weight: 700;
   letter-spacing: normal;
   white-space: nowrap;
-}
-
-body.light-theme .brand,
-body.theme-light .brand {
-  color: #211a2e;
-}
-
-body.light-theme .idyllium-version,
-body.theme-light .idyllium-version,
-body.light-theme .topbar-badge,
-body.theme-light .topbar-badge {
-  color: #6d637b;
-}
-
-body.light-theme .topbar-badge,
-body.theme-light .topbar-badge,
-body.light-theme .menu-toggle,
-body.theme-light .menu-toggle {
-  border-color: #c8bed5;
-}
-
-body.light-theme .menu-toggle,
-body.theme-light .menu-toggle {
-  background: #e9e2f0;
-  color: #463b56;
 }
 
 /* ── три дропдауна ── */
@@ -168,52 +134,52 @@ body.theme-light .menu-toggle {
   align-items: center;
   height: 34px;
   padding: 0 12px;
-  border: 1px solid #342846;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #1c1629;
-  color: #c9bdd6;
+  background: var(--color-panel-raised);
+  color: var(--color-text-soft);
   font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  transition: background var(--duration-base) ease, color var(--duration-base) ease, border-color var(--duration-base) ease;
 }
 
 .site-nav-button:hover,
 .site-nav-group.is-open > .site-nav-button {
-  background: #241d34;
-  border-color: #87bfff;
-  color: #f2eaf7;
+  background: var(--color-panel-soft);
+  border-color: var(--color-accent);
+  color: var(--color-text);
 }
 
 /* Группа, в которой лежит текущий раздел, — чуть светлее фоном: «вы где-то здесь»
    (без подчёркивания и без шеврона — замечания владельца 2026-09-25; шевронов нет
    и у Файл/Правка/Внешний вид). */
 .site-nav-group.is-here > .site-nav-button {
-  background: #2d2346;
-  color: #f2eaf7;
+  background: var(--color-panel-active);
+  color: var(--color-text);
 }
 
 .site-nav-group.is-here > .site-nav-button:hover,
 .site-nav-group.is-here.is-open > .site-nav-button {
-  background: #372b55;
+  background: var(--color-panel-active-hover);
 }
 
 .site-nav-menu {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  z-index: 60; /* выше внутренних слоёв Monaco в IDE (они доходят до 40) */
+  z-index: var(--z-menu); /* выше внутренних слоёв Monaco в IDE (они доходят до 40) */
   display: none;
   min-width: 250px;
   max-width: min(360px, calc(100vw - 24px));
   padding: 6px;
-  border: 1px solid #342846;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #151020;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-popup);
 }
 
 .site-nav-group.is-open > .site-nav-menu {
@@ -233,7 +199,7 @@ body.theme-light .menu-toggle {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #f2eaf7;
+  color: var(--color-text);
   align-items: flex-start; /* пункт-кнопка «Генератор цвета» в IDE: глобальное button {align-items: center} тянуло текст в середину */
   justify-content: flex-start;
   text-align: left;
@@ -252,7 +218,7 @@ body.theme-light .menu-toggle {
   height: 16px;
   margin-top: 1px;
   flex: 0 0 auto;
-  color: #a99bbd;
+  color: var(--color-text-muted);
 }
 
 .site-nav-icon svg {
@@ -281,7 +247,7 @@ body.theme-light .menu-toggle {
 }
 
 .site-nav-item small {
-  color: #8e819d;
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.3;
@@ -289,13 +255,13 @@ body.theme-light .menu-toggle {
 
 .site-nav-item:hover,
 .site-nav-item:focus-visible {
-  background: #241d34;
-  color: #f2eaf7;
+  background: var(--color-panel-soft);
+  color: var(--color-text);
   outline: none;
 }
 
 .site-nav-item.is-current {
-  color: #8e819d;
+  color: var(--color-text-muted);
   cursor: default;
 }
 
@@ -304,8 +270,8 @@ body.theme-light .menu-toggle {
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(135, 191, 255, 0.16);
-  color: #87bfff;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -322,94 +288,16 @@ body.theme-light .menu-toggle {
 .site-nav-separator {
   height: 1px;
   margin: 6px 4px;
-  background: #342846;
+  background: var(--color-border);
 }
 
 .site-nav-caption {
   padding: 8px 10px 4px;
-  color: #8e819d;
+  color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-body.light-theme .site-nav-button,
-body.theme-light .site-nav-button {
-  border-color: #c8bed5;
-  background: #e9e2f0;
-  color: #463b56;
-}
-
-body.light-theme .site-nav-button:hover,
-body.theme-light .site-nav-button:hover,
-body.light-theme .site-nav-group.is-open > .site-nav-button,
-body.theme-light .site-nav-group.is-open > .site-nav-button {
-  background: #ded6e8;
-  border-color: #275f9e;
-  color: #211a2e;
-}
-
-body.light-theme .site-nav-group.is-here > .site-nav-button,
-body.theme-light .site-nav-group.is-here > .site-nav-button {
-  background: #d6cce3;
-  color: #211a2e;
-}
-
-body.light-theme .site-nav-group.is-here > .site-nav-button:hover,
-body.theme-light .site-nav-group.is-here > .site-nav-button:hover,
-body.light-theme .site-nav-group.is-here.is-open > .site-nav-button,
-body.theme-light .site-nav-group.is-here.is-open > .site-nav-button {
-  background: #cbbfdb;
-}
-
-body.light-theme .site-nav-menu,
-body.theme-light .site-nav-menu {
-  border-color: #c8bed5;
-  background: #f7f4fb;
-  box-shadow: 0 18px 44px rgba(39, 30, 54, 0.18);
-}
-
-body.light-theme .site-nav-item,
-body.theme-light .site-nav-item {
-  color: #211a2e;
-}
-
-body.light-theme .site-nav-item:hover,
-body.theme-light .site-nav-item:hover,
-body.light-theme .site-nav-item:focus-visible,
-body.theme-light .site-nav-item:focus-visible {
-  background: #e9e2f0;
-  color: #211a2e;
-}
-
-body.light-theme .site-nav-item small,
-body.theme-light .site-nav-item small,
-body.light-theme .site-nav-item.is-current,
-body.theme-light .site-nav-item.is-current,
-body.light-theme .site-nav-caption,
-body.theme-light .site-nav-caption {
-  color: #6d637b;
-}
-
-body.light-theme .site-nav-soon,
-body.theme-light .site-nav-soon {
-  color: #275f9e;
-}
-
-body.light-theme .site-nav-icon,
-body.theme-light .site-nav-icon {
-  color: #6d637b;
-}
-
-body.light-theme .site-nav-soon,
-body.theme-light .site-nav-soon {
-  background: rgba(39, 95, 158, 0.13);
-}
-
-body.light-theme .site-nav-separator,
-body.theme-light .site-nav-separator {
-  background: #c8bed5;
 }
 
 /* ── справа: главное действие раздела и тема ── */
@@ -426,36 +314,22 @@ body.theme-light .site-nav-separator {
   align-items: center;
   height: 34px;
   padding: 0 14px;
-  border: 1px solid #87bfff;
+  border: 1px solid var(--color-accent);
   border-radius: 8px;
-  background: #87bfff;
-  color: #0c0515;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   font-size: 14px;
   line-height: 20px;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
-  transition: background 0.16s ease, border-color 0.16s ease;
+  transition: background var(--duration-base) ease, border-color var(--duration-base) ease;
 }
 
 .site-action:hover {
-  background: #a3ceff;
-  border-color: #a3ceff;
-  color: #0c0515;
-}
-
-body.light-theme .site-action,
-body.theme-light .site-action {
-  border-color: #275f9e;
-  background: #275f9e;
-  color: #ffffff;
-}
-
-body.light-theme .site-action:hover,
-body.theme-light .site-action:hover {
-  background: #1d4d82;
-  border-color: #1d4d82;
-  color: #ffffff;
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
+  color: var(--color-on-accent);
 }
 
 .site-theme-toggle {
@@ -465,16 +339,16 @@ body.theme-light .site-action:hover {
   width: 36px;
   height: 34px;
   padding: 0;
-  border: 1px solid #342846;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #1c1629;
-  color: #c9bdd6;
+  background: var(--color-panel-raised);
+  color: var(--color-text-soft);
   cursor: pointer;
 }
 
 .site-theme-toggle:hover {
-  border-color: #87bfff;
-  color: #f2eaf7;
+  border-color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .site-theme-toggle svg {
@@ -485,17 +359,11 @@ body.theme-light .site-action:hover {
   display: none !important;
 }
 
-body.light-theme .site-theme-toggle {
-  border-color: #c8bed5;
-  background: #e9e2f0;
-  color: #463b56;
-}
-
-body.light-theme .site-theme-toggle .icon-sun {
+html[data-theme="light"] .site-theme-toggle .icon-sun {
   display: none !important;
 }
 
-body.light-theme .site-theme-toggle .icon-moon {
+html[data-theme="light"] .site-theme-toggle .icon-moon {
   display: block !important;
 }
 

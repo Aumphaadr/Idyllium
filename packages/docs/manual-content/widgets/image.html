@@ -216,6 +216,59 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Картинка-кнопка</h2>
+  <p>
+    По картинке можно щёлкать: у <code>gui.ImageBox</code> есть событие
+    <code>on_click</code> — такое же, как у кнопки. Кот, которого гладят
+    щелчком, — самая частая просьба на первом уроке с картинками:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
+    gui.Window win;
+    win.width = 420;
+    win.height = 260;
+    win.title = "Погладь кота";
+
+    gui.ImageBox img;
+    img.x = 30;
+    img.y = 30;
+    img.width = 160;
+    img.height = 120;
+    img.set_image(cat);
+
+    gui.Label counter;
+    counter.x = 30;
+    counter.y = 170;
+    counter.text = "Погладили: 0 раз";
+
+    int strokes = 0;
+    img.on_click = void function() {
+        strokes = strokes + 1;
+        counter.text = "Погладили: " + to_string(strokes) + " раз";
+    };
+
+    win.add_child(img);
+    win.add_child(counter);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Такое же событие есть у значка <code>gui.Icon</code> и у рамки
+    <code>gui.Frame</code>. Двойной щелчок по картинке — событие
+    <code>on_double_click</code>; про остальные события виджетов рассказывает
+    справочник.
+  </p>
+</div>
+
+<div class="docs-section">
   <h2>Копии и преобразования</h2>
   <p>
     Методы преобразования не портят исходную картинку. Каждый из них создаёт

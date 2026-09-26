@@ -1,3 +1,8 @@
+/* Шрифты сайта Idyllium — единственный набор @font-face (стилевая база 1.6.4): Geologica (переменный),
+   Source Code Pro (все начертания; браузер скачивает только те, что использованы) и Lobster
+   (демо шрифтов в уроках). Источник — packages/fonts/, на сайте — /fonts/ (копирует build-web-ide.js);
+   подключает tools/site-nav.ts на каждой странице. Кадр юнита (embed/frame.css) и окно программы
+   (gui-renderer) объявляют свои шрифты сами — они живут вне страниц сайта. */
 @font-face {
   font-family: 'Geologica';
   src: url('Geologica-Variable.ttf') format('truetype-variations');

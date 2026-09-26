@@ -3,7 +3,7 @@ import { RuntimeObject, isRuntimeObject } from './runtime-shared';
 import { IdylliumArray, IdylliumColor, IdylliumTimeStamp, colorToCss, valueOps } from './runtime-values';
 import { IdylliumAudioSnapshot, IdylliumCanvasSnapshot, IdylliumDrawableSnapshot, IdylliumGuiWidgetSnapshot, IdylliumModalSnapshot, IdylliumWindowSnapshot, RuntimeObjectState, CanvasSnapshotOptions, IdylliumCanvasCommand, canvasCommands } from './runtime-state';
 import { isDrawableObject, drawableTransform, runtimeFontBytes } from './runtime-drawable';
-import { isGuiWidget } from './runtime-gui';
+import { isGuiWidget, listenedGuiEvents } from './runtime-gui';
 import { storedStaticImage, storedAnimation, storedBitmap } from './runtime-image';
 import { audioCommands } from './runtime-audio';
 import { detectImageFormat, imageMimeType } from './image-service';
@@ -282,6 +282,7 @@ export function windowSnapshot(window: RuntimeObject): IdylliumWindowSnapshot {
     type: 'gui.Window',
     properties: objectPropertiesSnapshot(window),
     children: widgetChildrenSnapshot(window),
+    events: listenedGuiEvents(window),
   };
 }
 
@@ -302,6 +303,7 @@ export function widgetSnapshot(widget: RuntimeObject): IdylliumGuiWidgetSnapshot
     type,
     properties: objectPropertiesSnapshot(widget),
     children: widgetChildrenSnapshot(widget),
+    events: listenedGuiEvents(widget),
     canvas: type === 'gui.Canvas' ? canvasSnapshot(widget) : undefined,
     items: type === 'gui.ComboBox' && Array.isArray(widget.__items) ? [...widget.__items] as string[] : undefined,
     columns: type === 'gui.Table' && Array.isArray(widget.__columns) ? [...widget.__columns] as string[] : undefined,

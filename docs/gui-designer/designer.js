@@ -245,6 +245,23 @@
       var BORDER_COLOR = { name: "border_color", kind: "color", group: "colors", label: "\u0446\u0432\u0435\u0442 \u0440\u0430\u043C\u043A\u0438" };
       var ON_CLICK = { name: "on_click", params: "", comment: "\u0447\u0442\u043E \u0434\u0435\u043B\u0430\u0442\u044C \u043F\u0440\u0438 \u0449\u0435\u043B\u0447\u043A\u0435" };
       var ON_CHANGE = (what) => ({ name: "on_change", params: "", comment: `\u0447\u0442\u043E \u0434\u0435\u043B\u0430\u0442\u044C, \u043A\u043E\u0433\u0434\u0430 ${what}` });
+      var POINTER_EVENTS = (type) => [
+        { name: "on_mouse_enter", params: "", comment: "\u043A\u0443\u0440\u0441\u043E\u0440 \u0432\u043E\u0448\u0451\u043B \u0432 \u0432\u0438\u0434\u0436\u0435\u0442" },
+        { name: "on_mouse_leave", params: "", comment: "\u043A\u0443\u0440\u0441\u043E\u0440 \u0432\u044B\u0448\u0435\u043B \u0438\u0437 \u0432\u0438\u0434\u0436\u0435\u0442\u0430" },
+        { name: "on_mouse_pressed", params: `gui.${type} sender, gui.MouseEvent evt`, comment: "\u043A\u043D\u043E\u043F\u043A\u0443 \u043C\u044B\u0448\u0438 \u043D\u0430\u0436\u0430\u043B\u0438: evt.x, evt.y, evt.mouse_button" },
+        { name: "on_mouse_released", params: `gui.${type} sender, gui.MouseEvent evt`, comment: "\u043A\u043D\u043E\u043F\u043A\u0443 \u043C\u044B\u0448\u0438 \u043E\u0442\u043F\u0443\u0441\u0442\u0438\u043B\u0438: evt.x, evt.y" },
+        { name: "on_mouse_move", params: `gui.${type} sender, gui.MouseEvent evt`, comment: "\u043C\u044B\u0448\u044C \u0434\u0432\u0438\u0436\u0435\u0442\u0441\u044F \u043D\u0430\u0434 \u0432\u0438\u0434\u0436\u0435\u0442\u043E\u043C: evt.x, evt.y" }
+      ];
+      var FOCUS_EVENTS = [
+        { name: "on_focus_in", params: "", comment: "\u0432\u0438\u0434\u0436\u0435\u0442 \u043F\u043E\u043B\u0443\u0447\u0438\u043B \u0444\u043E\u043A\u0443\u0441" },
+        { name: "on_focus_out", params: "", comment: "\u0432\u0438\u0434\u0436\u0435\u0442 \u043F\u043E\u0442\u0435\u0440\u044F\u043B \u0444\u043E\u043A\u0443\u0441" }
+      ];
+      var KEY_EVENTS = (type) => [
+        { name: "on_key_pressed", params: `gui.${type} sender, gui.KeyboardEvent evt`, comment: "\u043A\u043B\u0430\u0432\u0438\u0448\u0443 \u043D\u0430\u0436\u0430\u043B\u0438: evt.key" },
+        { name: "on_key_released", params: `gui.${type} sender, gui.KeyboardEvent evt`, comment: "\u043A\u043B\u0430\u0432\u0438\u0448\u0443 \u043E\u0442\u043F\u0443\u0441\u0442\u0438\u043B\u0438: evt.key" }
+      ];
+      var DOUBLE_CLICK = (type) => ({ name: "on_double_click", params: `gui.${type} sender, gui.MouseEvent evt`, comment: "\u0434\u0432\u043E\u0439\u043D\u043E\u0439 \u0449\u0435\u043B\u0447\u043E\u043A" });
+      var FOCUSABLE = /* @__PURE__ */ new Set(["Button", "LineEdit", "TextEdit", "SpinBox", "FloatSpinBox", "Slider", "CheckBox", "RadioButton", "ComboBox", "Table"]);
       var DATA_KINDS = {
         // ComboBox: пункты — add_item("…") по одному.
         items: { title: "\u041F\u0443\u043D\u043A\u0442\u044B \u0441\u043F\u0438\u0441\u043A\u0430", method: "add_item", field: "items", shape: "strings", placeholder: "\u043F\u0443\u043D\u043A\u0442" },
@@ -264,7 +281,11 @@
           size,
           icon: options.icon || `widget-${type}`,
           props: [...GEOMETRY, ...own, ...COMMON_TAIL],
-          events: options.events || [],
+          events: [
+            ...options.events || [],
+            ...FOCUSABLE.has(type) ? [...FOCUS_EVENTS, ...KEY_EVENTS(type)] : [],
+            ...options.pointer === false ? [] : POINTER_EVENTS(type)
+          ],
           container: options.container || null,
           data: options.data ? { ...DATA_KINDS[options.data], ...options.dataOptions || {} } : null,
           hint: options.hint || ""
@@ -276,7 +297,7 @@
           FONT_SIZE,
           { name: "href", kind: "string", group: "text", label: "\u0441\u0441\u044B\u043B\u043A\u0430: \u043D\u0430\u0434\u043F\u0438\u0441\u044C \u0441\u0442\u0430\u043D\u0435\u0442 \u0433\u0438\u043F\u0435\u0440\u0441\u0441\u044B\u043B\u043A\u043E\u0439" },
           BORDER_COLOR
-        ], { events: [ON_CLICK] }),
+        ], { events: [ON_CLICK, DOUBLE_CLICK("Label")] }),
         widget("Button", "\u041A\u043D\u043E\u043F\u043A\u0430", "button", "\u041D\u0430\u0434\u043F\u0438\u0441\u0438 \u0438 \u043A\u043D\u043E\u043F\u043A\u0438", { width: 120, height: 32 }, [
           { name: "text", kind: "string", group: "text", label: "\u0442\u0435\u043A\u0441\u0442", initial: "\u041A\u043D\u043E\u043F\u043A\u0430" },
           FONT_SIZE,
@@ -289,14 +310,21 @@
           FONT_SIZE,
           BORDER_COLOR,
           { name: "placeholder_color", kind: "color", group: "colors", label: "\u0446\u0432\u0435\u0442 \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0438" }
-        ], { events: [ON_CHANGE("\u0442\u0435\u043A\u0441\u0442 \u0438\u0437\u043C\u0435\u043D\u0438\u043B\u0441\u044F")] }),
+        ], { events: [
+          ON_CHANGE("\u0442\u0435\u043A\u0441\u0442 \u0438\u0437\u043C\u0435\u043D\u0438\u043B\u0441\u044F"),
+          { name: "on_enter_pressed", params: "", comment: "\u0432 \u043F\u043E\u043B\u0435 \u043D\u0430\u0436\u0430\u043B\u0438 Enter \u2014 \u0432\u0432\u043E\u0434 \u0437\u0430\u043A\u043E\u043D\u0447\u0435\u043D" },
+          { name: "on_editing_finished", params: "", comment: "\u043F\u0440\u0430\u0432\u043A\u0443 \u0437\u0430\u043A\u043E\u043D\u0447\u0438\u043B\u0438: Enter \u0438\u043B\u0438 \u0443\u0448\u043B\u0438 \u0438\u0437 \u043F\u043E\u043B\u044F" }
+        ] }),
         widget("TextEdit", "\u041C\u043D\u043E\u0433\u043E\u0441\u0442\u0440\u043E\u0447\u043D\u043E\u0435 \u043F\u043E\u043B\u0435", "text_edit", "\u0412\u0432\u043E\u0434", { width: 240, height: 120 }, [
           { name: "text", kind: "string", group: "text", label: "\u0442\u0435\u043A\u0441\u0442" },
           { name: "placeholder", kind: "string", group: "text", label: "\u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430 \u0432\u043D\u0443\u0442\u0440\u0438 \u043F\u0443\u0441\u0442\u043E\u0433\u043E \u043F\u043E\u043B\u044F" },
           FONT_SIZE,
           BORDER_COLOR,
           { name: "placeholder_color", kind: "color", group: "colors", label: "\u0446\u0432\u0435\u0442 \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0438" }
-        ], { events: [ON_CHANGE("\u0442\u0435\u043A\u0441\u0442 \u0438\u0437\u043C\u0435\u043D\u0438\u043B\u0441\u044F")] }),
+        ], { events: [
+          ON_CHANGE("\u0442\u0435\u043A\u0441\u0442 \u0438\u0437\u043C\u0435\u043D\u0438\u043B\u0441\u044F"),
+          { name: "on_editing_finished", params: "", comment: "\u043F\u0440\u0430\u0432\u043A\u0443 \u0437\u0430\u043A\u043E\u043D\u0447\u0438\u043B\u0438: \u0443\u0448\u043B\u0438 \u0438\u0437 \u043F\u043E\u043B\u044F, \u0438\u0437\u043C\u0435\u043D\u0438\u0432 \u0442\u0435\u043A\u0441\u0442" }
+        ] }),
         widget("SpinBox", "\u0421\u0447\u0451\u0442\u0447\u0438\u043A", "spin_box", "\u0412\u0432\u043E\u0434", { width: 100, height: 28 }, [
           { name: "min", kind: "int", group: "values", label: "\u043C\u0438\u043D\u0438\u043C\u0443\u043C", default: 0 },
           { name: "max", kind: "int", group: "values", label: "\u043C\u0430\u043A\u0441\u0438\u043C\u0443\u043C", default: 100 },
@@ -317,7 +345,11 @@
           { name: "value", kind: "int", group: "values", label: "\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435", default: 0 },
           { name: "step", kind: "int", group: "values", label: "\u0448\u0430\u0433", default: 1 },
           { name: "orientation", kind: "enum", group: "values", label: "\u043E\u0440\u0438\u0435\u043D\u0442\u0430\u0446\u0438\u044F", values: ["horizontal", "vertical"], default: "horizontal" }
-        ], { events: [ON_CHANGE("\u043F\u043E\u043B\u0437\u0443\u043D\u043E\u043A \u0441\u0434\u0432\u0438\u043D\u0443\u043B\u0438")] }),
+        ], { events: [
+          ON_CHANGE("\u043F\u043E\u043B\u0437\u0443\u043D\u043E\u043A \u0441\u0434\u0432\u0438\u043D\u0443\u043B\u0438"),
+          { name: "on_grab", params: "", comment: "\u043C\u0430\u0440\u043A\u0435\u0440 \u0441\u0445\u0432\u0430\u0442\u0438\u043B\u0438 \u043C\u044B\u0448\u044C\u044E" },
+          { name: "on_release", params: "", comment: "\u043C\u0430\u0440\u043A\u0435\u0440 \u043E\u0442\u043F\u0443\u0441\u0442\u0438\u043B\u0438 \u2014 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u0443\u0441\u0442\u043E\u044F\u043B\u043E\u0441\u044C" }
+        ] }),
         widget("CheckBox", "\u0424\u043B\u0430\u0436\u043E\u043A", "check_box", "\u0412\u044B\u0431\u043E\u0440", { width: 180, height: 24 }, [
           { name: "text", kind: "string", group: "text", label: "\u0442\u0435\u043A\u0441\u0442", initial: "\u0424\u043B\u0430\u0436\u043E\u043A" },
           { name: "is_checked", kind: "bool", group: "values", label: "\u043E\u0442\u043C\u0435\u0447\u0435\u043D", default: false },
@@ -344,10 +376,10 @@
         ]),
         widget("ImageBox", "\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430", "image_box", "\u0418\u043D\u0434\u0438\u043A\u0430\u0442\u043E\u0440\u044B", { width: 160, height: 120 }, [
           { name: "resize_mode", kind: "enum", group: "values", label: "\u0432\u043F\u0438\u0441\u044B\u0432\u0430\u043D\u0438\u0435: \u0446\u0435\u043B\u0438\u043A\u043E\u043C, \u0441 \u043E\u0431\u0440\u0435\u0437\u043A\u043E\u0439, \u0440\u0430\u0441\u0442\u044F\u043D\u0443\u0442\u044C, \u043A\u0430\u043A \u0435\u0441\u0442\u044C", values: ["fit", "fill", "stretch", "original"], default: "fit" }
-        ], { hint: "\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0432 \u043A\u043E\u0434\u0435: image_box1.set_image(\u2026)" }),
+        ], { hint: "\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0432 \u043A\u043E\u0434\u0435: image_box1.set_image(\u2026)", events: [ON_CLICK, DOUBLE_CLICK("ImageBox")] }),
         widget("Icon", "\u0417\u043D\u0430\u0447\u043E\u043A", "icon", "\u0418\u043D\u0434\u0438\u043A\u0430\u0442\u043E\u0440\u044B", { width: 24, height: 24 }, [
           { name: "icon", kind: "enum", group: "values", label: "\u0438\u043C\u044F \u0437\u043D\u0430\u0447\u043A\u0430 \u0438\u0437 \u0435\u0434\u0438\u043D\u043E\u0433\u043E \u043D\u0430\u0431\u043E\u0440\u0430 \u0441\u0430\u0439\u0442\u0430", values: ICON_NAMES2, default: "star" }
-        ], { icon: "star", hint: "\u0417\u043D\u0430\u0447\u043E\u043A \u0432\u043F\u0438\u0441\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0432 \u043A\u0432\u0430\u0434\u0440\u0430\u0442 \u043F\u043E \u043C\u0435\u043D\u044C\u0448\u0435\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u0435; \u0446\u0432\u0435\u0442 \u2014 text_color" }),
+        ], { icon: "star", hint: "\u0417\u043D\u0430\u0447\u043E\u043A \u0432\u043F\u0438\u0441\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0432 \u043A\u0432\u0430\u0434\u0440\u0430\u0442 \u043F\u043E \u043C\u0435\u043D\u044C\u0448\u0435\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u0435; \u0446\u0432\u0435\u0442 \u2014 text_color", events: [ON_CLICK, DOUBLE_CLICK("Icon")] }),
         widget("Canvas", "\u0425\u043E\u043B\u0441\u0442", "canvas", "\u0418\u043D\u0434\u0438\u043A\u0430\u0442\u043E\u0440\u044B", { width: 300, height: 150 }, [], {
           hint: "\u0420\u0438\u0441\u043E\u0432\u0430\u043D\u0438\u0435 \u2014 \u0432 \u043A\u043E\u0434\u0435: canvas1.draw(\u2026), canvas1.fill(\u2026)",
           events: [
@@ -359,21 +391,25 @@
             { name: "on_mouse_move", params: "gui.Canvas canvas, gui.MouseEvent evt", comment: "\u043C\u044B\u0448\u044C \u0434\u0432\u0438\u0433\u0430\u0435\u0442\u0441\u044F: evt.x, evt.y" },
             { name: "on_mouse_pressed", params: "gui.Canvas canvas, gui.MouseEvent evt", comment: "\u043A\u043D\u043E\u043F\u043A\u0443 \u043C\u044B\u0448\u0438 \u043D\u0430\u0436\u0430\u043B\u0438: evt.x, evt.y" },
             { name: "on_mouse_released", params: "gui.Canvas canvas, gui.MouseEvent evt", comment: "\u043A\u043D\u043E\u043F\u043A\u0443 \u043C\u044B\u0448\u0438 \u043E\u0442\u043F\u0443\u0441\u0442\u0438\u043B\u0438: evt.x, evt.y" },
-            { name: "on_mouse_scroll", params: "gui.Canvas canvas, gui.MouseScrollEvent evt", comment: "\u043A\u0440\u0443\u0442\u044F\u0442 \u043A\u043E\u043B\u0435\u0441\u043E: evt.delta" }
-          ]
+            { name: "on_mouse_scroll", params: "gui.Canvas canvas, gui.MouseScrollEvent evt", comment: "\u043A\u0440\u0443\u0442\u044F\u0442 \u043A\u043E\u043B\u0435\u0441\u043E: evt.delta" },
+            { name: "on_mouse_enter", params: "gui.Canvas canvas", comment: "\u043A\u0443\u0440\u0441\u043E\u0440 \u0432\u043E\u0448\u0451\u043B \u043D\u0430 \u0445\u043E\u043B\u0441\u0442" },
+            { name: "on_mouse_leave", params: "gui.Canvas canvas", comment: "\u043A\u0443\u0440\u0441\u043E\u0440 \u0443\u0448\u0451\u043B \u0441 \u0445\u043E\u043B\u0441\u0442\u0430" },
+            { name: "on_click", params: "gui.Canvas canvas", comment: "\u0449\u0435\u043B\u0447\u043E\u043A \u043F\u043E \u0445\u043E\u043B\u0441\u0442\u0443" }
+          ],
+          pointer: false
         }),
         widget("Frame", "\u0420\u0430\u043C\u043A\u0430", "frame", "\u041A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B", { width: 220, height: 140 }, [
           { name: "title", kind: "string", group: "text", label: "\u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043E\u043A" },
           FONT_SIZE,
           BORDER_COLOR,
           { name: "border_width", kind: "int", group: "values", label: "\u0442\u043E\u043B\u0449\u0438\u043D\u0430 \u0440\u0430\u043C\u043A\u0438", min: 0 }
-        ], { container: "children" }),
+        ], { container: "children", events: [ON_CLICK] }),
         widget("TabWidget", "\u0412\u043A\u043B\u0430\u0434\u043A\u0438", "tabs", "\u041A\u043E\u043D\u0442\u0435\u0439\u043D\u0435\u0440\u044B", { width: 320, height: 200 }, [
           FONT_SIZE
-        ], { container: "tabs", events: [ON_CHANGE("\u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u043B\u0438 \u0432\u043A\u043B\u0430\u0434\u043A\u0443")] }),
+        ], { container: "tabs", events: [ON_CHANGE("\u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u043B\u0438 \u0432\u043A\u043B\u0430\u0434\u043A\u0443"), ON_CLICK] }),
         widget("Table", "\u0422\u0430\u0431\u043B\u0438\u0446\u0430", "table", "\u0412\u0438\u0442\u0440\u0438\u043D\u044B", { width: 320, height: 200 }, [
           FONT_SIZE
-        ], { events: [{ name: "on_select", params: "", comment: "\u0447\u0442\u043E \u0434\u0435\u043B\u0430\u0442\u044C, \u043A\u043E\u0433\u0434\u0430 \u0432\u044B\u0431\u0440\u0430\u043B\u0438 \u0441\u0442\u0440\u043E\u043A\u0443" }], data: "table" }),
+        ], { events: [{ name: "on_select", params: "", comment: "\u0447\u0442\u043E \u0434\u0435\u043B\u0430\u0442\u044C, \u043A\u043E\u0433\u0434\u0430 \u0432\u044B\u0431\u0440\u0430\u043B\u0438 \u0441\u0442\u0440\u043E\u043A\u0443" }, DOUBLE_CLICK("Table")], data: "table" }),
         widget("BarChart", "\u0421\u0442\u043E\u043B\u0431\u0446\u044B", "bar_chart", "\u0412\u0438\u0442\u0440\u0438\u043D\u044B", { width: 320, height: 220 }, [
           { name: "min_value", kind: "float", group: "values", label: "\u043D\u0438\u0437 \u0448\u043A\u0430\u043B\u044B" },
           { name: "max_value", kind: "float", group: "values", label: "\u0432\u0435\u0440\u0445 \u0448\u043A\u0430\u043B\u044B" },
@@ -404,7 +440,14 @@
         { name: "background_color", kind: "color", group: "colors", label: "\u0446\u0432\u0435\u0442 \u0444\u043E\u043D\u0430" },
         ...STYLE_PROPS
       ];
-      var WINDOW_EVENTS = [{ name: "on_close", params: "", comment: "\u0447\u0442\u043E \u0434\u0435\u043B\u0430\u0442\u044C, \u043A\u043E\u0433\u0434\u0430 \u043E\u043A\u043D\u043E \u0437\u0430\u043A\u0440\u044B\u0432\u0430\u044E\u0442" }];
+      var WINDOW_EVENTS = [
+        { name: "on_close", params: "", comment: "\u0447\u0442\u043E \u0434\u0435\u043B\u0430\u0442\u044C, \u043A\u043E\u0433\u0434\u0430 \u043E\u043A\u043D\u043E \u0437\u0430\u043A\u0440\u044B\u0432\u0430\u044E\u0442" },
+        ...KEY_EVENTS("Window"),
+        { name: "on_focus_in", params: "", comment: "\u043E\u043A\u043D\u043E \u0432\u044B\u0432\u0435\u043B\u0438 \u043D\u0430\u0432\u0435\u0440\u0445" },
+        { name: "on_focus_out", params: "", comment: "\u043E\u043A\u043D\u043E \u0443\u0448\u043B\u043E \u043F\u043E\u0434 \u0434\u0440\u0443\u0433\u043E\u0435" },
+        { name: "on_move", params: "", comment: "\u043E\u043A\u043D\u043E \u043F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u043B\u0438: x \u0438 y \u0443\u0436\u0435 \u043D\u043E\u0432\u044B\u0435" },
+        ...POINTER_EVENTS("Window")
+      ];
       var WIDGETS2 = Object.fromEntries(WIDGET_TYPES.map((def) => [def.type, def]));
       var PALETTE_GROUPS2 = [...new Set(WIDGET_TYPES.map((def) => def.group))].map((group) => ({
         title: group,
@@ -2229,7 +2272,6 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
   var STORAGE_KEY = "idyllium-gui-designer";
   var FILES_DB_NAME = "idyllium-gui-designer-files";
   var FILES_DB_STORE = "files";
-  var THEME_KEY = "idyllium-docs-theme";
   var CLIPBOARD_MARK = "idyllium-gui-designer-clipboard:";
   var WINDOW_TITLE_HEIGHT = 28;
   var MIN_SIZE = 8;
@@ -2478,34 +2520,11 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     const known = (0, import_widgets.eventsOf)(type).map((event) => event.name);
     return handlers.filter((name) => known.includes(name));
   }
-  function applyTheme(light) {
-    document.body.classList.toggle("light-theme", light);
-    const toggle = $("theme-toggle");
-    if (toggle) {
-      const hint = light ? "\u0422\u0451\u043C\u043D\u0430\u044F \u0442\u0435\u043C\u0430" : "\u0421\u0432\u0435\u0442\u043B\u0430\u044F \u0442\u0435\u043C\u0430";
-      toggle.title = hint;
-      toggle.setAttribute("aria-label", hint);
-    }
-    postToPreview({ type: "theme", theme: light ? "light" : "dark" });
+  function siteTheme() {
+    return window.idylliumTheme ? window.idylliumTheme.get() : "dark";
   }
   function initTheme() {
-    let saved = null;
-    try {
-      saved = localStorage.getItem(THEME_KEY);
-    } catch (error) {
-    }
-    applyTheme(saved === "light");
-    const toggle = $("theme-toggle");
-    if (toggle) {
-      toggle.addEventListener("click", () => {
-        const next = document.body.classList.contains("light-theme") ? "dark" : "light";
-        try {
-          localStorage.setItem(THEME_KEY, next);
-        } catch (error) {
-        }
-        applyTheme(next === "light");
-      });
-    }
+    document.addEventListener("idyllium-theme-change", (event) => postToPreview({ type: "theme", theme: event.detail.theme }));
   }
   var dialogResolve = null;
   function showDialog({ title, body, ok = "\u0414\u0430", cancel = "\u041E\u0442\u043C\u0435\u043D\u0430" }) {
@@ -4831,7 +4850,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       const observer = new MutationObserver(() => requestAnimationFrame(syncOverlay));
       observer.observe(doc.getElementById("stage"), { childList: true, subtree: true, attributes: true });
       frameReady = true;
-      applyTheme(document.body.classList.contains("light-theme"));
+      postToPreview({ type: "theme", theme: siteTheme() });
       scheduleRun(0);
       return true;
     };

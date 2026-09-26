@@ -1,7 +1,7 @@
 {
   "version": 1,
   "languageVersion": "1.6.3",
-  "generatedAt": "2026-09-25T21:02:51.787Z",
+  "generatedAt": "2026-09-26T18:33:49.807Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -5758,6 +5758,59 @@
               "callbacks": []
             },
             {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.BarChart): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.BarChart): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.BarChart): void",
+                "function(gui.BarChart, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.BarChart): void",
+                "function(gui.BarChart, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.BarChart): void",
+                "function(gui.BarChart, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "show_values",
               "type": "bool",
               "readonly": false,
@@ -5970,6 +6023,101 @@
               ]
             },
             {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void",
+                "function(gui.Button, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void",
+                "function(gui.Button, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void",
+                "function(gui.Button, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void",
+                "function(gui.Button, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Button): void",
+                "function(gui.Button, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -6097,11 +6245,22 @@
               "callbacks": []
             },
             {
+              "name": "on_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Щелчок по холсту (нажали и отпустили на месте). Координаты — в on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void"
+              ]
+            },
+            {
               "name": "on_init",
               "type": "any",
               "readonly": false,
               "documentation": "",
               "callbacks": [
+                "function(): void",
                 "function(gui.Canvas): void"
               ]
             },
@@ -6109,8 +6268,10 @@
               "name": "on_key_pressed",
               "type": "any",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Клавишу нажали, когда холст активен (над ним была мышь или по нему щёлкнули). evt.key — \"W\", \"7\", \"ArrowLeft\", \"Enter\"; evt.ctrl, evt.shift, evt.alt — модификаторы. После холста событие получает его окно.",
               "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void",
                 "function(gui.Canvas, gui.KeyboardEvent): void"
               ]
             },
@@ -6120,7 +6281,29 @@
               "readonly": false,
               "documentation": "",
               "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void",
                 "function(gui.Canvas, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл на холст.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор ушёл с холста.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void"
               ]
             },
             {
@@ -6129,6 +6312,8 @@
               "readonly": false,
               "documentation": "",
               "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void",
                 "function(gui.Canvas, gui.MouseEvent): void"
               ]
             },
@@ -6136,8 +6321,10 @@
               "name": "on_mouse_pressed",
               "type": "any",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Кнопку мыши нажали над холстом. evt.x, evt.y — в координатах холста; evt.mouse_button — \"LEFT\", \"RIGHT\", \"MIDDLE\"; evt.ctrl, evt.shift, evt.alt.",
               "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void",
                 "function(gui.Canvas, gui.MouseEvent): void"
               ]
             },
@@ -6147,6 +6334,8 @@
               "readonly": false,
               "documentation": "",
               "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void",
                 "function(gui.Canvas, gui.MouseEvent): void"
               ]
             },
@@ -6156,6 +6345,8 @@
               "readonly": false,
               "documentation": "",
               "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void",
                 "function(gui.Canvas, gui.MouseScrollEvent): void"
               ]
             },
@@ -6165,6 +6356,8 @@
               "readonly": false,
               "documentation": "Вызывается каждый кадр; второй параметр — время кадра в секундах. Кадр сам ничего не стирает: нарисованное раньше остаётся на холсте, пока его не закрасит fill() или не уберёт clear(). Поэтому обычный кадр начинается с canvas.fill(цвет); без него за движущейся фигурой потянется шлейф.",
               "callbacks": [
+                "function(): void",
+                "function(gui.Canvas): void",
                 "function(gui.Canvas, float): void"
               ]
             },
@@ -6500,6 +6693,101 @@
               ]
             },
             {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void",
+                "function(gui.CheckBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void",
+                "function(gui.CheckBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void",
+                "function(gui.CheckBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void",
+                "function(gui.CheckBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void",
+                "function(gui.CheckBox, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -6636,6 +6924,101 @@
               "callbacks": [
                 "function(): void",
                 "function(gui.ComboBox): void"
+              ]
+            },
+            {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void",
+                "function(gui.ComboBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void",
+                "function(gui.ComboBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void",
+                "function(gui.ComboBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void",
+                "function(gui.ComboBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void",
+                "function(gui.ComboBox, gui.MouseEvent): void"
               ]
             },
             {
@@ -6825,6 +7208,101 @@
               ]
             },
             {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void",
+                "function(gui.FloatSpinBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void",
+                "function(gui.FloatSpinBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void",
+                "function(gui.FloatSpinBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void",
+                "function(gui.FloatSpinBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void",
+                "function(gui.FloatSpinBox, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "step",
               "type": "float",
               "readonly": false,
@@ -6982,6 +7460,69 @@
               "callbacks": []
             },
             {
+              "name": "on_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Щелчок по виджету — по его собственной поверхности: щелчки по виджетам внутри контейнера ему не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Frame): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Frame): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Frame): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Frame): void",
+                "function(gui.Frame, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Frame): void",
+                "function(gui.Frame, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Frame): void",
+                "function(gui.Frame, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -7122,6 +7663,80 @@
               "callbacks": []
             },
             {
+              "name": "on_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Щелчок по виджету — по его собственной поверхности: щелчки по виджетам внутри контейнера ему не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Icon): void"
+              ]
+            },
+            {
+              "name": "on_double_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Двойной щелчок. Перед ним уже пришли два одиночных (у таблицы — on_select, строка в selected_row). Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Icon): void",
+                "function(gui.Icon, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Icon): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Icon): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Icon): void",
+                "function(gui.Icon, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Icon): void",
+                "function(gui.Icon, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Icon): void",
+                "function(gui.Icon, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -7238,6 +7853,80 @@
               "readonly": false,
               "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
+            },
+            {
+              "name": "on_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Щелчок по виджету — по его собственной поверхности: щелчки по виджетам внутри контейнера ему не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ImageBox): void"
+              ]
+            },
+            {
+              "name": "on_double_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Двойной щелчок. Перед ним уже пришли два одиночных (у таблицы — on_select, строка в selected_row). Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ImageBox): void",
+                "function(gui.ImageBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ImageBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ImageBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ImageBox): void",
+                "function(gui.ImageBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ImageBox): void",
+                "function(gui.ImageBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ImageBox): void",
+                "function(gui.ImageBox, gui.MouseEvent): void"
+              ]
             },
             {
               "name": "resize_mode",
@@ -7359,10 +8048,31 @@
           "example": "canvas.on_key_pressed = void function(gui.Canvas cvs, gui.KeyboardEvent evt) {\n    console.writeln(evt.key);\n};",
           "properties": [
             {
+              "name": "alt",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Alt.",
+              "callbacks": []
+            },
+            {
+              "name": "ctrl",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Ctrl в момент нажатия — для сочетаний вроде Ctrl+S.",
+              "callbacks": []
+            },
+            {
               "name": "key",
               "type": "string",
               "readonly": true,
               "documentation": "Имя клавиши строкой. Одиночные символы приходят ЗАГЛАВНЫМИ — \"W\", \"Д\"; цифры — тоже строками: \"7\"; пробел — \" \". Служебные клавиши названы словами, как в браузере: \"ArrowLeft\", \"ArrowRight\", \"ArrowUp\", \"ArrowDown\", \"Enter\", \"Escape\". Сравнивайте с заглавной буквой: pressed_keys.contains(\"W\"), не \"w\".",
+              "callbacks": []
+            },
+            {
+              "name": "shift",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Shift.",
               "callbacks": []
             }
           ],
@@ -7433,6 +8143,70 @@
               "callbacks": [
                 "function(): void",
                 "function(gui.Label): void"
+              ]
+            },
+            {
+              "name": "on_double_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Двойной щелчок. Перед ним уже пришли два одиночных (у таблицы — on_select, строка в selected_row). Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Label): void",
+                "function(gui.Label, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Label): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Label): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Label): void",
+                "function(gui.Label, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Label): void",
+                "function(gui.Label, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Label): void",
+                "function(gui.Label, gui.MouseEvent): void"
               ]
             },
             {
@@ -7573,6 +8347,59 @@
               "readonly": false,
               "documentation": "Нижняя граница шкалы. Для приборов шкалу фиксируют, иначе ось «дышит».",
               "callbacks": []
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineChart): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineChart): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineChart): void",
+                "function(gui.LineChart, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineChart): void",
+                "function(gui.LineChart, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineChart): void",
+                "function(gui.LineChart, gui.MouseEvent): void"
+              ]
             },
             {
               "name": "show_dots",
@@ -7758,6 +8585,121 @@
               "callbacks": [
                 "function(): void",
                 "function(gui.LineEdit): void"
+              ]
+            },
+            {
+              "name": "on_editing_finished",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Правку закончили: нажали Enter или ушли из поля, изменив текст. В отличие от on_change (каждая буква) срабатывает один раз на правку.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void"
+              ]
+            },
+            {
+              "name": "on_enter_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "В поле нажали Enter — «ввод закончен, считай». Текст к этому моменту уже в text. После него срабатывает on_editing_finished.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void"
+              ]
+            },
+            {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void",
+                "function(gui.LineEdit, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void",
+                "function(gui.LineEdit, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void",
+                "function(gui.LineEdit, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void",
+                "function(gui.LineEdit, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void",
+                "function(gui.LineEdit, gui.MouseEvent): void"
               ]
             },
             {
@@ -7957,17 +8899,38 @@
           "example": "canvas.on_mouse_pressed = void function(gui.Canvas cvs, gui.MouseEvent evt) {\n    console.writeln(evt.mouse_button, \": \", evt.x, \", \", evt.y);\n};",
           "properties": [
             {
+              "name": "alt",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Alt.",
+              "callbacks": []
+            },
+            {
+              "name": "ctrl",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Ctrl в момент события.",
+              "callbacks": []
+            },
+            {
               "name": "mouse_button",
               "type": "string",
               "readonly": true,
-              "documentation": "",
+              "documentation": "Какую кнопку нажали: \"LEFT\", \"RIGHT\", \"MIDDLE\" (иная — \"UNKNOWN\").",
+              "callbacks": []
+            },
+            {
+              "name": "shift",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Shift.",
               "callbacks": []
             },
             {
               "name": "x",
               "type": "int",
               "readonly": true,
-              "documentation": "",
+              "documentation": "Координата от левого верхнего угла холста или виджета, в пикселях.",
               "callbacks": []
             },
             {
@@ -7989,10 +8952,31 @@
           "example": "canvas.on_mouse_scroll = void function(gui.Canvas cvs, gui.MouseScrollEvent evt) {\n    zoom = zoom + evt.delta;\n};",
           "properties": [
             {
+              "name": "alt",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Alt.",
+              "callbacks": []
+            },
+            {
+              "name": "ctrl",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Ctrl в момент события.",
+              "callbacks": []
+            },
+            {
               "name": "delta",
               "type": "int",
               "readonly": true,
-              "documentation": "",
+              "documentation": "Направление колеса: 1 — от себя (вверх), -1 — к себе (вниз).",
+              "callbacks": []
+            },
+            {
+              "name": "shift",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Зажат ли Shift.",
               "callbacks": []
             },
             {
@@ -8040,6 +9024,59 @@
               "readonly": false,
               "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.PieChart): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.PieChart): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.PieChart): void",
+                "function(gui.PieChart, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.PieChart): void",
+                "function(gui.PieChart, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.PieChart): void",
+                "function(gui.PieChart, gui.MouseEvent): void"
+              ]
             },
             {
               "name": "show_legend",
@@ -8272,6 +9309,59 @@
               "callbacks": []
             },
             {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ProgressBar): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ProgressBar): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ProgressBar): void",
+                "function(gui.ProgressBar, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ProgressBar): void",
+                "function(gui.ProgressBar, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.ProgressBar): void",
+                "function(gui.ProgressBar, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "orientation",
               "type": "string",
               "readonly": false,
@@ -8421,6 +9511,101 @@
               ]
             },
             {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void",
+                "function(gui.RadioButton, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void",
+                "function(gui.RadioButton, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void",
+                "function(gui.RadioButton, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void",
+                "function(gui.RadioButton, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void",
+                "function(gui.RadioButton, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -8561,6 +9746,121 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void"
+              ]
+            },
+            {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void"
+              ]
+            },
+            {
+              "name": "on_grab",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Маркер ползунка захватили мышью — начали тянуть. Пока тянут, on_change приходит на каждое движение.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void",
+                "function(gui.Slider, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void",
+                "function(gui.Slider, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void",
+                "function(gui.Slider, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void",
+                "function(gui.Slider, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void",
+                "function(gui.Slider, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_release",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Маркер отпустили — значение устоялось; тяжёлое действие (пересчитать, перерисовать) лучше делать здесь, а не в on_change. Изменение клавишами on_grab и on_release не даёт.",
               "callbacks": [
                 "function(): void",
                 "function(gui.Slider): void"
@@ -8734,6 +10034,101 @@
               ]
             },
             {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void",
+                "function(gui.SpinBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void",
+                "function(gui.SpinBox, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void",
+                "function(gui.SpinBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void",
+                "function(gui.SpinBox, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void",
+                "function(gui.SpinBox, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "step",
               "type": "int",
               "readonly": false,
@@ -8868,6 +10263,112 @@
               "readonly": false,
               "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
+            },
+            {
+              "name": "on_double_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Двойной щелчок. Перед ним уже пришли два одиночных (у таблицы — on_select, строка в selected_row). Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void",
+                "function(gui.Table, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void",
+                "function(gui.Table, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void",
+                "function(gui.Table, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void",
+                "function(gui.Table, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void",
+                "function(gui.Table, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void",
+                "function(gui.Table, gui.MouseEvent): void"
+              ]
             },
             {
               "name": "on_select",
@@ -9101,6 +10602,69 @@
               ]
             },
             {
+              "name": "on_click",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Щелчок по виджету — по его собственной поверхности: щелчки по виджетам внутри контейнера ему не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TabWidget): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TabWidget): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TabWidget): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TabWidget): void",
+                "function(gui.TabWidget, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TabWidget): void",
+                "function(gui.TabWidget, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TabWidget): void",
+                "function(gui.TabWidget, gui.MouseEvent): void"
+              ]
+            },
+            {
               "name": "selected_index",
               "type": "int",
               "readonly": false,
@@ -9301,6 +10865,111 @@
               "callbacks": [
                 "function(): void",
                 "function(gui.TextEdit): void"
+              ]
+            },
+            {
+              "name": "on_editing_finished",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Правку закончили: ушли из поля, изменив текст. Enter в многострочном поле — перенос строки, а не конец правки.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void"
+              ]
+            },
+            {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void",
+                "function(gui.TextEdit, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void",
+                "function(gui.TextEdit, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void",
+                "function(gui.TextEdit, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void",
+                "function(gui.TextEdit, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void",
+                "function(gui.TextEdit, gui.MouseEvent): void"
               ]
             },
             {
@@ -9612,6 +11281,111 @@
               "callbacks": [
                 "function(): bool",
                 "function(gui.Window): bool",
+                "function(): void",
+                "function(gui.Window): void"
+              ]
+            },
+            {
+              "name": "on_focus_in",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void"
+              ]
+            },
+            {
+              "name": "on_focus_out",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void"
+              ]
+            },
+            {
+              "name": "on_key_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: \"W\", \"7\", \"ArrowLeft\", \"Enter\", \"Escape\"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void",
+                "function(gui.Window, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_key_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Клавишу отпустили. Данные и всплытие — как у on_key_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void",
+                "function(gui.Window, gui.KeyboardEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_enter",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void"
+              ]
+            },
+            {
+              "name": "on_mouse_leave",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Курсор вышел из виджета. Парное к on_mouse_enter.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void"
+              ]
+            },
+            {
+              "name": "on_mouse_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void",
+                "function(gui.Window, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_pressed",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button (\"LEFT\", \"RIGHT\", \"MIDDLE\"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с \"RIGHT\" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void",
+                "function(gui.Window, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_mouse_released",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Window): void",
+                "function(gui.Window, gui.MouseEvent): void"
+              ]
+            },
+            {
+              "name": "on_move",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Окно перетащили за шапку; x и y к этому моменту уже новые.",
+              "callbacks": [
                 "function(): void",
                 "function(gui.Window): void"
               ]

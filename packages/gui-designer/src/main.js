@@ -15,7 +15,6 @@ import { zipBytes } from '../../web-ide/src/zip-write.js';
 const STORAGE_KEY = 'idyllium-gui-designer';
 const FILES_DB_NAME = 'idyllium-gui-designer-files'; // байты файлов шрифтов — в IndexedDB, макет их знает по именам
 const FILES_DB_STORE = 'files';
-const THEME_KEY = 'idyllium-docs-theme';
 const CLIPBOARD_MARK = 'idyllium-gui-designer-clipboard:';
 const WINDOW_TITLE_HEIGHT = 28;
 const MIN_SIZE = 8;
@@ -255,29 +254,14 @@ function cleanHandlers(type, handlers) {
 }
 
 // ─── тема страницы и кадра ───────────────────────────────────────────────────
-function applyTheme(light) {
-  document.body.classList.toggle('light-theme', light);
-  const toggle = $('theme-toggle');
-  if (toggle) {
-    const hint = light ? 'Тёмная тема' : 'Светлая тема';
-    toggle.title = hint;
-    toggle.setAttribute('aria-label', hint);
-  }
-  postToPreview({ type: 'theme', theme: light ? 'light' : 'dark' });
+// Тема — общий модуль сайта (assets/site-theme.js): он ставит html[data-theme], хранит выбор
+// и обслуживает кнопку в шапке; конструктору остаётся передать тему кадру предпросмотра.
+function siteTheme() {
+  return window.idylliumTheme ? window.idylliumTheme.get() : 'dark';
 }
 
 function initTheme() {
-  let saved = null;
-  try { saved = localStorage.getItem(THEME_KEY); } catch (error) { /* нет хранилища */ }
-  applyTheme(saved === 'light');
-  const toggle = $('theme-toggle');
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      const next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
-      try { localStorage.setItem(THEME_KEY, next); } catch (error) { /* нет хранилища */ }
-      applyTheme(next === 'light');
-    });
-  }
+  document.addEventListener('idyllium-theme-change', (event) => postToPreview({ type: 'theme', theme: event.detail.theme }));
 }
 
 // ─── диалог вместо браузерного confirm ───────────────────────────────────────
@@ -2539,7 +2523,7 @@ function watchPreviewFrame() {
     const observer = new MutationObserver(() => requestAnimationFrame(syncOverlay));
     observer.observe(doc.getElementById('stage'), { childList: true, subtree: true, attributes: true });
     frameReady = true;
-    applyTheme(document.body.classList.contains('light-theme'));
+    postToPreview({ type: 'theme', theme: siteTheme() });
     scheduleRun(0);
     return true;
   };

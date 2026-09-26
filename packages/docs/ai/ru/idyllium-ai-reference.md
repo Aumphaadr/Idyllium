@@ -3603,9 +3603,10 @@ main() {
 ```
 
 Обработчик не получает нового значения отдельным аргументом; формы
-`(sender, value)` у виджетов не существует. Только обработчики `gui.Canvas`
-получают дополнительный аргумент события или `delta_time` (см. раздел
-про холст).
+`(sender, value)` у виджетов не существует — состояние читается из свойств
+отправителя. Второй аргумент-описание получают только события с данными —
+мышь и клавиатура (`gui.MouseEvent`, `gui.KeyboardEvent`, см. «События
+виджетов» ниже) и обработчики `gui.Canvas` (`delta_time` у `on_update`).
 
 Пример кнопки:
 
@@ -3632,6 +3633,91 @@ main() {
     button.on_click = clicked;
 
     win.add_child(button);
+    win.show();
+}
+```
+
+### События виджетов (с 1.6.4)
+
+У окна и каждого виджета, кроме своих событий (`on_click`, `on_change`,
+`on_select`, `on_close`), есть общая семья. Формы обработчика одни на всех:
+без параметров, с отправителем, а у событий с данными — ещё `(sender, evt)`:
+
+```idyllium
+// мышь — у всех виджетов и у окна; evt.x, evt.y — от левого верхнего угла виджета
+on_mouse_enter, on_mouse_leave                       // () | (sender)
+on_mouse_pressed, on_mouse_released, on_mouse_move   // () | (sender) | (sender, gui.MouseEvent evt)
+
+// фокус и клавиатура — у Button, LineEdit, TextEdit, SpinBox, FloatSpinBox,
+// Slider, CheckBox, RadioButton, ComboBox, Table и у gui.Window
+on_focus_in, on_focus_out                            // () | (sender)
+on_key_pressed, on_key_released                      // () | (sender) | (sender, gui.KeyboardEvent evt)
+
+// свои события
+gui.Label, gui.ImageBox, gui.Icon, gui.Table:  on_double_click   // () | (sender) | (sender, gui.MouseEvent evt)
+gui.ImageBox, gui.Icon, gui.Frame, gui.TabWidget, gui.Canvas:  on_click
+gui.LineEdit:  on_enter_pressed, on_editing_finished
+gui.TextEdit:  on_editing_finished
+gui.Slider:    on_grab, on_release
+gui.Window:    on_move, on_focus_in, on_focus_out, on_key_pressed, on_key_released
+gui.Canvas:    on_mouse_enter, on_mouse_leave, on_click — и все его обработчики
+               принимают также формы () и (canvas)
+```
+
+Правила:
+
+- Правая кнопка — через `on_mouse_pressed`: `evt.mouse_button == "RIGHT"`.
+  Отдельного события нет; браузерное меню над виджетом с таким обработчиком
+  не появляется.
+- Клавиши всплывают, как в Qt: после кнопки, флажка, ползунка, таблицы или
+  холста их получает окно. Из полей ввода (`LineEdit`, `TextEdit`, счётчики,
+  `ComboBox`) клавиши окну не отдаются — иначе Escape в поле закрывал бы
+  программу. Окно получает клавиши и когда фокус ни на чём.
+- `on_enter_pressed` — Enter в поле, текст уже в `text`; за ним
+  `on_editing_finished`. Уход из поля даёт `on_editing_finished`, только если
+  текст меняли. `on_change` по-прежнему приходит на каждую букву.
+- `on_grab` / `on_release` — маркер ползунка схватили мышью и отпустили
+  (значение устоялось; тяжёлое действие делайте здесь, а не в `on_change`).
+  Изменение клавишами их не даёт.
+- `on_double_click` приходит после двух одиночных щелчков (у таблицы — после
+  `on_select`, строка в `selected_row`). Порядок жеста мыши:
+  `on_mouse_pressed` → `on_mouse_released` → `on_click`.
+- `on_focus_in` / `on_focus_out` у окна — окно вывели наверх щелчком / оно ушло
+  под другое; `on_move` — окно перетащили за шапку, `x` и `y` уже новые.
+- Выключенный (`enabled = false`) или скрытый виджет и всё внутри него событий
+  не получает. `on_mouse_move` приходит только когда назначен, десятки раз
+  в секунду — тяжёлую работу в нём не делайте.
+
+```idyllium
+use console;
+use gui;
+
+void function key_in_window(gui.Window sender, gui.KeyboardEvent evt) {
+    if (evt.key == "Escape") {
+        sender.close();
+    }
+}
+
+void function name_entered(gui.LineEdit sender) {
+    console.writeln("Привет, " + sender.text + "!");
+}
+
+main() {
+    gui.Window win;
+    win.on_key_pressed = key_in_window;
+
+    gui.LineEdit name;
+    name.placeholder = "Имя и Enter";
+    name.on_enter_pressed = name_entered;
+    win.add_child(name);
+
+    gui.ImageBox cat;
+    cat.y = 40;
+    cat.on_click = void function() {
+        console.writeln("мяу");
+    };
+    win.add_child(cat);
+
     win.show();
 }
 ```
@@ -3752,14 +3838,23 @@ HTML-canvas. Кадр сам ничего не стирает: нарисова�
 
 ```idyllium
 gui.KeyboardEvent.key: string
+gui.KeyboardEvent.ctrl: bool     // зажат ли Ctrl (с 1.6.4; также shift и alt)
+gui.KeyboardEvent.shift: bool
+gui.KeyboardEvent.alt: bool
 
 gui.MouseEvent.x: int
 gui.MouseEvent.y: int
 gui.MouseEvent.mouse_button: string  // "LEFT", "RIGHT", "MIDDLE"
+gui.MouseEvent.ctrl: bool
+gui.MouseEvent.shift: bool
+gui.MouseEvent.alt: bool
 
 gui.MouseScrollEvent.x: int
 gui.MouseScrollEvent.y: int
 gui.MouseScrollEvent.delta: int
+gui.MouseScrollEvent.ctrl: bool
+gui.MouseScrollEvent.shift: bool
+gui.MouseScrollEvent.alt: bool
 ```
 
 Значения `KeyboardEvent.key`: одиночные символы приходят в верхнем регистре

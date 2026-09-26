@@ -221,7 +221,7 @@ function schedulePreview() {
     // системной: иначе на тёмной странице окажется светлый юнит. В разметку
     // для вставки это не попадает.
     if (!config.editor || !config.editor.theme || config.editor.theme === 'auto') {
-      config.editor = { ...config.editor, theme: document.body.classList.contains('light-theme') ? 'light' : 'dark' };
+      config.editor = { ...config.editor, theme: siteTheme() };
     }
     if (!previewUnit) {
       previewUnit = window.IdylliumUnit.create($('preview'), { ...config, id: `${config.id}-preview` });
@@ -457,21 +457,14 @@ document.addEventListener('click', (event) => {
 });
 document.querySelectorAll('.tip').forEach((tip) => tip.setAttribute('tabindex', '0'));
 
-// Тема общая с учебником и задачником: тот же ключ и тот же класс на body.
-const THEME_KEY = 'idyllium-docs-theme';
-function applyTheme(light) {
-  document.body.classList.toggle('light-theme', light);
-  const hint = light ? 'Тёмная тема' : 'Светлая тема';
-  $('theme-toggle').title = hint;
-  $('theme-toggle').setAttribute('aria-label', hint);
+// Тема — общий модуль сайта (assets/site-theme.js): html[data-theme], один ключ на весь сайт,
+// кнопка #theme-toggle. Здесь — только перекраска предпросмотра.
+function siteTheme() {
+  return window.idylliumTheme ? window.idylliumTheme.get() : 'dark';
 }
-try { applyTheme(window.localStorage.getItem(THEME_KEY) === 'light'); } catch (_error) { applyTheme(false); }
-$('theme-toggle').addEventListener('click', () => {
-  const light = !document.body.classList.contains('light-theme');
-  applyTheme(light);
-  try { window.localStorage.setItem(THEME_KEY, light ? 'light' : 'dark'); } catch (_error) { /* не страшно */ }
+document.addEventListener('idyllium-theme-change', (event) => {
   // Предпросмотр перекрашивается сразу, командой: пересборка юнита тут не нужна.
-  if (previewUnit && state.editor.theme === 'auto') previewUnit.setTheme(light ? 'light' : 'dark');
+  if (previewUnit && state.editor.theme === 'auto') previewUnit.setTheme(event.detail.theme);
 });
 
 // ─── старт ─────────────────────────────────────────────────────────────────

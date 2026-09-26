@@ -102,6 +102,14 @@ table.on_select = void function(gui.Table sender) {
           🖱️ Клик подсвечивает строку и зовёт <code>on_select</code> — как <code>on_click</code> у кнопки, только с номером в придачу.
         </div>
       </div>
+
+      <p>Двойной щелчок по строке — привычный жест «открыть»: для него у таблицы есть событие <code>on_double_click</code>. Строка к этому моменту уже выбрана (<code>on_select</code> сработал первым), её номер — в <code>selected_row</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+table.on_double_click = void function(gui.Table sender) {
+    info.text = "Открываем карточку №" + to_string(sender.selected_row + 1);
+};
+</script></idyl-code-block>
     </div>
 
     <div class="docs-section">
@@ -242,7 +250,7 @@ main() {
           <tr><th>Виджет</th><th>Данные кладут так</th><th>Особое</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>gui.Table</code></td><td><code>set_columns(...)</code>, затем <code>add_row(...)</code></td><td><code>selected_row</code> + <code>on_select</code>; <code>set_cell</code>, <code>remove_row</code>, <code>row_count</code></td></tr>
+          <tr><td><code>gui.Table</code></td><td><code>set_columns(...)</code>, затем <code>add_row(...)</code></td><td><code>selected_row</code> + <code>on_select</code> (щелчок) и <code>on_double_click</code> (открыть); <code>set_cell</code>, <code>remove_row</code>, <code>row_count</code></td></tr>
           <tr><td><code>gui.BarChart</code></td><td><code>add_value("Мира", 340)</code></td><td><code>bar_color</code>, <code>show_values</code>, <code>set_value</code></td></tr>
           <tr><td><code>gui.PieChart</code></td><td><code>add_slice("Маги", 3)</code></td><td>доли и цвета — сам; <code>show_legend</code>, <code>show_percents</code></td></tr>
           <tr><td><code>gui.LineChart</code></td><td><code>add_value(21)</code> — точки по порядку</td><td><code>max_points</code> — бегущая лента; шкалу приборам фиксируйте</td></tr>

@@ -1,0 +1,97 @@
+/* База сайта Idyllium (стилевая база 1.6.4; спека Idyllium-backstage/tech/spec/some_style_base/01 §5.2).
+   Слой base: сброс, страница, атрибут hidden, ссылки, наследование шрифта полями, строчный код,
+   выделение, кольцо фокуса, полосы прокрутки. Значения — только из токенов (assets/site-tokens.css).
+   Здесь НЕТ вида кнопок и полей (это компоненты) и нет классов. Подключается tools/site-nav.ts
+   после токенов и шрифтов на всех страницах сайта; кадр юнита (embed/frame.css) и окно программы
+   (gui-renderer/renderer.css) — чужие домены со своей базой. Правила разделов лежат вне слоёв и
+   потому сильнее любого правила отсюда: база задаёт умолчания, а не спорит. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+  }
+
+  /* Единственный !important базы: атрибут hidden обязан побеждать display любого компонента. */
+  [hidden] {
+    display: none !important;
+  }
+
+  a {
+    color: var(--color-accent);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+  }
+
+  code {
+    font-size: 0.92em;
+  }
+
+  ::selection {
+    background: var(--color-selection);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* Полосы прокрутки — одни на весь сайт (эталон — учебник, 1.6.2): 9 px, мягкий бегунок цвета
+     приглушённого текста, поэтому подходит обеим темам. Стандартные scrollbar-width/scrollbar-color
+     нарочно НЕ задаются для всех браузеров: Chrome, увидев их, бросает ::-webkit-scrollbar и рисует
+     свою «тонкую» полосу — именно так справочник и «Авторам» оказались у́же учебника. Firefox,
+     который ::-webkit не знает, получает стандартные свойства отдельно. */
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-text-muted) 40%, transparent);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-text-muted) 62%, transparent);
+  }
+
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--color-text-muted) 40%, transparent) transparent;
+    }
+  }
+}

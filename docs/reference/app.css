@@ -1,155 +1,36 @@
-@font-face {
-  font-family: "Geologica";
-  src: url("../fonts/Geologica-Variable.ttf") format("truetype-variations");
-  font-weight: 100 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Source Code Pro";
-  src: url("../fonts/SourceCodePro-Regular.woff2") format("woff2");
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Source Code Pro";
-  src: url("../fonts/SourceCodePro-Semibold.woff2") format("woff2");
-  font-weight: 600;
-  font-display: swap;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
 :root {
-  --bg: #0c0515;
-  --panel: #151020;
-  --panel-raised: #1c1629;
-  --panel-soft: #241d34;
-  --code-bg: #100b1a;
-  --text: #f2eaf7;
-  --text-soft: #c9bdd6;
-  --muted: #8e819d;
-  --border: #342846;
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --accent: #87bfff;
-  --accent-soft: rgba(135, 191, 255, 0.12);
-  --type: #4ec9a2;
-  --function: #dcd98f;
-  --property: #9fe4ff;
-  --constant: #f5d98b;
-  --green: #8bd58f;
-  --danger: #f38ba8;
-  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
-  --topbar-height: 56px;
-  --sidebar-width: 330px;
-  --font-sans: "Geologica", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "Source Code Pro", "JetBrains Mono", Consolas, monospace;
-  --hl-keyword: #c586b1;
-  --hl-typeName: #4a9ad6;
-  --hl-className: #4ec9a2;
-  --hl-function: #dcd98f;
-  --hl-object: #9fe4ff;
-  --hl-string: #ce8453;
-  --hl-number: #b5cb8e;
-  --hl-comment: rgba(106, 153, 78, 0.72);
-  --hl-brackets: #ced4d4;
-  --hl-json-key: #9fe4ff;
-}
-
-body.light-theme {
-  --bg: #ece8f2;
-  --panel: #f7f4fb;
-  --panel-raised: #e9e2f0;
-  --panel-soft: #ded6e8;
-  --code-bg: #f2edf7;
-  --text: #211a2e;
-  --text-soft: #463b56;
-  --muted: #6d637b;
-  --border: #c8bed5;
-  --border-soft: rgba(33, 26, 46, 0.14);
-  --accent: #275f9e;
-  --accent-soft: rgba(39, 95, 158, 0.13);
-  --type: #1b745c;
-  --function: #76620f;
-  --property: #0d667f;
-  --constant: #87481f;
-  --danger: #a93152;
-  --shadow: 0 18px 44px rgba(39, 30, 54, 0.12);
-  --hl-keyword: #8d3f75;
-  --hl-typeName: #1d659a;
-  --hl-className: #1b745c;
-  --hl-function: #76620f;
-  --hl-object: #0d667f;
-  --hl-string: #87481f;
-  --hl-number: #5b7027;
-  --hl-comment: rgba(71, 114, 55, 0.86);
-  --hl-brackets: #445253;
-  --hl-json-key: #0d667f;
-}
-
-html,
-body {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 18px/1.68 var(--font-sans);
-}
-
-button,
-input {
-  font: inherit;
-}
-
-a {
-  color: var(--accent);
-}
-
-code,
-pre {
-  font-family: var(--font-mono);
-}
-
-::selection {
-  background: color-mix(in srgb, var(--accent) 28%, transparent);
-}
-
-/* Полосы прокрутки — одни на весь сайт учебных разделов (1.6.2), эталон — учебник: 9 px, мягкий
-   бегунок. Стандартные scrollbar-width/scrollbar-color нарочно НЕ задаются для всех браузеров:
-   Chrome, увидев их, бросает ::-webkit-scrollbar и рисует свою «тонкую» полосу — именно так
-   справочник и «Авторам» оказались у́же учебника. Firefox, который ::-webkit не знает, получает
-   стандартные свойства отдельно. */
-::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
-}
-
-::-webkit-scrollbar-track,
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(145, 132, 161, 0.36);
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(145, 132, 161, 0.56);
-}
-
-@supports (-moz-appearance: none) {
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(145, 132, 161, 0.36) transparent;
-  }
+  /* Палитра, шрифты, высота шапки и ширина колонки — из единого источника токенов
+     (assets/site-tokens.css, packages/design/tokens.js; стилевая база 1.6.4). Имена ниже —
+     исторические имена справочника, псевдонимы на время переезда. Светлая тема — html[data-theme]. */
+  --bg: var(--color-bg);
+  --panel: var(--color-panel);
+  --panel-raised: var(--color-panel-raised);
+  --panel-soft: var(--color-panel-soft);
+  --code-bg: var(--color-code-bg);
+  --text: var(--color-text);
+  --text-soft: var(--color-text-soft);
+  --muted: var(--color-text-muted);
+  --border: var(--color-border);
+  --border-soft: var(--color-border-soft);
+  --accent: var(--color-accent);
+  --accent-soft: var(--color-accent-soft);
+  --type: var(--syntax-class);
+  --function: var(--syntax-function);
+  --property: var(--syntax-object);
+  --constant: var(--syntax-constant);
+  --green: var(--color-success);
+  --danger: var(--color-danger);
+  --shadow: var(--shadow-popup);
+  --hl-keyword: var(--syntax-keyword);
+  --hl-typeName: var(--syntax-type);
+  --hl-className: var(--syntax-class);
+  --hl-function: var(--syntax-function);
+  --hl-object: var(--syntax-object);
+  --hl-string: var(--syntax-string);
+  --hl-number: var(--syntax-number);
+  --hl-comment: var(--syntax-comment);
+  --hl-brackets: var(--syntax-brackets);
+  --hl-json-key: var(--syntax-json-key);
 }
 
 .reference-shell {

@@ -31,7 +31,7 @@ assert(missingGlyphError.includes('does not contain character'), `unexpected mis
 
 const woff2 = new Uint8Array(fs.readFileSync(path.join(
   process.cwd(),
-  'packages/web-ide/fonts/SourceCodePro-Regular.woff2',
+  'packages/fonts/SourceCodePro-Regular.woff2',
 )));
 const woff2Latin = service.measure(woff2, 'Hello', 16);
 close(woff2Latin.width, 48, 'Source Code Pro WOFF2 Latin advance width');

@@ -315,6 +315,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const guiKeyboardEvent = qualified('gui', 'KeyboardEvent');
   const guiMouseEvent = qualified('gui', 'MouseEvent');
   const guiMouseScrollEvent = qualified('gui', 'MouseScrollEvent');
+  const guiImageBox = qualified('gui', 'ImageBox');
+  const guiIcon = qualified('gui', 'Icon');
+  const guiTabWidget = qualified('gui', 'TabWidget');
+  const guiBarChart = qualified('gui', 'BarChart');
+  const guiLineChart = qualified('gui', 'LineChart');
+  const guiPieChart = qualified('gui', 'PieChart');
   const guiChildParameter: ParameterSpec = {
     name: 'child',
     type: guiWidget,
@@ -376,6 +382,41 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       callbackSpec([]),
       callbackSpec([widget]),
     ]),
+  ];
+  // События виджетов (спека some_widget_events/01, вердикты владельца 2026-09-26). Формы одни на
+  // всех: без параметров, с отправителем, у событий с данными — ещё (sender, evt). Учебник
+  // рассказывает про два-три события на виджет, справочник — про все.
+  const pointerEventsFor = (widget: QualifiedType) => [
+    callbackPropertySpec('on_mouse_enter', [callbackSpec([]), callbackSpec([widget])],
+      'Курсор вошёл в виджет. Внешность при наведении задаёт style_hover без кода; событие нужно, когда наведение должно что-то сделать — показать подсказку, подсветить соседа. Выключенный или скрытый виджет событий не получает.'),
+    callbackPropertySpec('on_mouse_leave', [callbackSpec([]), callbackSpec([widget])],
+      'Курсор вышел из виджета. Парное к on_mouse_enter.'),
+    callbackPropertySpec('on_mouse_pressed', [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])],
+      'Кнопку мыши нажали над виджетом. В evt: x и y от левого верхнего угла виджета, mouse_button ("LEFT", "RIGHT", "MIDDLE"), ctrl, shift, alt. Правая кнопка — тоже здесь: сравнивайте evt.mouse_button с "RIGHT" (браузерное меню над виджетом с этим обработчиком не появляется). Порядок жеста: on_mouse_pressed → on_mouse_released → on_click. Щелчки по виджетам внутри контейнера самому контейнеру не достаются.'),
+    callbackPropertySpec('on_mouse_released', [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])],
+      'Кнопку мыши отпустили над виджетом. Данные — как у on_mouse_pressed. Вместе с ним — «удержание»: нажали — начали, отпустили — закончили.'),
+    callbackPropertySpec('on_mouse_move', [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])],
+      'Мышь движется над виджетом; приходит только когда обработчик назначен, десятки раз в секунду — тяжёлую работу в нём не делайте. Данные — как у on_mouse_pressed.'),
+  ];
+  const focusEventsFor = (widget: QualifiedType) => [
+    callbackPropertySpec('on_focus_in', [callbackSpec([]), callbackSpec([widget])],
+      'Виджет получил фокус ввода — щелчком или клавишей Tab. У окна: окно вывели наверх щелчком.'),
+    callbackPropertySpec('on_focus_out', [callbackSpec([]), callbackSpec([widget])],
+      'Виджет потерял фокус. У поля ввода перед этим уже сработал on_editing_finished, если текст меняли.'),
+  ];
+  const keyEventsFor = (widget: QualifiedType) => [
+    callbackPropertySpec('on_key_pressed', [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiKeyboardEvent])],
+      'Клавишу нажали, когда фокус на этом виджете; у окна — когда фокус не в текстовом поле (ввод в LineEdit, TextEdit, счётчики и список окну не отдаётся). evt.key — как у холста: "W", "7", "ArrowLeft", "Enter", "Escape"; evt.ctrl, evt.shift, evt.alt — зажатые модификаторы. Событие всплывает: после кнопки, флажка, ползунка, таблицы или холста его получает их окно.'),
+    callbackPropertySpec('on_key_released', [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiKeyboardEvent])],
+      'Клавишу отпустили. Данные и всплытие — как у on_key_pressed.'),
+  ];
+  const clickableFor = (widget: QualifiedType) => [
+    callbackPropertySpec('on_click', [callbackSpec([]), callbackSpec([widget])],
+      'Щелчок по виджету — по его собственной поверхности: щелчки по виджетам внутри контейнера ему не достаются.'),
+  ];
+  const doubleClickableFor = (widget: QualifiedType) => [
+    callbackPropertySpec('on_double_click', [callbackSpec([]), callbackSpec([widget]), callbackSpec([widget, guiMouseEvent])],
+      'Двойной щелчок. Перед ним уже пришли два одиночных (у таблицы — on_select, строка в selected_row). Данные — как у on_mouse_pressed.'),
   ];
   const inheritableColorRoles = [
     propertySpec('text_color', COLOR),
@@ -1545,6 +1586,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('theme', STRING, false,
         'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
       ...styleable,
+      ...pointerEventsFor(guiWindow),
+      ...focusEventsFor(guiWindow),
+      ...keyEventsFor(guiWindow),
+      callbackPropertySpec('on_move', [callbackSpec([]), callbackSpec([guiWindow])],
+        'Окно перетащили за шапку; x и y к этому моменту уже новые.'),
       // Вопрос «закрывать ли?»: bool-обработчик отвечает, void-обработчик
       // просто успевает сделать своё (сохранить файл) — окно закроется.
       callbackPropertySpec('on_close', [
@@ -1571,14 +1617,20 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       propertySpec('framerate_limit', INT),
-      callbackPropertySpec('on_init', [callbackSpec([guiCanvas])]),
-      callbackPropertySpec('on_key_pressed', [callbackSpec([guiCanvas, guiKeyboardEvent])]),
-      callbackPropertySpec('on_key_released', [callbackSpec([guiCanvas, guiKeyboardEvent])]),
-      callbackPropertySpec('on_mouse_pressed', [callbackSpec([guiCanvas, guiMouseEvent])]),
-      callbackPropertySpec('on_mouse_released', [callbackSpec([guiCanvas, guiMouseEvent])]),
-      callbackPropertySpec('on_mouse_move', [callbackSpec([guiCanvas, guiMouseEvent])]),
-      callbackPropertySpec('on_mouse_scroll', [callbackSpec([guiCanvas, guiMouseScrollEvent])]),
-      callbackPropertySpec('on_update', [callbackSpec([guiCanvas, FLOAT])],
+      // Формы — как у остальных виджетов: без параметров, с холстом, с холстом и событием.
+      callbackPropertySpec('on_init', [callbackSpec([]), callbackSpec([guiCanvas])]),
+      callbackPropertySpec('on_key_pressed', [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiKeyboardEvent])],
+        'Клавишу нажали, когда холст активен (над ним была мышь или по нему щёлкнули). evt.key — "W", "7", "ArrowLeft", "Enter"; evt.ctrl, evt.shift, evt.alt — модификаторы. После холста событие получает его окно.'),
+      callbackPropertySpec('on_key_released', [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiKeyboardEvent])]),
+      callbackPropertySpec('on_mouse_pressed', [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseEvent])],
+        'Кнопку мыши нажали над холстом. evt.x, evt.y — в координатах холста; evt.mouse_button — "LEFT", "RIGHT", "MIDDLE"; evt.ctrl, evt.shift, evt.alt.'),
+      callbackPropertySpec('on_mouse_released', [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseEvent])]),
+      callbackPropertySpec('on_mouse_move', [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseEvent])]),
+      callbackPropertySpec('on_mouse_scroll', [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, guiMouseScrollEvent])]),
+      callbackPropertySpec('on_mouse_enter', [callbackSpec([]), callbackSpec([guiCanvas])], 'Курсор вошёл на холст.'),
+      callbackPropertySpec('on_mouse_leave', [callbackSpec([]), callbackSpec([guiCanvas])], 'Курсор ушёл с холста.'),
+      callbackPropertySpec('on_click', [callbackSpec([]), callbackSpec([guiCanvas])], 'Щелчок по холсту (нажали и отпустили на месте). Координаты — в on_mouse_pressed.'),
+      callbackPropertySpec('on_update', [callbackSpec([]), callbackSpec([guiCanvas]), callbackSpec([guiCanvas, FLOAT])],
         'Вызывается каждый кадр; второй параметр — время кадра в секундах. Кадр сам ничего не стирает: нарисованное раньше остаётся на холсте, пока его не закрасит fill() или не уберёт clear(). Поэтому обычный кадр начинается с canvas.fill(цвет); без него за движущейся фигурой потянется шлейф.'),
     ], [
       functionSpec('clear', [], VOID, {
@@ -1635,6 +1687,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         callbackSpec([]),
         callbackSpec([guiLabel]),
       ]),
+      ...doubleClickableFor(guiLabel),
+      ...pointerEventsFor(guiLabel),
       propertySpec('text', STRING),
     ], [], guiWidget),
     typeSpec('Button', [
@@ -1644,6 +1698,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...colorRoles,
       ...fontSized,
       ...buttonClickable,
+      ...pointerEventsFor(guiButton),
+      ...focusEventsFor(guiButton),
+      ...keyEventsFor(guiButton),
       propertySpec('text', STRING),
     ], [
       functionSpec('click', [], VOID, {
@@ -1658,6 +1715,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('border_color', COLOR),
       propertySpec('border_width', INT),
       ...fontSized,
+      ...clickableFor(guiFrame),
+      ...pointerEventsFor(guiFrame),
       propertySpec('title', STRING),
     ], [
       functionSpec('add_child', [guiChildParameter], VOID, { documentation: 'Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет.' }),
@@ -1666,6 +1725,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
+      ...clickableFor(guiImageBox),
+      ...doubleClickableFor(guiImageBox),
+      ...pointerEventsFor(guiImageBox),
       propertySpec('resize_mode', STRING, false, "Режим вписывания картинки: 'fit' (вписать целиком), 'fill' (заполнить с обрезкой), 'stretch' (растянуть), 'original' (без масштабирования). Другое значение — ошибка выполнения."),
     ], [
       functionSpec('set_image', [{ name: 'image', type: imageImage }], VOID),
@@ -1674,6 +1736,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
+      ...clickableFor(guiIcon),
+      ...doubleClickableFor(guiIcon),
+      ...pointerEventsFor(guiIcon),
       propertySpec('icon', STRING, false, `Имя значка из единого набора Idyllium (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`),
     ], [], guiWidget),
     typeSpec('LineEdit', [
@@ -1681,6 +1746,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiLineEdit),
+      callbackPropertySpec('on_enter_pressed', [callbackSpec([]), callbackSpec([guiLineEdit])],
+        'В поле нажали Enter — «ввод закончен, считай». Текст к этому моменту уже в text. После него срабатывает on_editing_finished.'),
+      callbackPropertySpec('on_editing_finished', [callbackSpec([]), callbackSpec([guiLineEdit])],
+        'Правку закончили: нажали Enter или ушли из поля, изменив текст. В отличие от on_change (каждая буква) срабатывает один раз на правку.'),
+      ...focusEventsFor(guiLineEdit),
+      ...keyEventsFor(guiLineEdit),
+      ...pointerEventsFor(guiLineEdit),
       ...colorRoles,
       ...fontSized,
       propertySpec('text', STRING),
@@ -1694,6 +1766,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiTextEdit),
+      callbackPropertySpec('on_editing_finished', [callbackSpec([]), callbackSpec([guiTextEdit])],
+        'Правку закончили: ушли из поля, изменив текст. Enter в многострочном поле — перенос строки, а не конец правки.'),
+      ...focusEventsFor(guiTextEdit),
+      ...keyEventsFor(guiTextEdit),
+      ...pointerEventsFor(guiTextEdit),
       ...colorRoles,
       ...fontSized,
       propertySpec('text', STRING),
@@ -1710,6 +1787,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('max', INT),
       propertySpec('text_color', COLOR),
       propertySpec('background_color', COLOR),
+      ...pointerEventsFor(guiProgressBar),
       propertySpec('foreground_color', COLOR),
       propertySpec('border_color', COLOR),
       ...fontSized,
@@ -1721,6 +1799,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiSpinBox),
+      ...focusEventsFor(guiSpinBox),
+      ...keyEventsFor(guiSpinBox),
+      ...pointerEventsFor(guiSpinBox),
       propertySpec('value', INT),
       propertySpec('min', INT),
       propertySpec('max', INT),
@@ -1732,6 +1813,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiFloatSpinBox),
+      ...focusEventsFor(guiFloatSpinBox),
+      ...keyEventsFor(guiFloatSpinBox),
+      ...pointerEventsFor(guiFloatSpinBox),
       propertySpec('value', FLOAT),
       propertySpec('min', FLOAT),
       propertySpec('max', FLOAT),
@@ -1743,6 +1827,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiSlider),
+      callbackPropertySpec('on_grab', [callbackSpec([]), callbackSpec([guiSlider])],
+        'Маркер ползунка захватили мышью — начали тянуть. Пока тянут, on_change приходит на каждое движение.'),
+      callbackPropertySpec('on_release', [callbackSpec([]), callbackSpec([guiSlider])],
+        'Маркер отпустили — значение устоялось; тяжёлое действие (пересчитать, перерисовать) лучше делать здесь, а не в on_change. Изменение клавишами on_grab и on_release не даёт.'),
+      ...focusEventsFor(guiSlider),
+      ...keyEventsFor(guiSlider),
+      ...pointerEventsFor(guiSlider),
       propertySpec('value', INT),
       propertySpec('min', INT),
       propertySpec('max', INT),
@@ -1755,6 +1846,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiCheckBox),
+      ...focusEventsFor(guiCheckBox),
+      ...keyEventsFor(guiCheckBox),
+      ...pointerEventsFor(guiCheckBox),
       ...fontSized,
       propertySpec('text', STRING),
       propertySpec('is_checked', BOOL),
@@ -1764,6 +1858,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiRadioButton),
+      ...focusEventsFor(guiRadioButton),
+      ...keyEventsFor(guiRadioButton),
+      ...pointerEventsFor(guiRadioButton),
       ...fontSized,
       propertySpec('text', STRING),
       propertySpec('is_selected', BOOL),
@@ -1774,6 +1871,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...widgetState,
       ...styleable,
       ...changeableFor(guiComboBox),
+      ...focusEventsFor(guiComboBox),
+      ...keyEventsFor(guiComboBox),
+      ...pointerEventsFor(guiComboBox),
       ...fontSized,
       propertySpec('selected_index', INT),
       propertySpec('selected_text', STRING, true, 'Текст выбранного пункта; изменяется через selected_index.'),
@@ -1792,6 +1892,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         callbackSpec([]),
         callbackSpec([guiTable]),
       ], 'Срабатывает при клике по строке; номер выбранной — в selected_row.'),
+      ...doubleClickableFor(guiTable),
+      ...focusEventsFor(guiTable),
+      ...keyEventsFor(guiTable),
+      ...pointerEventsFor(guiTable),
     ], [
       functionSpec('set_columns', [], VOID, {
         variadic: true,
@@ -1823,6 +1927,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
+      ...pointerEventsFor(guiBarChart),
       propertySpec('bar_color', COLOR, false, 'Цвет столбиков — один на всех, чтобы сравнение было честным. Не задан — акцентный цвет темы.'),
       propertySpec('show_values', BOOL, false, 'Печатать ли числа над столбиками (по умолчанию true).'),
       propertySpec('min_value', FLOAT, false, 'Нижняя граница шкалы. Не задана — шкала начинается с нуля.'),
@@ -1846,6 +1951,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
+      ...pointerEventsFor(guiLineChart),
       propertySpec('line_color', COLOR, false, 'Цвет линии. Не задан — акцентный цвет темы.'),
       propertySpec('show_dots', BOOL, false, 'Рисовать ли кружки в точках (по умолчанию true).'),
       propertySpec('min_value', FLOAT, false, 'Нижняя граница шкалы. Для приборов шкалу фиксируют, иначе ось «дышит».'),
@@ -1861,6 +1967,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
+      ...pointerEventsFor(guiPieChart),
       propertySpec('show_legend', BOOL, false, 'Показывать ли легенду сбоку (по умолчанию true).'),
       propertySpec('show_percents', BOOL, false, 'Подписывать ли проценты на дольках (по умолчанию true).'),
     ], [
@@ -1882,7 +1989,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeableFor(qualified('gui', 'TabWidget')),
+      ...changeableFor(guiTabWidget),
+      ...clickableFor(guiTabWidget),
+      ...pointerEventsFor(guiTabWidget),
       ...fontSized,
       propertySpec('selected_index', INT, false, 'Номер открытой вкладки, начиная с 0. У пустого шкафа -1 — «ничего не выбрано», как у ComboBox; первая add_tab() делает его 0.'),
       propertySpec('selected_title', STRING, true, 'Заголовок открытой вкладки; меняется через selected_index.'),
@@ -1934,17 +2043,26 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       }),
     ]),
     typeSpec('KeyboardEvent', [
+      propertySpec('ctrl', BOOL, true, 'Зажат ли Ctrl в момент нажатия — для сочетаний вроде Ctrl+S.'),
+      propertySpec('shift', BOOL, true, 'Зажат ли Shift.'),
+      propertySpec('alt', BOOL, true, 'Зажат ли Alt.'),
       propertySpec('key', STRING, true, 'Имя клавиши строкой. Одиночные символы приходят ЗАГЛАВНЫМИ — "W", "Д"; цифры — тоже строками: "7"; пробел — " ". Служебные клавиши названы словами, как в браузере: "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Escape". Сравнивайте с заглавной буквой: pressed_keys.contains("W"), не "w".'),
     ]),
     typeSpec('MouseEvent', [
-      propertySpec('x', INT, true),
+      propertySpec('x', INT, true, 'Координата от левого верхнего угла холста или виджета, в пикселях.'),
       propertySpec('y', INT, true),
-      propertySpec('mouse_button', STRING, true),
+      propertySpec('mouse_button', STRING, true, 'Какую кнопку нажали: "LEFT", "RIGHT", "MIDDLE" (иная — "UNKNOWN").'),
+      propertySpec('ctrl', BOOL, true, 'Зажат ли Ctrl в момент события.'),
+      propertySpec('shift', BOOL, true, 'Зажат ли Shift.'),
+      propertySpec('alt', BOOL, true, 'Зажат ли Alt.'),
     ]),
     typeSpec('MouseScrollEvent', [
       propertySpec('x', INT, true),
       propertySpec('y', INT, true),
-      propertySpec('delta', INT, true),
+      propertySpec('delta', INT, true, 'Направление колеса: 1 — от себя (вверх), -1 — к себе (вниз).'),
+      propertySpec('ctrl', BOOL, true, 'Зажат ли Ctrl в момент события.'),
+      propertySpec('shift', BOOL, true, 'Зажат ли Shift.'),
+      propertySpec('alt', BOOL, true, 'Зажат ли Alt.'),
     ]),
   ]));
 
