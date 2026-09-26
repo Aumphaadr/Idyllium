@@ -117,7 +117,7 @@
 .color-slider::-webkit-slider-thumb {
   width: 18px;
   height: 28px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-on-solid);
   border-radius: 7px;
   background: var(--color-accent);
   box-shadow: var(--shadow-raised);
@@ -127,7 +127,7 @@
 .color-slider::-moz-range-thumb {
   width: 18px;
   height: 28px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-on-solid);
   border-radius: 7px;
   background: var(--color-accent);
   box-shadow: var(--shadow-raised);
@@ -238,7 +238,7 @@
 
 #eyedropper-lens {
   position: fixed;
-  z-index: 100000;
+  z-index: var(--z-lens);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -275,7 +275,7 @@
     linear-gradient(var(--preview-rgba, rgba(34, 145, 188, 1)), var(--preview-rgba, rgba(34, 145, 188, 1))),
     url("transparent_idyllium.png");
   background-size: auto, cover;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px var(--color-border-soft);
 }
 
 .color-code-list {
@@ -449,7 +449,7 @@
 /* Живая модалка: над всем, тянется за заголовок или пустое полотно; положение помнит localStorage. */
 .color-picker-panel.is-floating {
   position: fixed;
-  z-index: 250;
+  z-index: var(--z-floating);
   width: min(620px, calc(100vw - 28px));
   padding: 12px;
   border: 1px solid var(--color-border);

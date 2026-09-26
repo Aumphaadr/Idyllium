@@ -142,7 +142,7 @@ function replaceBlock(text, name, body, relative, kind = 'tokens') {
 // Кадр юнита сохраняет свои имена переменных (frame.css — самодостаточный файл); значения — из ролей.
 const FRAME_VARS = [
   ['bg', 'color-bg'], ['panel', 'color-panel'], ['panel-soft', 'color-panel-soft'], ['panel-raised', 'color-panel-raised'],
-  ['border', 'color-border'], ['text', 'color-text'], ['muted', 'color-text-muted'],
+  ['border', 'color-border'], ['text', 'color-text'], ['muted', 'color-text-muted'], ['on-solid', 'color-on-solid'],
   ['accent', 'color-accent'], ['accent-strong', 'color-accent-strong'],
   ['run-bg', 'color-run'], ['run-bg-hover', 'color-run-hover'], ['danger', 'color-danger'],
   ['editor-bg', 'editor-bg'], ['editor-text', 'editor-text'], ['editor-muted', 'editor-muted'], ['editor-caret', 'editor-caret'],

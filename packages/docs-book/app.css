@@ -59,7 +59,7 @@
 .lesson-loading {
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: var(--z-sticky);
   background: color-mix(in srgb, var(--color-bg) 55%, transparent);
   backdrop-filter: blur(2px);
   animation: lesson-loading-fade 0.25s ease-out;

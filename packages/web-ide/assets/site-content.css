@@ -86,7 +86,7 @@
     font-size: 0.9em;
   }
 
-  @media (max-width: 700px) {
+  @media (max-width: 720px) {
     /* На узких экранах — прежнее поведение: горизонтальный скролл внутри блока. */
     .docs-section table {
       display: block;
@@ -370,10 +370,6 @@
     gap: 14px;
   }
 
-  .gui-demo-gallery .ui-gui-demo-caption {
-    font-family: var(--font-mono);
-  }
-
   .image-mirrored-y {
     transform: scaleY(-1);
   }
@@ -429,7 +425,7 @@
     font-size: 12px;
   }
 
-  @media (max-width: 650px) {
+  @media (max-width: 640px) {
     .canvas-sprite-surface {
       height: 200px;
     }

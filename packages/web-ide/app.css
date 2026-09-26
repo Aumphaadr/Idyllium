@@ -171,7 +171,8 @@
   width: 176px;
 }
 
-.color-picker-menu {
+/* Место генератора цвета в IDE (id color-picker-menu — крючок скрипта); сам генератор — компонент color-picker.css. */
+.ide-color-picker-host {
   /* Положение и вид задаёт общий компонент (assets/color-picker.css, .is-floating). */
   display: block;
 }
@@ -2144,7 +2145,7 @@ summary.json-node-line:hover {
     min-height: 620px;
   }
 
-  .color-picker-menu {
+  .ide-color-picker-host {
     left: 0;
     transform: none;
     width: calc(100vw - 28px);
@@ -2152,7 +2153,7 @@ summary.json-node-line:hover {
 
 }
 
-@media (max-width: 1180px) and (min-width: 981px) {
+@media (max-width: 1200px) and (min-width: 981px) {
   .appearance-label-full {
     display: none;
   }
@@ -2190,7 +2191,7 @@ summary.json-node-line:hover {
   align-items: stretch;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 820px) {
   .share-ways {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -93,7 +93,7 @@ body.is-resizing .preview, body.is-resizing-rows .preview { pointer-events: none
 
 .palette-ghost {
   position: fixed;
-  z-index: 100;
+  z-index: var(--z-floating);
   pointer-events: none;
   padding: 4px 10px;
   border: 1px dashed var(--color-accent);
@@ -369,7 +369,7 @@ body.is-tree-dragging .tree-row { cursor: grabbing; }
 .designer-narrow { display: none; max-width: 560px; margin: 0 auto; padding: 60px 22px; text-align: center; color: var(--color-text-soft); }
 .designer-narrow h1 { color: var(--color-text); }
 
-@media (max-width: 999px) {
+@media (max-width: 980px) {
   .designer { display: none; }
   .designer-narrow { display: block; }
 }

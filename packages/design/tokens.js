@@ -173,7 +173,9 @@ const density = {
   app: { 'font-size-body': '14px', 'line-height-body': lineHeight.ui },
 };
 
-/** Точки перелома, px. В @media переменные не работают — значения сторожит тест. */
-const breakpoints = { phone: 480, narrow: 820, medium: 1000, wide: 1200 };
+/** Точки перелома, px. В @media переменные не работают — значения сторожит тест (tests/style-guards.test.ts):
+ *  phone — телефон; small — узкий телефон/половина экрана; compact — планшет в портрете; narrow — скрытие
+ *  боковой колонки документов; medium — узкая шапка IDE и конструктор; wide — оглавление документов. */
+const breakpoints = { phone: 480, small: 640, compact: 720, narrow: 820, medium: 980, wide: 1200 };
 
 module.exports = { fonts, color, editor, syntax, windowTheme, ansi, shadow, fontSize, lineHeight, space, radius, z, duration, layout, density, breakpoints };

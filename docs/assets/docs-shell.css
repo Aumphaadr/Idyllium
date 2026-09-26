@@ -27,7 +27,7 @@
   outline: none;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1200px) {
   .docs-shell {
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   }
