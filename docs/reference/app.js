@@ -187,9 +187,9 @@
         .filter((entry) => entry.searchText.includes(state.query))
         .slice(0, 80);
       els.nav.innerHTML = matches.length === 0
-        ? '<div class="search-empty">Ничего не найдено</div>'
-        : `<div class="nav-heading">Результаты</div>${matches.map((entry) => `
-            <a class="nav-link" href="${entry.href}">
+        ? '<div class="ui-empty search-empty">Ничего не найдено</div>'
+        : `<div class="ui-nav-heading nav-heading">Результаты</div>${matches.map((entry) => `
+            <a class="ui-nav-link nav-link" href="${entry.href}">
               <span class="nav-symbol-kind">${escapeHtml(entry.kind)}</span>
               <span class="nav-symbol-name">${escapeHtml(entry.label)}</span>
             </a>
@@ -201,10 +201,10 @@
       const moduleActive = route[0] === module.name;
       const types = module.types.map((type) => {
         const active = moduleActive && route[1] === type.name;
-        return `<a class="nav-link nav-type ${active ? 'active' : ''}" href="${typeUrl(module.name, type.name)}">${escapeHtml(type.name)}</a>`;
+        return `<a class="ui-nav-link nav-link nav-type ${active ? 'active' : ''}" href="${typeUrl(module.name, type.name)}">${escapeHtml(type.name)}</a>`;
       }).join('');
       return `
-        <a class="nav-link nav-module ${moduleActive && route.length === 1 ? 'active' : ''}" href="${routeUrl(module.name)}">
+        <a class="ui-nav-link nav-link nav-module ${moduleActive && route.length === 1 ? 'active' : ''}" href="${routeUrl(module.name)}">
           <span>${escapeHtml(module.name)}</span>
         </a>
         ${types}
@@ -212,17 +212,17 @@
     }).join('');
 
     els.nav.innerHTML = `
-      <div class="nav-heading">Общее</div>
-      <a class="nav-link ${route.length === 0 ? 'active' : ''}" href="${ROOT_PATH}">Обзор</a>
+      <div class="ui-nav-heading nav-heading">Общее</div>
+      <a class="ui-nav-link nav-link ${route.length === 0 ? 'active' : ''}" href="${ROOT_PATH}">Обзор</a>
       ${(state.api.general || []).map((page) => `
-        <a class="nav-link nav-language ${route[0] === 'general' && route[1] === page.id ? 'active' : ''}" href="${routeUrl('general', page.id)}">${escapeHtml(page.title)}</a>
+        <a class="ui-nav-link nav-link nav-language ${route[0] === 'general' && route[1] === page.id ? 'active' : ''}" href="${routeUrl('general', page.id)}">${escapeHtml(page.title)}</a>
       `).join('')}
-      <div class="nav-heading">Язык</div>
+      <div class="ui-nav-heading nav-heading">Язык</div>
       ${state.api.language.map((page) => `
-        <a class="nav-link nav-language ${route[0] === 'language' && route[1] === page.id ? 'active' : ''}" href="${routeUrl('language', page.id)}">${escapeHtml(page.title)}</a>
+        <a class="ui-nav-link nav-link nav-language ${route[0] === 'language' && route[1] === page.id ? 'active' : ''}" href="${routeUrl('language', page.id)}">${escapeHtml(page.title)}</a>
       `).join('')}
-      <a class="nav-link nav-language ${route[0] === 'globals' ? 'active' : ''}" href="${routeUrl('globals')}">Встроенные функции</a>
-      <div class="nav-heading">Библиотеки</div>
+      <a class="ui-nav-link nav-link nav-language ${route[0] === 'globals' ? 'active' : ''}" href="${routeUrl('globals')}">Встроенные функции</a>
+      <div class="ui-nav-heading nav-heading">Библиотеки</div>
       ${moduleLinks}
     `;
   }
@@ -295,7 +295,7 @@
       <header class="api-header">
         <div class="api-header-row">
           <h1>Документация Idyllium</h1>
-          <span class="kind-badge module">API v${escapeHtml(api.languageVersion)}</span>
+          <span class="ui-badge ui-badge--sm kind-badge module">API v${escapeHtml(api.languageVersion)}</span>
         </div>
         <p class="api-description">${escapeHtml(api.overview)}</p>
       </header>
@@ -356,7 +356,7 @@
       <header class="api-header">
         <div class="api-header-row">
           <h1>${escapeHtml(page.title)}</h1>
-          <span class="kind-badge">${escapeHtml(sectionLabel === 'Язык' ? 'язык' : 'общее')}</span>
+          <span class="ui-badge ui-badge--sm kind-badge">${escapeHtml(sectionLabel === 'Язык' ? 'язык' : 'общее')}</span>
         </div>
         <p class="api-description">${inlineCodeHtml(page.description)}</p>
       </header>
@@ -379,7 +379,7 @@
       <header class="api-header">
         <div class="api-header-row">
           <h1>Встроенные функции</h1>
-          <span class="kind-badge">язык</span>
+          <span class="ui-badge ui-badge--sm kind-badge">язык</span>
         </div>
         <p class="api-description">Эти функции доступны без директивы <code>use</code>.</p>
       </header>
@@ -398,7 +398,7 @@
       <header class="api-header">
         <div class="api-header-row">
           <h1 class="api-qualified-name">${escapeHtml(module.name)}</h1>
-          <span class="kind-badge module">библиотека</span>
+          <span class="ui-badge ui-badge--sm kind-badge module">библиотека</span>
         </div>
         <p class="api-description">${inlineCodeHtml(module.description)}</p>
       </header>
@@ -484,7 +484,7 @@
       <header class="api-header">
         <div class="api-header-row">
           <h1 class="api-qualified-name">${escapeHtml(type.qualifiedName)}</h1>
-          <span class="kind-badge type">тип</span>
+          <span class="ui-badge ui-badge--sm kind-badge type">тип</span>
         </div>
         <p class="api-description">${inlineCodeHtml(type.description || 'Библиотечный тип Idyllium.')}</p>
         ${baseLink}
@@ -577,7 +577,7 @@
       <article class="member-row property${highlight}" id="${memberId('property', property.name)}">
         <div class="member-head">
           <code class="member-signature">${escapeHtml(`${property.name}: ${property.type}`)}</code>
-          ${property.readonly ? '<span class="readonly-badge">только чтение</span>' : ''}
+          ${property.readonly ? '<span class="ui-badge ui-badge--sm readonly-badge">только чтение</span>' : ''}
           ${inherited ? ownerBadge(entry.owner) : ''}
         </div>
         ${property.documentation ? `<p class="member-description">${inlineCodeHtml(property.documentation)}</p>` : ''}
@@ -670,9 +670,9 @@
     const languageId = language === 'json' ? 'json' : 'idyllium';
     const highlighted = languageId === 'json' ? highlightJson(source) : highlightIdyllium(source);
     const languageLabel = languageId === 'json'
-      ? '<span class="code-language">JSON</span>'
+      ? '<span class="ui-code-lang code-language">JSON</span>'
       : '';
-    return `<pre class="code-sample ${languageId}-code-sample">${languageLabel}<button class="copy-button" type="button" data-copy="${escapeAttribute(source)}">Копировать</button><code class="${languageId}-code">${highlighted}</code></pre>`;
+    return `<div class="ui-code code-sample ${languageId}-code-sample">${languageLabel}<pre><code class="${languageId}-code">${highlighted}</code></pre><button class="ui-button ui-button--sm ui-code-copy copy-button" type="button" data-copy="${escapeAttribute(source)}">Копировать</button></div>`;
   }
 
   function highlightIdyllium(source) {
@@ -984,7 +984,7 @@
   }
 
   function ownerBadge(owner) {
-    return `<span class="owner-badge">из ${escapeHtml(owner)}</span>`;
+    return `<span class="ui-badge ui-badge--sm owner-badge">из ${escapeHtml(owner)}</span>`;
   }
 
   function collectProperties(type) {
@@ -1097,7 +1097,7 @@
 
   function renderNotFound(name) {
     els.view.innerHTML = `
-      <div class="error-state">
+      <div class="ui-state ui-state--error error-state">
         <h1>Символ не найден</h1>
         <p>В текущем API нет элемента <code>${escapeHtml(name)}</code>.</p>
       </div>
@@ -1110,7 +1110,7 @@
     // обновить страницу решает почти все такие случаи (просьба владельца,
     // 2026-08-29).
     els.view.innerHTML = `
-      <div class="error-state">
+      <div class="ui-state ui-state--error error-state">
         <h1>Документация не загрузилась</h1>
         <p>${escapeHtml(String(error?.message || error))}</p>
         <p>Попробуйте обновить страницу — чаще всего этого достаточно.
@@ -1140,10 +1140,10 @@
     }
     const oldText = button.textContent;
     button.textContent = 'Скопировано';
-    button.classList.add('copied');
+    button.classList.add('copied', 'is-done');
     setTimeout(() => {
       button.textContent = oldText;
-      button.classList.remove('copied');
+      button.classList.remove('copied', 'is-done');
     }, 1000);
   }
 

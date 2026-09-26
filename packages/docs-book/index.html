@@ -19,23 +19,24 @@
   <!-- @site-topbar -->
 
   <div class="docs-shell">
-    <aside class="docs-sidebar" id="docs-sidebar">
-      <div class="sidebar-head">
-        <label class="search-box">
-          <span>Поиск</span>
-          <input id="lesson-search" type="search" autocomplete="off" placeholder="Найти урок">
-        </label>
+    <aside class="ui-sidebar docs-sidebar" id="docs-sidebar">
+      <div class="ui-sidebar-head sidebar-head">
+        <label class="ui-sidebar-label search-box" for="lesson-search">Поиск</label>
+        <div class="ui-search">
+          <input id="lesson-search" class="ui-field ui-field--lg" type="search" autocomplete="off" placeholder="Найти урок">
+          <button id="lesson-search-clear" class="ui-search-clear" type="button" hidden title="Очистить" aria-label="Очистить поиск"></button>
+        </div>
       </div>
-      <nav class="lesson-nav" id="lesson-nav" aria-label="Уроки"></nav>
+      <nav class="ui-sidebar-nav lesson-nav" id="lesson-nav" aria-label="Уроки"></nav>
     </aside>
 
     <main class="docs-main" id="docs-main" tabindex="-1">
       <article class="lesson-view" id="lesson-view">
-        <div class="loading-card">Загрузка учебника...</div>
+        <div class="ui-state loading-card">Загрузка учебника...</div>
       </article>
     </main>
 
-    <aside class="docs-toc" id="docs-toc" aria-label="Разделы урока"></aside>
+    <aside class="ui-toc docs-toc" id="docs-toc" aria-label="Разделы урока"></aside>
   </div>
 </body>
 </html>

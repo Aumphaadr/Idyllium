@@ -1,5 +1,6 @@
 // Однопроходная подсветка Idyllium для легаси-редактора (без Monaco):
-// словари токенов и превращение исходника в HTML со span-раскраской.
+// словари токенов и превращение исходника в HTML со span-раскраской. Классы — общий словарь
+// сайта hl-* (assets/site-components.css): те же имена у учебника, справочника и конструктора.
 
 export const KEYWORDS = new Set([
   'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'contract', 'do', 'else', 'event', 'extends',
@@ -28,28 +29,28 @@ export function highlightIdyllium(source) {
     const rest = source.slice(index);
     const comment = /^\/\/[^\n]*/u.exec(rest);
     if (comment) {
-      html += span('tok-comment', comment[0]);
+      html += span('hl-comment', comment[0]);
       index += comment[0].length;
       continue;
     }
 
     const string = /^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/u.exec(rest);
     if (string) {
-      html += span('tok-string', string[0]);
+      html += span('hl-string', string[0]);
       index += string[0].length;
       continue;
     }
 
     const number = /^\b\d+(?:\.\d+)?\b/u.exec(rest);
     if (number) {
-      html += span('tok-number', number[0]);
+      html += span('hl-number', number[0]);
       index += number[0].length;
       continue;
     }
 
     const member = /^(\.)([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)/u.exec(rest);
     if (member) {
-      html += escapeHtml(member[1]) + span('tok-property', member[2]);
+      html += escapeHtml(member[1]) + span('hl-object', member[2]);
       index += member[0].length;
       continue;
     }
@@ -63,11 +64,11 @@ export function highlightIdyllium(source) {
       const isTypePosition = /^[A-ZА-ЯЁ]/u.test(word)
         && /^\s+[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*\s*(?:[=;,)\[]|$)/u.test(afterWord);
       if (KEYWORDS.has(word)) {
-        html += span('tok-keyword', word);
+        html += span('hl-keyword', word);
       } else if (BUILTIN_TYPES.has(word) || CLASS_NAMES.has(word) || QUALIFIED_TYPES.has(word) || isDeclaredClass || isTypePosition) {
-        html += span('tok-type', word);
+        html += span('hl-typeName', word);
       } else if (/^\s*\(/u.test(afterWord)) {
-        html += span('tok-function', word);
+        html += span('hl-function', word);
       } else {
         html += escapeHtml(word);
       }

@@ -124,7 +124,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   editAppMenu.addEventListener('click', handleEditAppMenuClick);
   colorPickerButton.addEventListener('click', toggleColorPickerMenu);
   // Тот же пункт в схлопнутом меню «Разделы» (узкий экран): id там нет, есть data-role.
-  document.querySelectorAll('.site-nav-collapsed [data-role="color-picker-button"]').forEach((button) => {
+  document.querySelectorAll('.ui-nav-collapsed [data-role="color-picker-button"]').forEach((button) => {
     button.addEventListener('click', toggleColorPickerMenu);
   });
   themeDarkButton.addEventListener('click', () => {
@@ -1367,7 +1367,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   function openDeleteConfirm(path, type, left, top) {
     fileContextMenu.replaceChildren();
     const label = document.createElement('div');
-    label.className = 'file-delete-prompt';
+    label.className = 'ui-menu-caption file-delete-prompt';
     label.textContent = 'Удалить?';
     fileContextMenu.appendChild(label);
 
@@ -1375,6 +1375,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     actions.className = 'file-delete-actions';
     const yes = document.createElement('button');
     yes.type = 'button';
+    yes.className = 'ui-button ui-button--sm ui-button--danger';
     yes.textContent = 'Да';
     yes.addEventListener('click', () => {
       hideFileContextMenu();
@@ -1382,6 +1383,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     });
     const no = document.createElement('button');
     no.type = 'button';
+    no.className = 'ui-button ui-button--sm';
     no.textContent = 'Нет';
     no.addEventListener('click', hideFileContextMenu);
     actions.append(yes, no);
@@ -1461,7 +1463,8 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     for (const [label, action] of actions) {
       const button = document.createElement('button');
       button.type = 'button';
-      if (window.IdylliumIcons && CONTEXT_ICONS[label]) button.appendChild(window.IdylliumIcons.element(CONTEXT_ICONS[label], { size: 16, className: 'menu-icon' }));
+      button.className = 'ui-menu-item';
+      if (window.IdylliumIcons && CONTEXT_ICONS[label]) button.appendChild(window.IdylliumIcons.element(CONTEXT_ICONS[label], { size: 16, className: 'ui-menu-icon menu-icon' }));
       button.appendChild(document.createTextNode(label));
       button.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -1681,10 +1684,10 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
 
     filePropsModal.replaceChildren();
     const card = document.createElement('div');
-    card.className = 'file-props-card';
+    card.className = 'ui-dialog file-props-card';
 
     const heading = document.createElement('h3');
-    heading.className = 'file-props-title';
+    heading.className = 'ui-dialog-title file-props-title';
     heading.textContent = title;
     card.appendChild(heading);
 
@@ -1712,9 +1715,10 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     }
 
     const actions = document.createElement('div');
-    actions.className = 'file-props-actions';
+    actions.className = 'ui-dialog-actions file-props-actions';
     const close = document.createElement('button');
     close.type = 'button';
+    close.className = 'ui-button';
     close.textContent = 'Закрыть';
     close.addEventListener('click', hideFileProperties);
     actions.appendChild(close);
@@ -3261,12 +3265,13 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     actions.className = 'app-menu-form-actions';
     const cancel = document.createElement('button');
     cancel.type = 'button';
+    cancel.className = 'ui-button ui-button--sm';
     cancel.textContent = 'Отмена';
     cancel.addEventListener('click', resetFileAppMenu);
     actions.appendChild(cancel);
     const submit = document.createElement('button');
     submit.type = 'submit';
-    submit.className = 'primary';
+    submit.className = 'ui-button ui-button--sm ui-button--tonal primary';
     submit.textContent = options.submitLabel;
     actions.appendChild(submit);
     form.appendChild(actions);
@@ -3318,6 +3323,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     for (const entry of sorted) {
       const button = document.createElement('button');
       button.type = 'button';
+      button.className = 'ui-menu-item';
       const name = document.createElement('strong');
       name.textContent = entry.name;
       button.appendChild(name);
@@ -3354,12 +3360,13 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     actions.className = 'app-menu-form-actions';
     const cancel = document.createElement('button');
     cancel.type = 'button';
+    cancel.className = 'ui-button ui-button--sm';
     cancel.textContent = 'Нет';
     cancel.addEventListener('click', resetFileAppMenu);
     actions.appendChild(cancel);
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'app-menu-danger';
+    remove.className = 'ui-button ui-button--sm ui-button--danger app-menu-danger';
     remove.textContent = 'Да, удалить';
     remove.addEventListener('click', async () => {
       remove.disabled = true;
@@ -3383,6 +3390,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     header.className = 'app-menu-panel-header';
     const back = document.createElement('button');
     back.type = 'button';
+    back.className = 'ui-button ui-button--sm ui-button--icon';
     back.textContent = '‹';
     back.title = 'Назад';
     back.setAttribute('aria-label', 'Назад');
@@ -3556,7 +3564,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     colorPickerButton.setAttribute('aria-expanded', 'true');
     // Живая модалка (общий компонент): в первый раз встаёт под пунктом «Инструменты» (или «Разделы»
     // на узком экране), дальше — там, куда её перетащили; положение помнит localStorage.
-    const anchor = Array.from(document.querySelectorAll('.site-nav-group[data-group="tools"] > .site-nav-button, .site-nav-collapsed > .site-nav-button'))
+    const anchor = Array.from(document.querySelectorAll('.ui-nav-group[data-group="tools"] > .ui-topbar-button, .site-nav-collapsed > .site-nav-button'))
       .find((button) => button.offsetParent !== null);
     const anchorRect = anchor ? anchor.getBoundingClientRect() : null;
     if (!colorPicker) return;

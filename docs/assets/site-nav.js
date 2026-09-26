@@ -1,6 +1,6 @@
 // Поведение общей шапки сайта (1.6.3): дропдауны «Материалы / Инструменты / О проекте»
 // и их схлопнутая форма «Разделы». Разметка — из tools/site-nav.ts, стили —
-// site-nav.css. Без зависимостей; один файл на все разделы и Web IDE.
+// site-components.css (ui-topbar, ui-nav-*, ui-menu-*). Без зависимостей; один файл на все разделы и Web IDE.
 (function () {
   'use strict';
 
@@ -10,11 +10,11 @@
   }
 
   whenReady(function () {
-    var groups = Array.prototype.slice.call(document.querySelectorAll('.site-nav-group'));
+    var groups = Array.prototype.slice.call(document.querySelectorAll('.ui-nav-group'));
     if (groups.length === 0) return;
 
-    function buttonOf(group) { return group.querySelector(':scope > .site-nav-button'); }
-    function menuOf(group) { return group.querySelector(':scope > .site-nav-menu'); }
+    function buttonOf(group) { return group.querySelector(':scope > .ui-topbar-button'); }
+    function menuOf(group) { return group.querySelector(':scope > .ui-nav-menu'); }
     function isOpen(group) { return group.classList.contains('is-open'); }
 
     function close(group) {
@@ -58,12 +58,12 @@
       });
 
       menu.addEventListener('click', function (event) {
-        var item = event.target.closest ? event.target.closest('.site-nav-item') : null;
+        var item = event.target.closest ? event.target.closest('.ui-menu-item') : null;
         if (item && !item.classList.contains('is-current')) close(group);
       });
 
       group.addEventListener('keydown', function (event) {
-        var items = Array.prototype.slice.call(menu.querySelectorAll('.site-nav-item:not(.is-current)'));
+        var items = Array.prototype.slice.call(menu.querySelectorAll('.ui-menu-item:not(.is-current)'));
         var index = items.indexOf(document.activeElement);
         if (event.key === 'Escape') {
           close(group);
@@ -87,7 +87,7 @@
     });
 
     document.addEventListener('click', function (event) {
-      var inside = event.target.closest ? event.target.closest('.site-nav-group') : null;
+      var inside = event.target.closest ? event.target.closest('.ui-nav-group') : null;
       if (!inside) closeAll(null);
     });
     document.addEventListener('keydown', function (event) {

@@ -373,7 +373,7 @@ test('gui designer: names, values and the file-vs-model difference report', () =
 test('gui designer: the built page is a real section with the shared header, not a stub', () => {
   const root = path.resolve(process.cwd(), 'docs', 'gui-designer');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert(html.includes('class="site-topbar"') && html.includes('class="topbar-badge">Конструктор GUI<'), 'the designer page carries the shared header');
+  assert(html.includes('class="ui-topbar"') && html.includes('class="ui-badge ui-topbar-badge">Конструктор GUI<'), 'the designer page carries the shared header');
   assert(html.includes('src="designer.js"') && fs.existsSync(path.join(root, 'designer.js')), 'the designer script is built and referenced');
   assert(html.includes('src="../assets/idyllium-web-core.js"') && fs.existsSync(path.resolve(process.cwd(), 'docs', 'assets', 'idyllium-web-core.js')), 'the designer uses the browser core');
   assert(html.includes('src="../gui-preview.html"') && fs.existsSync(path.resolve(process.cwd(), 'docs', 'gui-preview.html')), 'the scene is the real preview frame');

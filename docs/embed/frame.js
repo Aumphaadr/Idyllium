@@ -229,6 +229,7 @@
       "color-text-soft": "#c9bdd6",
       "color-text-muted": "#8e819d",
       "color-on-accent": "#0c0515",
+      "color-on-solid": "#ffffff",
       "color-border": "#342846",
       "color-border-soft": "rgba(255, 255, 255, 0.08)",
       "color-accent": "#87bfff",
@@ -244,6 +245,8 @@
       "color-info-bg": "rgba(135, 191, 255, 0.12)",
       "color-run": "#179f5b",
       "color-run-hover": "#1fba6d",
+      "color-stop": "#c7728a",
+      "color-stop-hover": "#f38ba8",
       "color-focus": "#87bfff",
       "color-selection": "rgba(135, 191, 255, 0.28)",
       "editor-bg": "#100b1a",
@@ -307,6 +310,7 @@
       "color-text-soft": "#463b56",
       "color-text-muted": "#6d637b",
       "color-on-accent": "#ffffff",
+      "color-on-solid": "#ffffff",
       "color-border": "#c8bed5",
       "color-border-soft": "rgba(33, 26, 46, 0.14)",
       "color-accent": "#275f9e",
@@ -322,6 +326,8 @@
       "color-info-bg": "rgba(39, 95, 158, 0.13)",
       "color-run": "#177b49",
       "color-run-hover": "#12683d",
+      "color-stop": "#931f19",
+      "color-stop-hover": "#b3261e",
       "color-focus": "#275f9e",
       "color-selection": "rgba(39, 95, 158, 0.22)",
       "editor-bg": "#f2edf7",
@@ -745,7 +751,8 @@
     call: /^\s*\(/u,
     space: /^\s+/u
   };
-  var tok = (kind, text) => `<span class="tok-${kind}">${escapeHtml(text)}</span>`;
+  var HL_NAMES = { type: "typeName", class: "className" };
+  var tok = (kind, text) => `<span class="hl-${HL_NAMES[kind] || kind}">${escapeHtml(text)}</span>`;
   function highlightLikeMonaco(source) {
     let html = "";
     let index = 0;

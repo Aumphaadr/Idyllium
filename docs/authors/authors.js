@@ -100,7 +100,7 @@ main() {
       row.className = "test-row";
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.className = "btn remove";
+      remove.className = "ui-button ui-button--sm ui-button--icon btn remove";
       remove.textContent = "\xD7";
       remove.title = "\u0423\u0431\u0440\u0430\u0442\u044C \u0442\u0435\u0441\u0442";
       remove.addEventListener("click", () => update({ tests: state.tests.filter((_, position) => position !== index) }, true));
@@ -115,7 +115,7 @@ main() {
         const field = (value, onInput) => {
           const input = document.createElement("input");
           input.type = "number";
-          input.className = "small";
+          input.className = "ui-field ui-field--sm small";
           input.value = value;
           if (test.kind === "float") input.step = "any";
           input.addEventListener("input", () => onInput(Number(input.value)));
@@ -132,7 +132,7 @@ main() {
           field(test.times, (value) => replace({ ...test, times: value }))
         );
         const kind = document.createElement("select");
-        kind.className = "kind";
+        kind.className = "ui-field ui-field--sm kind";
         kind.title = "\u041A\u0430\u043A\u0438\u0435 \u0447\u0438\u0441\u043B\u0430 \u043F\u043E\u0434\u0441\u0442\u0430\u0432\u043B\u044F\u0442\u044C";
         for (const [value, text] of [["int", "\u0446\u0435\u043B\u044B\u0435"], ["float", "\u0434\u0440\u043E\u0431\u043D\u044B\u0435"]]) kind.append(new Option(text, value));
         kind.value = test.kind === "float" ? "float" : "int";
@@ -170,10 +170,11 @@ main() {
       const row = document.createElement("div");
       row.className = "rule-row";
       const when = document.createElement("input");
-      when.className = "when";
+      when.className = "ui-field ui-field--sm ui-field--mono when";
       when.placeholder = "\u043A\u043E\u0433\u0434\u0430 (\u043F\u0443\u0441\u0442\u043E \u2014 \u0432\u0441\u0435\u0433\u0434\u0430)";
       when.value = rule.when;
       const expr = document.createElement("input");
+      expr.className = "ui-field ui-field--sm ui-field--mono";
       expr.placeholder = "\u0443\u0441\u043B\u043E\u0432\u0438\u0435: {out1} == {in1} * 2";
       expr.value = rule.expr;
       const commit = () => setRules(currentRules().map((item, position) => position === index ? { when: when.value, expr: expr.value } : item));
@@ -185,7 +186,7 @@ main() {
       }
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.className = "btn remove";
+      remove.className = "ui-button ui-button--sm ui-button--icon btn remove";
       remove.textContent = "\xD7";
       remove.addEventListener("click", () => setRules(currentRules().filter((_, position) => position !== index), true));
       row.append(when, expr, remove);
@@ -252,7 +253,7 @@ main() {
     if (issue.suggestTest) {
       const fix = document.createElement("button");
       fix.type = "button";
-      fix.className = "btn btn-fix";
+      fix.className = "ui-button ui-button--sm ui-button--tonal btn btn-fix";
       fix.textContent = `+ \u0442\u0435\u0441\u0442 \xAB${issue.suggestTest.join(" ")}\xBB`;
       fix.title = "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0442\u0435\u0441\u0442 \u0432 \u0441\u043F\u0438\u0441\u043E\u043A";
       fix.addEventListener("click", () => update({ tests: [...state.tests, { in: issue.suggestTest.join(" ") }] }, true));

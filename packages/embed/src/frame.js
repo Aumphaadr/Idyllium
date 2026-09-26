@@ -135,7 +135,9 @@ const RE = {
   call: /^\s*\(/u,
   space: /^\s+/u,
 };
-const tok = (kind, text) => `<span class="tok-${kind}">${escapeHtml(text)}</span>`;
+// Классы подсветки — общий словарь сайта hl-* (те же имена у учебника, справочника, IDE).
+const HL_NAMES = { type: 'typeName', class: 'className' };
+const tok = (kind, text) => `<span class="hl-${HL_NAMES[kind] || kind}">${escapeHtml(text)}</span>`;
 
 function highlightLikeMonaco(source) {
   let html = '';

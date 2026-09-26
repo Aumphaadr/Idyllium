@@ -12,69 +12,69 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body class="theme-dark">
-  <header class="topbar">
+  <header class="ui-topbar ui-topbar--ide topbar" data-section="ide" data-sidebar="false">
     <!-- @site-brand -->
-    <div class="actions">
+    <div class="ui-topbar-actions actions">
       <div id="file-app-menu-wrapper" class="app-menu-wrapper">
-        <button id="file-app-menu-button" type="button" aria-expanded="false">Файл</button>
-        <div id="file-app-menu" class="app-menu" role="menu" hidden>
+        <button id="file-app-menu-button" class="ui-topbar-button" type="button" aria-expanded="false">Файл</button>
+        <div id="file-app-menu" class="ui-menu app-menu" role="menu" hidden>
           <div id="file-app-menu-main">
             <div class="app-menu-current-project">
               <span>Текущий проект</span>
               <strong id="current-project-name">Мой проект</strong>
             </div>
-            <button type="button" role="menuitem" data-file-command="new-file">
-              <i class="icon menu-icon" data-icon="file-new" data-size="16"></i><span>Создать новый файл</span><kbd>Ctrl+N</kbd>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="new-file">
+              <i class="icon ui-menu-icon menu-icon" data-icon="file-new" data-size="16"></i><span>Создать новый файл</span><kbd>Ctrl+N</kbd>
             </button>
-            <button type="button" role="menuitem" data-file-command="open-file">
-              <i class="icon menu-icon" data-icon="open-file" data-size="16"></i><span>Открыть файл</span><kbd>Ctrl+O</kbd>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="open-file">
+              <i class="icon ui-menu-icon menu-icon" data-icon="open-file" data-size="16"></i><span>Открыть файл</span><kbd>Ctrl+O</kbd>
             </button>
-            <div class="app-menu-separator" aria-hidden="true"></div>
-            <button type="button" role="menuitem" data-file-command="new-project"><i class="icon menu-icon" data-icon="folder-new" data-size="16"></i><span>Создать новый проект</span></button>
-            <button type="button" role="menuitem" data-file-command="open-project"><i class="icon menu-icon" data-icon="folder-open" data-size="16"></i><span>Открыть проект</span></button>
-            <button type="button" role="menuitem" data-file-command="save-project">
-              <i class="icon menu-icon" data-icon="save" data-size="16"></i><span>Сохранить проект</span><kbd>Ctrl+S</kbd>
+            <div class="ui-menu-separator app-menu-separator" aria-hidden="true"></div>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="new-project"><i class="icon ui-menu-icon menu-icon" data-icon="folder-new" data-size="16"></i><span>Создать новый проект</span></button>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="open-project"><i class="icon ui-menu-icon menu-icon" data-icon="folder-open" data-size="16"></i><span>Открыть проект</span></button>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="save-project">
+              <i class="icon ui-menu-icon menu-icon" data-icon="save" data-size="16"></i><span>Сохранить проект</span><kbd>Ctrl+S</kbd>
             </button>
-            <button type="button" role="menuitem" data-file-command="duplicate-project"><i class="icon menu-icon" data-icon="duplicate" data-size="16"></i><span>Дублировать проект</span></button>
-            <button type="button" role="menuitem" data-file-command="delete-project"><i class="icon menu-icon" data-icon="trash" data-size="16"></i><span>Удалить проект</span></button>
-            <div class="app-menu-separator" aria-hidden="true"></div>
-            <button type="button" role="menuitem" data-file-command="share-project"><i class="icon menu-icon" data-icon="share" data-size="16"></i><span>Поделиться…</span></button>
-            <button type="button" role="menuitem" data-file-command="open-qr"><i class="icon menu-icon" data-icon="qr" data-size="16"></i><span>Открыть проект из QR-картинки…</span></button>
-            <button type="button" role="menuitem" data-file-command="download-project"><i class="icon menu-icon" data-icon="download" data-size="16"></i><span>Скачать текущий проект</span></button>
-            <button type="button" role="menuitem" data-file-command="download-other-project"><i class="icon menu-icon" data-icon="archive" data-size="16"></i><span>Скачать другой проект</span></button>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="duplicate-project"><i class="icon ui-menu-icon menu-icon" data-icon="duplicate" data-size="16"></i><span>Дублировать проект</span></button>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="delete-project"><i class="icon ui-menu-icon menu-icon" data-icon="trash" data-size="16"></i><span>Удалить проект</span></button>
+            <div class="ui-menu-separator app-menu-separator" aria-hidden="true"></div>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="share-project"><i class="icon ui-menu-icon menu-icon" data-icon="share" data-size="16"></i><span>Поделиться…</span></button>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="open-qr"><i class="icon ui-menu-icon menu-icon" data-icon="qr" data-size="16"></i><span>Открыть проект из QR-картинки…</span></button>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="download-project"><i class="icon ui-menu-icon menu-icon" data-icon="download" data-size="16"></i><span>Скачать текущий проект</span></button>
+            <button type="button" class="ui-menu-item" role="menuitem" data-file-command="download-other-project"><i class="icon ui-menu-icon menu-icon" data-icon="archive" data-size="16"></i><span>Скачать другой проект</span></button>
           </div>
           <div id="file-app-menu-panel" class="app-menu-panel" hidden></div>
         </div>
       </div>
       <div id="edit-app-menu-wrapper" class="app-menu-wrapper">
-        <button id="edit-app-menu-button" type="button" aria-expanded="false">Правка</button>
-        <div id="edit-app-menu" class="app-menu app-menu-edit" role="menu" hidden>
-          <button type="button" role="menuitem" data-edit-command="undo"><i class="icon menu-icon" data-icon="undo" data-size="16"></i><span>Отменить</span><kbd>Ctrl+Z</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="redo"><i class="icon menu-icon" data-icon="redo" data-size="16"></i><span>Повторить</span><kbd>Ctrl+Y</kbd></button>
-          <div class="app-menu-separator" aria-hidden="true"></div>
-          <button type="button" role="menuitem" data-edit-command="cut"><i class="icon menu-icon" data-icon="cut" data-size="16"></i><span>Вырезать</span><kbd>Ctrl+X</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="copy"><i class="icon menu-icon" data-icon="copy" data-size="16"></i><span>Копировать</span><kbd>Ctrl+C</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="paste"><i class="icon menu-icon" data-icon="paste" data-size="16"></i><span>Вставить</span><kbd>Ctrl+V</kbd></button>
-          <div class="app-menu-separator" aria-hidden="true"></div>
-          <button type="button" role="menuitem" data-edit-command="find"><i class="icon menu-icon" data-icon="find" data-size="16"></i><span>Найти</span><kbd>Ctrl+F</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="replace"><i class="icon menu-icon" data-icon="replace" data-size="16"></i><span>Найти и заменить</span><kbd>Ctrl+H</kbd></button>
-          <div class="app-menu-separator" aria-hidden="true"></div>
-          <button type="button" role="menuitem" data-edit-command="comment"><i class="icon menu-icon" data-icon="comment" data-size="16"></i><span>Закомментировать</span></button>
-          <button type="button" role="menuitem" data-edit-command="uncomment"><i class="icon menu-icon" data-icon="uncomment" data-size="16"></i><span>Раскомментировать</span></button>
+        <button id="edit-app-menu-button" class="ui-topbar-button" type="button" aria-expanded="false">Правка</button>
+        <div id="edit-app-menu" class="ui-menu app-menu app-menu-edit" role="menu" hidden>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="undo"><i class="icon ui-menu-icon menu-icon" data-icon="undo" data-size="16"></i><span>Отменить</span><kbd>Ctrl+Z</kbd></button>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="redo"><i class="icon ui-menu-icon menu-icon" data-icon="redo" data-size="16"></i><span>Повторить</span><kbd>Ctrl+Y</kbd></button>
+          <div class="ui-menu-separator app-menu-separator" aria-hidden="true"></div>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="cut"><i class="icon ui-menu-icon menu-icon" data-icon="cut" data-size="16"></i><span>Вырезать</span><kbd>Ctrl+X</kbd></button>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="copy"><i class="icon ui-menu-icon menu-icon" data-icon="copy" data-size="16"></i><span>Копировать</span><kbd>Ctrl+C</kbd></button>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="paste"><i class="icon ui-menu-icon menu-icon" data-icon="paste" data-size="16"></i><span>Вставить</span><kbd>Ctrl+V</kbd></button>
+          <div class="ui-menu-separator app-menu-separator" aria-hidden="true"></div>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="find"><i class="icon ui-menu-icon menu-icon" data-icon="find" data-size="16"></i><span>Найти</span><kbd>Ctrl+F</kbd></button>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="replace"><i class="icon ui-menu-icon menu-icon" data-icon="replace" data-size="16"></i><span>Найти и заменить</span><kbd>Ctrl+H</kbd></button>
+          <div class="ui-menu-separator app-menu-separator" aria-hidden="true"></div>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="comment"><i class="icon ui-menu-icon menu-icon" data-icon="comment" data-size="16"></i><span>Закомментировать</span></button>
+          <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="uncomment"><i class="icon ui-menu-icon menu-icon" data-icon="uncomment" data-size="16"></i><span>Раскомментировать</span></button>
         </div>
       </div>
       <div class="theme-wrapper">
-        <button id="theme-button" type="button" aria-expanded="false">
+        <button id="theme-button" class="ui-topbar-button" type="button" aria-expanded="false">
           <span class="appearance-label-full">Внешний вид</span>
           <span class="appearance-label-short">Вид</span>
         </button>
-        <div id="theme-menu" class="theme-menu" hidden>
-          <button id="theme-dark-button" type="button"><i class="icon menu-icon" data-icon="moon" data-size="16"></i><span>Тема: тёмная</span></button>
-          <button id="theme-light-button" type="button"><i class="icon menu-icon" data-icon="sun" data-size="16"></i><span>Тема: светлая</span></button>
-          <div class="theme-menu-separator" aria-hidden="true"></div>
+        <div id="theme-menu" class="ui-menu theme-menu" hidden>
+          <button id="theme-dark-button" class="ui-menu-item" type="button"><i class="icon ui-menu-icon menu-icon" data-icon="moon" data-size="16"></i><span>Тема: тёмная</span></button>
+          <button id="theme-light-button" class="ui-menu-item" type="button"><i class="icon ui-menu-icon menu-icon" data-icon="sun" data-size="16"></i><span>Тема: светлая</span></button>
+          <div class="ui-menu-separator theme-menu-separator" aria-hidden="true"></div>
           <div class="font-size-row">
             <span>Шрифт редактора</span>
-            <div class="font-size-control">
+            <div class="ui-stepper font-size-control">
               <button id="font-size-decrease" type="button" aria-label="Уменьшить шрифт редактора">−</button>
               <input id="font-size-input" type="number" min="10" max="32" step="1" value="16" aria-label="Размер шрифта в редакторе">
               <span>px</span>
@@ -83,15 +83,15 @@
           </div>
           <div class="font-size-row">
             <span>Шрифт консоли</span>
-            <div class="font-size-control">
+            <div class="ui-stepper font-size-control">
               <button id="console-font-size-decrease" type="button" aria-label="Уменьшить шрифт консоли">−</button>
               <input id="console-font-size-input" type="number" min="10" max="32" step="1" value="13" aria-label="Размер шрифта в консоли">
               <span>px</span>
               <button id="console-font-size-increase" type="button" aria-label="Увеличить шрифт консоли">+</button>
             </div>
           </div>
-          <div class="theme-menu-separator" aria-hidden="true"></div>
-          <label class="menu-check-row" title="Подсказки после точки и по мере ввода. Ctrl+Пробел работает всегда.">
+          <div class="ui-menu-separator theme-menu-separator" aria-hidden="true"></div>
+          <label class="ui-check menu-check-row" title="Подсказки после точки и по мере ввода. Ctrl+Пробел работает всегда.">
             <input id="autocomplete-toggle" type="checkbox" checked>
             <span>Автодополнение</span>
           </label>
@@ -100,12 +100,12 @@
       <!-- @site-nav -->
         <div id="color-picker-menu" class="color-picker-menu" hidden></div>
     </div>
-    <div class="run-actions">
-      <button id="run-button" class="run-button" type="button" title="Запустить: Ctrl+Enter" aria-label="Запустить: Ctrl+Enter">
+    <div class="ui-topbar-right run-actions">
+      <button id="run-button" class="ui-button ui-button--lg ui-button--run run-button" type="button" title="Запустить: Ctrl+Enter" aria-label="Запустить: Ctrl+Enter">
         <i class="icon" data-icon="play" data-size="18"></i>
         <span>Запустить</span>
       </button>
-      <button id="stop-button" class="stop-button" type="button" disabled>
+      <button id="stop-button" class="ui-button ui-button--lg ui-button--stop stop-button" type="button" disabled>
         <i class="icon" data-icon="stop" data-size="18"></i>
         <span>Остановить</span>
       </button>
@@ -116,20 +116,20 @@
 
   <main class="workspace">
     <aside class="files">
-      <div class="pane-title files-title">
+      <div class="ui-pane-title pane-title files-title">
         <span>Файлы</span>
         <div class="file-actions">
-          <button id="new-file-button" class="icon-button" type="button" title="Новый файл" aria-label="Новый файл">
+          <button id="new-file-button" class="ui-button ui-button--sm ui-button--icon icon-button" type="button" title="Новый файл" aria-label="Новый файл">
             <i class="icon" data-icon="file-new" data-size="18"></i>
           </button>
-          <button id="new-folder-button" class="icon-button" type="button" title="Новая папка" aria-label="Новая папка">
+          <button id="new-folder-button" class="ui-button ui-button--sm ui-button--icon icon-button" type="button" title="Новая папка" aria-label="Новая папка">
             <i class="icon" data-icon="folder-new" data-size="18"></i>
           </button>
           <div class="upload-wrapper">
-            <button id="upload-button" class="icon-button" type="button" title="Загрузить файл с компьютера" aria-label="Загрузить файл с компьютера" aria-expanded="false">
+            <button id="upload-button" class="ui-button ui-button--sm ui-button--icon icon-button" type="button" title="Загрузить файл с компьютера" aria-label="Загрузить файл с компьютера" aria-expanded="false">
               <i class="icon" data-icon="upload" data-size="18"></i>
             </button>
-            <div id="upload-menu" class="upload-menu" hidden>
+            <div id="upload-menu" class="ui-menu upload-menu" hidden>
               <button id="drop-area" class="drop-area" type="button">
                 <span>Перетащите файлы сюда</span>
                 <small>или нажмите, чтобы выбрать .idyl, .txt, ассеты или ZIP-проект; картинку из буфера обмена вставляет Ctrl+V</small>
@@ -138,34 +138,34 @@
                 <strong id="upload-conflict-name"></strong>
                 <span>Файл с таким именем уже существует. Заменить его?</span>
                 <div class="upload-conflict-actions">
-                  <button id="upload-conflict-skip" type="button">Оставить прежний</button>
-                  <button id="upload-conflict-replace" class="primary" type="button">Заменить</button>
+                  <button id="upload-conflict-skip" class="ui-button ui-button--sm" type="button">Оставить прежний</button>
+                  <button id="upload-conflict-replace" class="ui-button ui-button--sm ui-button--primary primary" type="button">Заменить</button>
                 </div>
               </div>
             </div>
           </div>
-          <button id="download-project-button" class="icon-button" type="button" title="Скачать проект" aria-label="Скачать проект">
+          <button id="download-project-button" class="ui-button ui-button--sm ui-button--icon icon-button" type="button" title="Скачать проект" aria-label="Скачать проект">
             <i class="icon" data-icon="download" data-size="18"></i>
           </button>
         </div>
       </div>
       <div id="file-list" class="file-list"></div>
-      <div id="file-context-menu" class="file-context-menu" hidden></div>
-      <div id="file-props-modal" class="file-props-backdrop" hidden></div>
+      <div id="file-context-menu" class="ui-menu ui-menu--fixed file-context-menu" hidden></div>
+      <div id="file-props-modal" class="ui-backdrop file-props-backdrop" hidden></div>
       <input id="upload-input" type="file" multiple hidden>
     </aside>
 
-    <div class="column-resizer" data-resizer="files" title="Изменить ширину панели файлов"></div>
+    <div class="ui-resizer column-resizer" data-resizer="files" title="Изменить ширину панели файлов"></div>
 
     <section class="editor-pane">
-      <div class="pane-title editor-titlebar">
+      <div class="ui-pane-title pane-title editor-titlebar">
         <span id="editor-title">main.idyl</span>
         <div class="editor-title-actions">
           <div id="structured-view-toggle" class="editor-view-toggle" role="group" aria-label="Режим просмотра данных" hidden>
             <button id="structured-text-view-button" type="button" class="active" aria-pressed="true">Текст</button>
             <button id="structured-data-view-button" type="button" aria-pressed="false">Просмотр</button>
           </div>
-          <button id="format-button" class="pane-action-button" type="button">Форматировать</button>
+          <button id="format-button" class="ui-button ui-button--sm pane-action-button" type="button">Форматировать</button>
         </div>
       </div>
       <div class="editor-shell">
@@ -179,26 +179,26 @@
           <div class="editor-stack">
             <pre id="highlight" class="highlight" aria-hidden="true"><code></code></pre>
             <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-            <div id="completion-popup" class="completion-popup" hidden></div>
+            <div id="completion-popup" class="ui-popover completion-popup" hidden></div>
           </div>
         </div>
       </div>
     </section>
 
-    <div class="column-resizer" data-resizer="runtime" title="Изменить ширину панели запуска"></div>
+    <div class="ui-resizer column-resizer" data-resizer="runtime" title="Изменить ширину панели запуска"></div>
 
     <section class="runtime-pane">
       <div class="output-pane">
-        <div class="pane-title">Вывод</div>
+        <div class="ui-pane-title pane-title">Вывод</div>
         <pre id="output"></pre>
         <div id="console-input-panel" class="console-input-panel" hidden>
           <input id="console-input" type="text" autocomplete="off" spellcheck="false" aria-label="Ввод для программы">
-          <button id="console-input-submit" type="button">Ввести</button>
+          <button id="console-input-submit" class="ui-button" type="button">Ввести</button>
         </div>
       </div>
-      <div id="runtime-row-resizer" class="runtime-row-resizer" title="Изменить высоту вывода"></div>
+      <div id="runtime-row-resizer" class="ui-resizer ui-resizer--horizontal runtime-row-resizer" title="Изменить высоту вывода"></div>
       <div class="preview-pane">
-        <div class="pane-title">Предварительный просмотр</div>
+        <div class="ui-pane-title pane-title">Предварительный просмотр</div>
         <iframe id="gui-frame" title="Idyllium GUI preview" src="gui-preview.html"></iframe>
       </div>
     </section>

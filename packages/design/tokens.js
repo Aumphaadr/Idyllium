@@ -37,6 +37,7 @@ const color = {
   'text-soft': ['#c9bdd6', '#463b56'],
   'text-muted': ['#8e819d', '#6d637b'],
   'on-accent': ['#0c0515', '#ffffff'],
+  'on-solid': ['#ffffff', '#ffffff'],
   // рамки
   border: ['#342846', '#c8bed5'],
   'border-soft': ['rgba(255, 255, 255, 0.08)', 'rgba(33, 26, 46, 0.14)'],
@@ -56,6 +57,8 @@ const color = {
   // действия
   run: ['#179f5b', '#177b49'],
   'run-hover': ['#1fba6d', '#12683d'],
+  stop: ['#c7728a', '#931f19'],
+  'stop-hover': ['#f38ba8', '#b3261e'],
   // служебные
   focus: ['#87bfff', '#275f9e'],
   selection: ['rgba(135, 191, 255, 0.28)', 'rgba(39, 95, 158, 0.22)'],
