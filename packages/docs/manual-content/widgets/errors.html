@@ -29,6 +29,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Button btn;
     btn.text = "Я невидимка";
     btn.x = 20;
@@ -55,6 +56,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
 
@@ -92,6 +94,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Button btn;
 
     // ОШИБКА: sender должен быть gui.Button, а не gui.Label
@@ -104,7 +107,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:8:20: compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'</idyl-error-block>
+      <idyl-error-block>main.idyl:9:20: compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'</idyl-error-block>
 
       <p>Сообщение длинное, но полезное: компилятор перечисляет, какие сигнатуры он готов принять для <code>on_click</code>, и какую получил. Исправление: указывайте в параметре <code>sender</code> тип того виджета, чей это обработчик.</p>
     </div>
@@ -119,12 +122,13 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Label label;
     label.text = 42;  // ОШИБКА!
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:18: compile error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+      <idyl-error-block>main.idyl:7:18: compile error: cannot assign 'int' value to 'string' variable</idyl-error-block>
 
       <p>Знакомое сообщение, правда? Оно то же самое, что и при работе с обычными переменными: <code>text</code> — строка, а <code>42</code> — число. Исправление: <code>label.text = to_string(42);</code></p>
     </div>
@@ -140,6 +144,7 @@ use console;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     btn.on_click = void function() {  // ОШИБКА: btn ещё не объявлена
         console.writeln("Нажато");
@@ -151,7 +156,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:7:5: compile error: 'btn' was not declared in this scope</idyl-error-block>
+      <idyl-error-block>main.idyl:8:5: compile error: 'btn' was not declared in this scope</idyl-error-block>
 
       <p>Компилятор не нашёл переменную <code>btn</code> — и сказал об этом ровно один раз, без эха о последствиях. Исправление: объявляйте виджет до его использования в обработчиках.</p>
     </div>
@@ -166,6 +171,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Label label;
     label.text = "Жду...";
 
@@ -198,6 +204,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Modal m;
     win.add_child(m);  // ОШИБКА!
     m.show_alert();
@@ -205,7 +212,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:19: compile error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'</idyl-error-block>
+      <idyl-error-block>main.idyl:7:19: compile error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'</idyl-error-block>
 
       <p>Исправление: модальные окна создаются и показываются динамически, без <code>add_child()</code> — достаточно <code>show_alert()</code>, <code>show_confirm()</code> или <code>show_input()</code>.</p>
     </div>
@@ -220,6 +227,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     array<gui.Button, 3> btns;
 
     for (int i = 0; i < 3; i = i + 1) {
@@ -234,7 +242,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:14: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)</idyl-error-block>
+      <idyl-error-block>main.idyl:15: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)</idyl-error-block>
 
       <p>Исправление: всегда проверяйте, что индекс в пределах <code>0 .. length - 1</code>.</p>
     </div>
@@ -249,12 +257,13 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Button btn;
     btn.placeholder = "Кнопка";  // ОШИБКА: у Button нет placeholder
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:5: compile error: type 'gui.Button' has no property 'placeholder'</idyl-error-block>
+      <idyl-error-block>main.idyl:7:5: compile error: type 'gui.Button' has no property 'placeholder'</idyl-error-block>
 
       <p>
         Исправление: сверяйтесь со справочником виджета. У кнопки есть
@@ -273,6 +282,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     gui.ComboBox combo;
     combo.add_item("Красный");
@@ -284,7 +294,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:9:5: compile error: property 'selected_text' is read-only</idyl-error-block>
+      <idyl-error-block>main.idyl:10:5: compile error: property 'selected_text' is read-only</idyl-error-block>
 
       <p>Исправление: выбирайте пункт по номеру — <code>combo.selected_index = 1;</code> — а <code>selected_text</code> используйте только для чтения.</p>
     </div>
@@ -300,6 +310,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.on_key_pressed = void function(gui.Window sender, gui.KeyboardEvent evt) {
         if (evt.key == "Escape") {
             win.close();

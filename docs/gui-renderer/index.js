@@ -12,9 +12,14 @@ function rendererAssetPaths() {
   };
 }
 
+// demo: кадр демонстрации в учебнике (стилевая база 1.6.4, этап 5; спека
+// some_lesson_demos/01 §4.3) — без строки «Idyllium GUI preview · окон: N»,
+// без перетаскивания окон и крестиков; renderer.js узнаёт режим по классу
+// body.demo. Снимок присылает страница учебника сообщением snapshot.
 function renderGuiWebviewHtml({
   cspSource,
   cssUri,
+  demo = false,
   hostBootstrap = 'window.IdylliumGuiHost = acquireVsCodeApi();',
   iconsUri,
   nonce,
@@ -33,12 +38,12 @@ function renderGuiWebviewHtml({
 ${csp}  <title>Idyllium GUI</title>
   <link rel="stylesheet" href="${htmlAttribute(cssUri)}">
 </head>
-<body>
-  <div class="toolbar">
+<body${demo ? ' class="demo"' : ''}>
+${demo ? '' : `  <div class="toolbar">
     <strong>Idyllium GUI preview</strong>
     <span id="summary"></span>
   </div>
-  <div id="stage" class="stage"></div>
+`}  <div id="stage" class="stage"></div>
   <script nonce="${htmlAttribute(nonce)}">
     window.IdylliumGuiInitialState = ${serialized};
     ${hostBootstrap}

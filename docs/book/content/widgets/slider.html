@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <!-- Hero -->
 
 
@@ -26,6 +14,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 100;
     win.title = "Громкость";
@@ -42,13 +31,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 30px; width: 260px;">
-              <input type="range" class="idyl-slider" style="width: 100%;" value="50" min="0" max="100">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="130"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":100,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Громкость","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Slider","properties":{"x":20,"y":30,"width":260,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"value":50,"min":0,"max":100,"step":1,"orientation":"horizontal","__explicit_properties":["value"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🎚️ Мы не задавали <code>min</code> и <code>max</code> — по умолчанию они равны 0 и 100, поэтому 50 — ровно середина. Попробуйте подвигать.
         </div>
@@ -80,6 +63,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Настройки Slider";
@@ -99,13 +83,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 30px; width: 260px;">
-              <input type="range" class="idyl-slider" style="width: 100%;" value="150" min="0" max="300" step="50">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Настройки Slider","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Slider","properties":{"x":20,"y":30,"width":260,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"value":150,"min":0,"max":300,"step":50,"orientation":"horizontal","__explicit_properties":["max","min","value"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🎯 Диапазон 0–300, шаг 50. Ползунок делает более резкие прыжки.<br>
           Ему становятся доступны значения: [0, 50, 100, 150, 200, 250, 300].
@@ -141,16 +119,7 @@ s2.height = 180;               // ...и высокий
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 200px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 85px; width: 200px;">
-              <input type="range" class="idyl-slider" style="width: 100%;" value="60" min="0" max="100">
-            </div>
-            <div style="position: absolute; left: 260px; top: 15px;">
-              <input type="range" class="idyl-slider" style="writing-mode: vertical-lr; direction: rtl; width: 30px; height: 170px;" value="60" min="0" max="100">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="322" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":320,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Две ориентации","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Slider","properties":{"x":20,"y":85,"width":200,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"value":60,"min":0,"max":100,"step":1,"orientation":"horizontal","__explicit_properties":["orientation","value"]},"children":[],"events":[]},{"id":3,"type":"gui.Slider","properties":{"x":260,"y":15,"width":30,"height":170,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"value":60,"min":0,"max":100,"step":1,"orientation":"vertical","__explicit_properties":["orientation","value"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🎚️ Оба ползунка стоят на одном значении: <code>"horizontal"</code> тянется вправо, <code>"vertical"</code> — вверх, минимум внизу.
         </div>
@@ -167,6 +136,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Настройки звука";
@@ -195,14 +165,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
-              <input type="range" class="idyl-slider" style="width: 100%;" value="50" min="0" max="100" id="sliderDemo">
-            </div>
-            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="sliderLabelDemo">Громкость: 50</div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Настройки звука","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Slider","properties":{"x":20,"y":20,"width":260,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"value":50,"min":0,"max":100,"step":1,"orientation":"horizontal","__explicit_properties":["max","min","value"]},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":20,"y":70,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Громкость: 50","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           📊 Двигайте ползунок — громкость отображается на лейбле в реальном времени.
         </div>
@@ -240,17 +203,3 @@ main() {
     </div>
 
     <!-- Lesson navigation -->
-
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 3: отображение громкости
-    const sliderDemo = document.getElementById('sliderDemo');
-    const sliderLabelDemo = document.getElementById('sliderLabelDemo');
-    if (sliderDemo && sliderLabelDemo) {
-      sliderDemo.addEventListener('input', () => {
-        sliderLabelDemo.textContent = 'Громкость: ' + sliderDemo.value;
-      });
-    }
-  });
-</script>

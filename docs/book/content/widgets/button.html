@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <div class="docs-section">
       <h2>Создание кнопки (повторение)</h2>
       <p>Как мы уже знаем из прошлого урока, кнопка создаётся через объявление переменной типа <code>gui.Button</code>:</p>
@@ -19,6 +7,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 200;
     win.title = "Кнопка-пустышка";
@@ -34,16 +23,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 200px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 50px;">
-              Нажми меня
-            </button>
-            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
-              (попробуйте нажать — пока ничего интересного)
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Кнопка-пустышка","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":50,"y":50,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Нажми меня","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🖱️ Попробуйте нажать на кнопку. Пока что происходит <strong>большое и прекрасное ничего</strong>.
         </div>
@@ -61,6 +41,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 200;
     win.title = "Рабочая кнопка";
@@ -81,16 +62,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 200px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 50px;" id="demoBtn">
-              Нажми меня
-            </button>
-            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
-              (работает! нажмите — текст изменится)
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo events='[{"type":"gui.Button","event":"click"}]' caption="Окно после нажатия на кнопку" data-frame-width="302" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Рабочая кнопка","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":50,"y":50,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка нажата!","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           ✨ Теперь при нажатии текст на кнопке меняется на «Кнопка нажата!».
         </div>
@@ -118,6 +90,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 200;
     win.title = "Битва за лейбл";
@@ -160,22 +133,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 200px; position: relative;">
-            <div style="position: absolute; left: 150px; top: 30px; font-size: 18px; color: #cdd6f4; font-weight: 500;" id="demoLabel">
-              ???
-            </div>
-            <button class="idyl-button" style="position: absolute; left: 30px; top: 100px; width: 140px;" id="leftDemoBtn">
-              Мой лейбл!
-            </button>
-            <button class="idyl-button" style="position: absolute; left: 250px; top: 100px; width: 120px;" id="rightDemoBtn">
-              Нет, мой!
-            </button>
-            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
-              (нажмите на кнопки — текст метки изменится)
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo events='[{"type":"gui.Button","text":"Нет, мой!","event":"click"}]' caption="Окно после нажатия правой кнопки" data-frame-width="402" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Битва за лейбл","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":150,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Нет, мой лейбл!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":30,"y":100,"width":140,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Мой лейбл!","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Button","properties":{"x":250,"y":100,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Нет, мой!","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🏆 Левая кнопка пишет на лейбле «Мой лейбл!», правая отвечает: «Нет, мой лейбл!». Обе кнопки управляют одним и тем же виджетом <code>label</code>.
         </div>
@@ -198,6 +156,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 200;
     win.title = "Ошибка";
@@ -217,7 +176,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:12:9: compile error: 'label' was not declared in this scope</idyl-error-block>
+      <idyl-error-block>main.idyl:13:9: compile error: 'label' was not declared in this scope</idyl-error-block>
 
       <p>«<code>label</code> was not declared in this scope» означает: в тот момент, когда компилятор читает обработчик, переменной <code>label</code> ещё нет — она объявлена ниже. Лекарство простое: <strong>объявляйте виджеты до обработчиков, которые к ним обращаются</strong>. Перенесите <code>gui.Label label;</code> выше <code>btn.on_click</code> — и программа скомпилируется.</p>
     </div>
@@ -234,6 +193,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 140;
     win.title = "Прощание";
@@ -295,30 +255,3 @@ main() {
       </table>
       <p>В следующем уроке мы познакомимся поближе с тем, за кого сегодня сражались, — с виджетом <code>gui.Label</code>.</p>
     </div>
-
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 2: кнопка меняет свой текст
-    const demoBtn = document.getElementById('demoBtn');
-    if (demoBtn) {
-      demoBtn.addEventListener('click', () => {
-        demoBtn.textContent = 'Кнопка нажата!';
-      });
-    }
-
-    // Пример 3: две кнопки управляют меткой
-    const leftDemoBtn = document.getElementById('leftDemoBtn');
-    const rightDemoBtn = document.getElementById('rightDemoBtn');
-    const demoLabel = document.getElementById('demoLabel');
-
-    if (leftDemoBtn && rightDemoBtn && demoLabel) {
-      leftDemoBtn.addEventListener('click', () => {
-        demoLabel.textContent = 'Мой лейбл!';
-      });
-      rightDemoBtn.addEventListener('click', () => {
-        demoLabel.textContent = 'Нет, мой лейбл!';
-      });
-    }
-  });
-</script>

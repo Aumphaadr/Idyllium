@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <!-- Hero -->
     
 
@@ -32,6 +20,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 250;
     win.height = 100;
     win.title = "ComboBox";
@@ -51,17 +40,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 30px;">
-              <select class="idyl-combobox" style="width: 200px;">
-                <option>Пункт 1</option>
-                <option>Пункт 2</option>
-                <option>Пункт 3</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="252" data-frame-height="130"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":250,"height":100,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"ComboBox","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.ComboBox","properties":{"x":20,"y":30,"width":200,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"selected_index":0,"selected_text":"Пункт 1"},"children":[],"events":[],"items":["Пункт 1","Пункт 2","Пункт 3"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           📋 Выпадающий список с тремя пунктами. Нажмите, чтобы раскрыть.
         </div>
@@ -79,6 +58,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 140;
     win.title = "Список цветов";
@@ -108,16 +88,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <select class="idyl-combobox" style="position: absolute; left: 20px; top: 20px; width: 200px;" id="clearCombo">
-              <option>Красный</option>
-              <option>Зелёный</option>
-              <option>Синий</option>
-            </select>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 150px;" id="clearListBtn">Очистить список</button>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="170"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":140,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Список цветов","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.ComboBox","properties":{"x":20,"y":20,"width":200,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"selected_index":0,"selected_text":"Красный"},"children":[],"events":[],"items":["Красный","Зелёный","Синий"]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":70,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Очистить список","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🧹 Сначала в списке три цвета. Нажмите «Очистить список» — и пункты исчезнут.
         </div>
@@ -145,6 +116,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Выбор цвета";
@@ -182,17 +154,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 150px; position: relative;">
-            <select class="idyl-combobox" style="position: absolute; left: 20px; top: 20px; width: 200px;" id="demoCombo">
-              <option>Красный</option>
-              <option>Зелёный</option>
-              <option>Синий</option>
-            </select>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 150px;" id="showChoiceBtn">Показать выбор</button>
-            <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="choiceLabel"></div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Выбор цвета","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.ComboBox","properties":{"x":20,"y":20,"width":200,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"selected_index":0,"selected_text":"Красный"},"children":[],"events":[],"items":["Красный","Зелёный","Синий"]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":70,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Показать выбор","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Label","properties":{"x":20,"y":110,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🎨 Выберите цвет из списка, нажмите кнопку — программа покажет ваш выбор.
         </div>
@@ -213,6 +175,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.title = "Выбор цвета";
 
     gui.ComboBox combo;
@@ -227,7 +190,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:12:5: compile error: property 'selected_text' is read-only</idyl-error-block>
+      <idyl-error-block>main.idyl:13:5: compile error: property 'selected_text' is read-only</idyl-error-block>
 
       <p>
         Компилятор останавливает программу: <code>selected_text</code> — свойство
@@ -250,6 +213,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 120;
     win.title = "Мгновенная реакция";
@@ -279,16 +243,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <select class="idyl-combobox" style="position: absolute; left: 20px; top: 20px; width: 200px;" id="changeCombo">
-              <option>Красный</option>
-              <option>Зелёный</option>
-              <option>Синий</option>
-            </select>
-            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="changeLabel">Выберите цвет</div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Мгновенная реакция","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.ComboBox","properties":{"x":20,"y":20,"width":200,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"selected_index":0,"selected_text":"Красный"},"children":[],"events":[],"items":["Красный","Зелёный","Синий"]},{"id":3,"type":"gui.Label","properties":{"x":20,"y":70,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Выберите цвет","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🔄 Меняйте выбранный пункт — лейбл обновляется мгновенно.
         </div>
@@ -321,36 +276,3 @@ main() {
     </div>
 
     <!-- Lesson navigation -->
-
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 2: очистка списка
-    const clearCombo = document.getElementById('clearCombo');
-    const clearListBtn = document.getElementById('clearListBtn');
-    if (clearCombo && clearListBtn) {
-      clearListBtn.addEventListener('click', () => {
-        clearCombo.innerHTML = '';
-      });
-    }
-
-    // Пример 3: выбор из списка
-    const demoCombo = document.getElementById('demoCombo');
-    const showChoiceBtn = document.getElementById('showChoiceBtn');
-    const choiceLabel = document.getElementById('choiceLabel');
-    if (demoCombo && showChoiceBtn && choiceLabel) {
-      showChoiceBtn.addEventListener('click', () => {
-        choiceLabel.textContent = 'Вы выбрали: ' + demoCombo.value;
-      });
-    }
-
-    // Пример 5: on_change
-    const changeCombo = document.getElementById('changeCombo');
-    const changeLabel = document.getElementById('changeLabel');
-    if (changeCombo && changeLabel) {
-      changeCombo.addEventListener('change', () => {
-        changeLabel.textContent = 'Вы выбрали: ' + changeCombo.value;
-      });
-    }
-  });
-</script>

@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <!-- Hero -->
     
 
@@ -23,6 +11,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 250;
     win.title = "Скрыть все";
@@ -47,15 +36,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 210px; position: relative;" id="hideAllDemo">
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 120px;">Кнопка 0</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 55px; width: 120px;">Кнопка 1</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 90px; width: 120px;">Кнопка 2</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 125px; width: 120px;">Кнопка 3</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 160px; width: 120px;">Кнопка 4</button>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🔘 Нажмите на любую кнопку — скроются все пять. У всех кнопок одна и та же функция-обработчик, и она не знает, какая именно кнопка её вызвала.
         </div>
@@ -73,6 +54,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 250;
     win.title = "Кто нажал?";
@@ -103,16 +85,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 230px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 150px;" id="senderBtn0">Кнопка 0</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 50px; width: 150px;" id="senderBtn1">Кнопка 1</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 80px; width: 150px;" id="senderBtn2">Кнопка 2</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 110px; width: 150px;" id="senderBtn3">Кнопка 3</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 140px; width: 150px;" id="senderBtn4">Кнопка 4</button>
-            <div style="position: absolute; left: 20px; top: 200px; color: #cdd6f4;" id="senderResult">Нажми на любую кнопку</div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🎯 Теперь обработчик знает, какая кнопка его вызвала, и выводит её текст.
         </div>
@@ -133,6 +106,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 220;
     win.title = "Sender в LineEdit";
@@ -164,20 +138,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 210px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 0" id="senderInput0">
-            </div>
-            <div style="position: absolute; left: 20px; top: 60px;">
-              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 1" id="senderInput1">
-            </div>
-            <div style="position: absolute; left: 20px; top: 100px;">
-              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 2" id="senderInput2">
-            </div>
-            <div style="position: absolute; left: 20px; top: 160px; color: #cdd6f4;" id="senderLineEditResult">Измени текст в любом поле</div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           ✏️ Начните печатать в любом поле — обработчик определит, какое именно поле вызвало событие, и покажет это.
         </div>
@@ -237,6 +198,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     gui.Button btn;
     btn.text = "Нажми";
@@ -251,7 +213,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:10:20: compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'</idyl-error-block>
+      <idyl-error-block>main.idyl:11:20: compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'</idyl-error-block>
 
       <p>Сообщение длинное, но читается просто: <code>on_click</code> у кнопки ждёт функцию без параметров <strong>или</strong> функцию с параметром <code>gui.Button</code>, а получил функцию с параметром <code>gui.Label</code>. Исправление одно — указать в скобках тот тип, чей это обработчик.</p>
       <div class="tip-box">
@@ -261,40 +223,3 @@ main() {
 
     <!-- Lesson navigation -->
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 1: скрытие всех кнопок
-    const hideAllDemo = document.getElementById('hideAllDemo');
-    if (hideAllDemo) {
-      const btns = hideAllDemo.querySelectorAll('.idyl-button');
-      btns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          btns.forEach(b => b.style.display = 'none');
-        });
-      });
-    }
-
-    // Пример 2: sender для кнопок
-    const senderResult = document.getElementById('senderResult');
-    for (let i = 0; i <= 4; i++) {
-      const btn = document.getElementById('senderBtn' + i);
-      if (btn && senderResult) {
-        btn.addEventListener('click', () => {
-          senderResult.textContent = 'Нажата кнопка ' + btn.textContent;
-        });
-      }
-    }
-
-    // Пример 3: sender для LineEdit
-    const senderLineEditResult = document.getElementById('senderLineEditResult');
-    for (let i = 0; i <= 2; i++) {
-      const input = document.getElementById('senderInput' + i);
-      if (input && senderLineEditResult) {
-        input.addEventListener('input', () => {
-          senderLineEditResult.textContent = 'Изменено поле: ' + input.placeholder;
-        });
-      }
-    }
-  });
-</script>

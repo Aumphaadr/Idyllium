@@ -5,6 +5,7 @@ const nodeCrypto: any = require('crypto');
 import { buildReferenceSite } from './docs-build-reference';
 import { SITE_SECTIONS, injectSiteTopbar, siteNavAssetsHtml, siteTopbarHtml } from './site-nav';
 import { iconSvg, isIconName } from '../src/icons';
+import { GuiDemoFile, bakeLessonGuiDemos } from './lesson-gui-demos';
 
 /** Версия сайта — из package.json (единственный источник версии). Уходит в шапку каждой страницы. */
 const SITE_VERSION = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version);
@@ -80,6 +81,7 @@ const MANAGED_PATHS = [
   'vendor',
   'gui-renderer',
   'gui-preview.html',
+  'gui-demo.html',
   'embed',
   'authors',
   'book',
@@ -936,7 +938,7 @@ function refreshAiReferenceFile(referencePath: string): void {
   if (updated !== source) fs.writeFileSync(referencePath, updated, 'utf8');
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const sourceRoot = path.resolve(readArg('--source') ?? DEFAULT_SOURCE_ROOT);
   const siteRoot = path.resolve(readArg('--out') ?? DEFAULT_OUTPUT_ROOT);
   const bookRoot = path.join(siteRoot, 'book');
@@ -956,13 +958,20 @@ function main(): void {
   copyDocsSiteStyles(siteRoot);
 
   const oldLessons = JSON.parse(fs.readFileSync(lessonsJsonPath, 'utf8')) as OldLessonsJson;
-  const convertedSections = oldLessons.sections.map((section) => convertSection(section, lessonsRoot, bookRoot));
+  // Демонстрации уроков (<idyl-gui-demo>) запекаются запуском программ — это
+  // асинхронно, поэтому уроки конвертируются по очереди, а не map-ом.
+  const demoFiles = guiDemoFiles();
+  const convertedSections: SiteSection[] = [];
+  for (const section of oldLessons.sections) {
+    convertedSections.push(await convertSection(section, lessonsRoot, bookRoot, demoFiles));
+  }
   const manifest: SiteManifest = {
     version: 1,
     generatedAt: new Date().toISOString(),
     sourceRoot: normalizePath(path.relative(process.cwd(), sourceRoot)) || '.',
-    sections: orderedSections(withManualLessons(convertedSections, bookRoot)),
+    sections: orderedSections(await withManualLessons(convertedSections, bookRoot, demoFiles)),
   };
+  console.log(`gui demos baked: ${bakedGuiDemos}`);
 
   // «Задачник» строится по той же карте, что и учебник: одинаковые разделы,
   // одинаковые перечни тем. Заодно проставляет hasTasks в манифест учебника —
@@ -2086,11 +2095,12 @@ ${siteTopbarHtml(sectionId, { prefix: '../', version: SITE_VERSION })}
 `;
 }
 
-function convertSection(
+async function convertSection(
   oldSection: OldSection,
   lessonsRoot: string,
   outputRoot: string,
-): SiteSection {
+  demoFiles: GuiDemoFiles,
+): Promise<SiteSection> {
   const meta = SECTION_RENAMES[oldSection.id] ?? { id: oldSection.id, title: oldSection.title, icon: oldSection.icon ?? 'section' };
   const usedSlugs = new Set<string>();
   const lessons: SiteLesson[] = [];
@@ -2110,7 +2120,7 @@ function convertSection(
       || (replacement !== undefined && fs.existsSync(path.resolve(process.cwd(), replacement)));
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, hasSource
-      ? lessonFragment(sourceFile, lessonSource(sourceFile, sourcePath))
+      ? await bakeGuiDemos(lessonFragment(sourceFile, lessonSource(sourceFile, sourcePath)), replacement ?? `${normalizePath(path.relative(process.cwd(), sourcePath))}`, demoFiles)
       : missingLessonFragment(oldSection.title, lessonRef.title), 'utf8');
 
     lessons.push({
@@ -2165,7 +2175,7 @@ function plannedSection(outputRoot: string, id: string, title: string, icon: str
   };
 }
 
-function withManualLessons(sections: readonly SiteSection[], outputRoot: string): SiteSection[] {
+async function withManualLessons(sections: readonly SiteSection[], outputRoot: string, demoFiles: GuiDemoFiles): Promise<SiteSection[]> {
   const byId = new Map<string, SiteSection>();
   for (const section of sections) byId.set(section.id, { ...section, lessons: [...section.lessons] });
 
@@ -2198,7 +2208,7 @@ function withManualLessons(sections: readonly SiteSection[], outputRoot: string)
     const outputPath = path.join(outputRoot, outputFile);
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, fs.existsSync(sourcePath)
-      ? fs.readFileSync(sourcePath, 'utf8')
+      ? await bakeGuiDemos(fs.readFileSync(sourcePath, 'utf8'), manual.sourceFile, demoFiles)
       : missingLessonFragment(section.title, manual.title), 'utf8');
 
     const lesson: SiteLesson = {
@@ -2388,10 +2398,47 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
   writeCurrentVersion(path.join(outputRoot, 'version.json'));
 
   fs.mkdirSync(path.join(outputRoot, 'assets'), { recursive: true });
-  const bookAssetsRoot = path.resolve(process.cwd(), 'packages', 'docs', 'book-assets');
-  for (const asset of ['cat.png', 'walk.gif', 'click.wav', 'theme.mp3']) {
-    copyFileIfExists(path.join(bookAssetsRoot, asset), path.join(outputRoot, 'assets', asset));
+  for (const asset of BOOK_ASSET_NAMES) {
+    copyFileIfExists(path.join(BOOK_ASSETS_ROOT, asset), path.join(outputRoot, 'assets', asset));
   }
+}
+
+/** Ассеты книги: программы уроков читают их как файлы рядом с собой, страница отдаёт их из book/assets/. */
+const BOOK_ASSET_NAMES = ['cat.png', 'walk.gif', 'click.wav', 'theme.mp3'];
+const BOOK_ASSETS_ROOT = path.resolve(process.cwd(), 'packages', 'docs', 'book-assets');
+
+interface GuiDemoFiles {
+  readonly files: readonly GuiDemoFile[];
+  readonly resolveFile: (name: string) => GuiDemoFile | null;
+}
+
+/**
+ * Файлы для программ демонстраций (tools/lesson-gui-demos.ts): ассеты книги —
+ * всегда; по files="…" в уроке — шрифты сайта (packages/fonts → /fonts/) и
+ * раздатка (packages/docs/handouts → /handouts/files/). Адрес на сайте
+ * относителен кадра gui-demo.html в корне сайта — его читает рендерер.
+ */
+function guiDemoFiles(): GuiDemoFiles {
+  const files = BOOK_ASSET_NAMES
+    .filter((name) => fs.existsSync(path.join(BOOK_ASSETS_ROOT, name)))
+    .map((name) => ({ name, path: path.join(BOOK_ASSETS_ROOT, name), resourceUri: `book/assets/${name}` }));
+  const fontsRoot = path.resolve(process.cwd(), 'packages', 'fonts');
+  const handoutsRoot = path.resolve(process.cwd(), 'packages', 'docs', 'handouts');
+  const resolveFile = (name: string): GuiDemoFile | null => {
+    if (name.includes('/') || name.includes('\\') || name.startsWith('.')) return null;
+    if (fs.existsSync(path.join(fontsRoot, name))) return { name, path: path.join(fontsRoot, name), resourceUri: `fonts/${name}` };
+    if (fs.existsSync(path.join(handoutsRoot, name))) return { name, path: path.join(handoutsRoot, name), resourceUri: `handouts/files/${encodeURIComponent(name)}` };
+    return null;
+  };
+  return { files, resolveFile };
+}
+
+let bakedGuiDemos = 0;
+
+async function bakeGuiDemos(html: string, lessonLabel: string, demoFiles: GuiDemoFiles): Promise<string> {
+  const baked = await bakeLessonGuiDemos(html, { lessonLabel, files: demoFiles.files, resolveFile: demoFiles.resolveFile });
+  bakedGuiDemos += baked.count;
+  return baked.html;
 }
 
 function copyBookShell(outputRoot: string): void {
@@ -2602,4 +2649,7 @@ function escapeScriptText(value: string): string {
   return value.replace(/<\/script>/giu, '<\\/script>');
 }
 
-main();
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  process.exitCode = 1;
+});

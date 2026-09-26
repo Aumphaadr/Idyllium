@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <div class="docs-section">
   <h2>Что такое Frame?</h2>
   <p>Когда в окне два виджета, всё понятно и так. Но когда их становится десять, окно превращается в кучу кнопок и полей — глазам не за что зацепиться. Хочется разложить виджеты по «коробочкам»: тут настройки звука, там данные игрока.</p>
@@ -29,6 +17,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Окно с рамкой";
@@ -46,14 +35,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 150px; position: relative;">
-        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 260px; height: 100px;">
-          <legend class="idyl-frame-title">Настройки</legend>
-          <div class="idyl-frame-content" style="height: 100%;"></div>
-        </fieldset>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       🖼️ Рамка с заголовком. Пока пустая — внутри нет виджетов.
     </div>
@@ -69,6 +51,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 290;
     win.title = "Настройки пользователя";
@@ -113,23 +96,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 270px; position: relative;">
-        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 350px; height: 220px;">
-          <legend class="idyl-frame-title">Личные данные</legend>
-          <div class="idyl-frame-content" style="position: relative; height: 100%;">
-            <div style="position: absolute; left: 15px; top: 30px; color: #cdd6f4;">Имя:</div>
-            <div style="position: absolute; left: 15px; top: 55px;">
-              <input type="text" class="idyl-lineedit" style="width: 280px;">
-            </div>
-            <div style="position: absolute; left: 15px; top: 90px; color: #cdd6f4;">Город:</div>
-            <div style="position: absolute; left: 15px; top: 115px;">
-              <input type="text" class="idyl-lineedit" style="width: 280px;">
-            </div>
-          </div>
-        </fieldset>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       📦 Виджеты внутри рамки. Координаты считаются <strong>относительно рамки</strong>, а не окна.
     </div>
@@ -145,6 +112,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 300;
     win.title = "Вложенные рамки";
@@ -178,23 +146,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 280px; position: relative;">
-        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 360px; height: 250px;">
-          <legend class="idyl-frame-title">Основная рамка</legend>
-          <div class="idyl-frame-content" style="position: relative; height: 100%;">
-            <fieldset class="idyl-frame" style="position: absolute; left: 15px; top: 30px; width: 150px; height: 100px;">
-              <legend class="idyl-frame-title">Блок 1</legend>
-              <div class="idyl-frame-content"></div>
-            </fieldset>
-            <fieldset class="idyl-frame" style="position: absolute; left: 180px; top: 30px; width: 150px; height: 100px;">
-              <legend class="idyl-frame-title">Блок 2</legend>
-              <div class="idyl-frame-content"></div>
-            </fieldset>
-          </div>
-        </fieldset>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       🪆 Рамка внутри рамки. Координаты внутренней рамки — относительно внешней.
     </div>
@@ -211,6 +163,7 @@ use colors;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 320;
     win.height = 180;
     win.title = "Стиль рамки";
@@ -231,14 +184,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 160px; position: relative;">
-        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 280px; height: 120px; background: #1E2B3C; border: 3px solid #008080;">
-          <legend class="idyl-frame-title">Панель героя</legend>
-          <div class="idyl-frame-content" style="height: 100%;"></div>
-        </fieldset>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       🎨 Тёмно-синий фон, бирюзовая граница толщиной 3 пикселя. Такая панель сразу видна в игре.
     </div>
@@ -254,6 +200,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 340;
     win.height = 200;
     win.title = "Где мой лейбл?";
@@ -285,17 +232,7 @@ main() {
   <p>Лейбл добавлен в <strong>рамку</strong>, значит его координаты отсчитываются от угла рамки. Реальная позиция на окне получается сложением: <code>20&nbsp;+&nbsp;40&nbsp;=&nbsp;60</code> по горизонтали и <code>60&nbsp;+&nbsp;90&nbsp;=&nbsp;150</code> по вертикали — лейбл уехал к нижнему краю панели:</p>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 200px; position: relative;">
-        <div style="position: absolute; left: 40px; top: 90px; padding: 2px 8px; border: 1px dashed #f38ba8; border-radius: 6px; color: #f38ba8; opacity: 0.85;">ожидал здесь</div>
-        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 60px; width: 300px; height: 120px;">
-          <legend class="idyl-frame-title">Панель</legend>
-          <div class="idyl-frame-content" style="position: relative; height: 100%;">
-            <div style="position: absolute; left: 40px; top: 90px; color: #cdd6f4;">Я должен быть выше!</div>
-          </div>
-        </fieldset>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       👀 Пунктиром — где лейбл ожидали. На самом деле он на (40, 90) <strong>от угла рамки</strong>, то есть на (60, 150) от угла окна.
     </div>

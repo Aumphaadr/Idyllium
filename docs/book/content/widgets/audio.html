@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <div class="docs-section">
   <h2>Звук по нажатию кнопки</h2>
   <p>
@@ -32,6 +20,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 320;
     win.height = 160;
     win.title = "Кнопка со звуком";
@@ -55,11 +44,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 130px; position: relative;">
-        <button class="idyl-button" style="position: absolute; left: 70px; top: 50px; width: 160px;" id="playClickBtn">Нажми меня</button>
-      </div>
-    </div>
+    <idyl-gui-demo data-frame-width="322" data-frame-height="190"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":320,"height":160,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Кнопка со звуком","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":70,"y":50,"width":160,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Нажми меня","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       🔊 Нажмите на кнопку — прозвучит настоящий щелчок, как в программе выше. Нажимайте быстро — звуки будут накладываться друг на друга.
     </div>
@@ -92,6 +77,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 320;
     win.height = 160;
     win.title = "Тихий щелчок";
@@ -165,6 +151,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 560;
     win.height = 210;
     win.title = "Музыкальный плеер";
@@ -240,6 +227,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 320;
     win.height = 160;
     win.title = "Фоновая музыка";
@@ -287,6 +275,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 460;
     win.height = 180;
     win.title = "Перемотка";
@@ -358,6 +347,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 360;
     win.height = 160;
     win.title = "Событие on_finished";
@@ -446,16 +436,3 @@ music.on_finished = void function(audio.Music current) {
   </p>
 </div>
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 1: кнопка со звуком
-    const playClickBtn = document.getElementById('playClickBtn');
-    if (playClickBtn) {
-      playClickBtn.addEventListener('click', () => {
-        const s = new Audio('assets/click.wav');
-        s.play();
-      });
-    }
-  });
-</script>

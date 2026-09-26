@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <div class="docs-section">
   <h2>Что такое CheckBox?</h2>
   <p>Представьте, что вы делаете игру и добавили в неё музыку. Звучит здорово — но только пока игрок не решил поиграть ночью, когда все спят. Ему нужен способ выключить звук. А завтра — включить обратно. Одним щелчком.</p>
@@ -22,6 +10,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 250;
     win.height = 100;
     win.title = "Настройки звука";
@@ -37,16 +26,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 100px; position: relative;">
-        <div style="position: absolute; left: 20px; top: 30px;">
-          <label class="idyl-checkbox-wrapper">
-            <input type="checkbox" class="idyl-checkbox">
-            <span class="idyl-checkbox-label">Включить звук</span>
-          </label>
-        </div>
-      </div>
-    </div>
+    <idyl-gui-demo data-frame-width="252" data-frame-height="130"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":250,"height":100,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Настройки звука","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.CheckBox","properties":{"x":20,"y":30,"width":180,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Включить звук","is_checked":false},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       ✅ Обычный флажок с текстом. Попробуйте поставить/снять галочку.
     </div>
@@ -66,6 +46,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Состояние CheckBox";
@@ -102,16 +83,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 150px; position: relative;">
-        <label class="idyl-checkbox-wrapper" style="position: absolute; left: 20px; top: 20px;">
-          <input type="checkbox" class="idyl-checkbox" id="stateCheckbox">
-          <span class="idyl-checkbox-label">Включить режим</span>
-        </label>
-        <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 180px;" id="stateBtn">Показать состояние</button>
-        <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="stateLabel"></div>
-      </div>
-    </div>
+    <idyl-gui-demo data-frame-width="302" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Состояние CheckBox","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.CheckBox","properties":{"x":20,"y":20,"width":180,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Включить режим","is_checked":false},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":70,"width":180,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Показать состояние","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Label","properties":{"x":20,"y":110,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       📋 Кнопка читает состояние <code>is_checked</code> и выводит результат на лейбл.
     </div>
@@ -127,6 +99,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Реакция на изменение";
@@ -156,15 +129,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 130px; position: relative;">
-        <label class="idyl-checkbox-wrapper" style="position: absolute; left: 20px; top: 20px;">
-          <input type="checkbox" class="idyl-checkbox" id="changeCheckbox">
-          <span class="idyl-checkbox-label">Согласен на получение рассылки</span>
-        </label>
-        <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="changeLabel">Вы не согласны на рассылку</div>
-      </div>
-    </div>
+    <idyl-gui-demo data-frame-width="352" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Реакция на изменение","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.CheckBox","properties":{"x":20,"y":20,"width":180,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Согласен на получение рассылки","is_checked":false},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":20,"y":70,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Вы не согласны на рассылку","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       🔄 Текст под флажком меняется мгновенно при каждом переключении.
     </div>
@@ -198,6 +163,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.title = "Настройки";
 
     gui.CheckBox cb;
@@ -209,7 +175,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:9:21: compile error: cannot assign 'string' value to 'bool' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:10:21: compile error: cannot assign 'string' value to 'bool' variable</idyl-error-block>
 
   <p>Компилятор напоминает: <code>is_checked</code> — это <code>bool</code>, и для него существуют ровно два значения. Правильно так: <code>cb.is_checked = true;</code> — галочка появится сразу при запуске программы.</p>
 </div>
@@ -219,35 +185,3 @@ main() {
   <p>Каждый CheckBox живёт сам по себе: звук, субтитры и полный экран можно включать в любых сочетаниях — хоть все сразу. Но бывает и другая задача: выбрать <strong>ровно один</strong> вариант из нескольких. Уровень сложности не может быть одновременно «лёгким» и «сложным»!</p>
   <p>Для такого выбора нужен другой виджет — <code>RadioButton</code>. О нём — в следующем уроке.</p>
 </div>
-
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 2: состояние CheckBox
-    const stateCheckbox = document.getElementById('stateCheckbox');
-    const stateBtn = document.getElementById('stateBtn');
-    const stateLabel = document.getElementById('stateLabel');
-    if (stateCheckbox && stateBtn && stateLabel) {
-      stateBtn.addEventListener('click', () => {
-        if (stateCheckbox.checked) {
-          stateLabel.textContent = 'Режим ВКЛЮЧЁН';
-        } else {
-          stateLabel.textContent = 'Режим ВЫКЛЮЧЕН';
-        }
-      });
-    }
-
-    // Пример 3: on_change
-    const changeCheckbox = document.getElementById('changeCheckbox');
-    const changeLabel = document.getElementById('changeLabel');
-    if (changeCheckbox && changeLabel) {
-      changeCheckbox.addEventListener('change', () => {
-        if (changeCheckbox.checked) {
-          changeLabel.textContent = 'Спасибо! Будем присылать новости';
-        } else {
-          changeLabel.textContent = 'Вы не согласны на рассылку';
-        }
-      });
-    }
-  });
-</script>

@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <div class="docs-section">
   <h2>Что такое CheckBox?</h2>
   <p>Представьте, что вы делаете игру и добавили в неё музыку. Звучит здорово — но только пока игрок не решил поиграть ночью, когда все спят. Ему нужен способ выключить звук. А завтра — включить обратно. Одним щелчком.</p>
@@ -22,6 +10,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 250;
     win.height = 100;
     win.title = "Настройки звука";
@@ -37,16 +26,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 100px; position: relative;">
-        <div style="position: absolute; left: 20px; top: 30px;">
-          <label class="idyl-checkbox-wrapper">
-            <input type="checkbox" class="idyl-checkbox">
-            <span class="idyl-checkbox-label">Включить звук</span>
-          </label>
-        </div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       ✅ Обычный флажок с текстом. Попробуйте поставить/снять галочку.
     </div>
@@ -66,6 +46,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Состояние CheckBox";
@@ -102,16 +83,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 150px; position: relative;">
-        <label class="idyl-checkbox-wrapper" style="position: absolute; left: 20px; top: 20px;">
-          <input type="checkbox" class="idyl-checkbox" id="stateCheckbox">
-          <span class="idyl-checkbox-label">Включить режим</span>
-        </label>
-        <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 180px;" id="stateBtn">Показать состояние</button>
-        <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="stateLabel"></div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       📋 Кнопка читает состояние <code>is_checked</code> и выводит результат на лейбл.
     </div>
@@ -127,6 +99,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Реакция на изменение";
@@ -156,15 +129,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 130px; position: relative;">
-        <label class="idyl-checkbox-wrapper" style="position: absolute; left: 20px; top: 20px;">
-          <input type="checkbox" class="idyl-checkbox" id="changeCheckbox">
-          <span class="idyl-checkbox-label">Согласен на получение рассылки</span>
-        </label>
-        <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="changeLabel">Вы не согласны на рассылку</div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       🔄 Текст под флажком меняется мгновенно при каждом переключении.
     </div>
@@ -198,6 +163,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.title = "Настройки";
 
     gui.CheckBox cb;
@@ -209,7 +175,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:9:21: compile error: cannot assign 'string' value to 'bool' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:10:21: compile error: cannot assign 'string' value to 'bool' variable</idyl-error-block>
 
   <p>Компилятор напоминает: <code>is_checked</code> — это <code>bool</code>, и для него существуют ровно два значения. Правильно так: <code>cb.is_checked = true;</code> — галочка появится сразу при запуске программы.</p>
 </div>
@@ -220,34 +186,3 @@ main() {
   <p>Для такого выбора нужен другой виджет — <code>RadioButton</code>. О нём — в следующем уроке.</p>
 </div>
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 2: состояние CheckBox
-    const stateCheckbox = document.getElementById('stateCheckbox');
-    const stateBtn = document.getElementById('stateBtn');
-    const stateLabel = document.getElementById('stateLabel');
-    if (stateCheckbox && stateBtn && stateLabel) {
-      stateBtn.addEventListener('click', () => {
-        if (stateCheckbox.checked) {
-          stateLabel.textContent = 'Режим ВКЛЮЧЁН';
-        } else {
-          stateLabel.textContent = 'Режим ВЫКЛЮЧЕН';
-        }
-      });
-    }
-
-    // Пример 3: on_change
-    const changeCheckbox = document.getElementById('changeCheckbox');
-    const changeLabel = document.getElementById('changeLabel');
-    if (changeCheckbox && changeLabel) {
-      changeCheckbox.addEventListener('change', () => {
-        if (changeCheckbox.checked) {
-          changeLabel.textContent = 'Спасибо! Будем присылать новости';
-        } else {
-          changeLabel.textContent = 'Вы не согласны на рассылку';
-        }
-      });
-    }
-  });
-</script>

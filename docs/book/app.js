@@ -1112,9 +1112,162 @@
     }
   }
 
+  // Демонстрация урока (стилевая база 1.6.4, этап 5): снимок окон настоящей
+  // программы, запечённый сборкой (tools/lesson-gui-demos.ts), рисует настоящий
+  // рендерер в кадре ../gui-demo.html — тот же код, что предпросмотр Web IDE.
+  // Кадр реальных размеров окна; шире колонки — уменьшается целиком. Тема
+  // кадра следует теме сайта. Демо — картинка, не игра: сцена кадра inert.
+  const GUI_DEMO_FRAME = '../gui-demo.html';
+
+  function siteTheme() {
+    if (window.idylliumTheme && typeof window.idylliumTheme.get === 'function') return window.idylliumTheme.get();
+    return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  }
+
+  class IdylGuiDemo extends HTMLElement {
+    connectedCallback() {
+      if (this.dataset.ready !== '1') {
+        this.dataset.ready = '1';
+        this.build();
+      }
+      this.attach();
+    }
+
+    disconnectedCallback() {
+      this.detach();
+    }
+
+    build() {
+      const script = this.querySelector('script[type="application/json"]');
+      let snapshot = null;
+      try {
+        snapshot = script ? JSON.parse(script.textContent || '') : null;
+      } catch {
+        snapshot = null;
+      }
+      const width = Number(this.dataset.frameWidth) || 0;
+      const height = Number(this.dataset.frameHeight) || 0;
+      const caption = this.getAttribute('caption');
+      this.innerHTML = '';
+
+      if (!snapshot || width <= 0 || height <= 0) {
+        const note = document.createElement('div');
+        note.className = 'ui-state ui-state--error';
+        note.textContent = 'Демонстрация не собрана: у этого демо нет снимка программы.';
+        this.appendChild(note);
+        return;
+      }
+
+      this.snapshot = snapshot;
+      this.frameWidth = width;
+      this.frameHeight = height;
+
+      const figure = document.createElement('figure');
+      figure.className = 'ui-gui-demo';
+      const firstWindow = (snapshot.windows || [])[0];
+      const windowTitle = firstWindow && firstWindow.properties && typeof firstWindow.properties.title === 'string'
+        ? firstWindow.properties.title
+        : '';
+      figure.setAttribute('aria-label', windowTitle ? `Окно программы «${windowTitle}»` : 'Окно программы');
+
+      const viewport = document.createElement('div');
+      viewport.className = 'ui-gui-demo-viewport';
+      const frame = document.createElement('div');
+      frame.className = 'ui-gui-demo-frame';
+      frame.style.width = `${width}px`;
+      frame.style.height = `${height}px`;
+      const iframe = document.createElement('iframe');
+      iframe.className = 'ui-gui-demo-canvas';
+      iframe.src = GUI_DEMO_FRAME;
+      iframe.loading = 'lazy';
+      iframe.tabIndex = -1;
+      iframe.setAttribute('title', windowTitle || 'Окно программы');
+      iframe.setAttribute('aria-hidden', 'true');
+      frame.appendChild(iframe);
+      viewport.appendChild(frame);
+      figure.appendChild(viewport);
+      if (caption) {
+        const figcaption = document.createElement('figcaption');
+        figcaption.className = 'ui-gui-demo-caption';
+        figcaption.textContent = caption;
+        figure.appendChild(figcaption);
+      }
+      this.appendChild(figure);
+
+      this.viewport = viewport;
+      this.frame = frame;
+      this.iframe = iframe;
+      iframe.addEventListener('load', () => this.post());
+    }
+
+    attach() {
+      if (!this.iframe) return;
+      this.onMessage = (event) => {
+        if (!this.iframe || event.source !== this.iframe.contentWindow) return;
+        const data = event.data;
+        if (!data || data.type !== 'idylliumGuiEvent' || !data.message) return;
+        // Рендерер готов или потерял холст — отдаём снимок ещё раз.
+        if (data.message.type === 'rendererReady' || data.message.type === 'canvasResync') this.post();
+      };
+      this.onTheme = () => this.postTheme();
+      this.onResize = () => this.fit();
+      window.addEventListener('message', this.onMessage);
+      document.addEventListener('idyllium-theme-change', this.onTheme);
+      if (typeof ResizeObserver === 'function') {
+        this.observer = new ResizeObserver(this.onResize);
+        this.observer.observe(this.viewport);
+      } else {
+        window.addEventListener('resize', this.onResize);
+      }
+      this.fit();
+    }
+
+    detach() {
+      if (this.onMessage) window.removeEventListener('message', this.onMessage);
+      if (this.onTheme) document.removeEventListener('idyllium-theme-change', this.onTheme);
+      if (this.observer) this.observer.disconnect();
+      if (this.onResize) window.removeEventListener('resize', this.onResize);
+      this.onMessage = null;
+      this.onTheme = null;
+      this.onResize = null;
+      this.observer = null;
+    }
+
+    postTheme() {
+      const target = this.iframe && this.iframe.contentWindow;
+      if (!target) return;
+      target.postMessage({ type: 'theme', theme: siteTheme() }, '*');
+    }
+
+    post() {
+      const target = this.iframe && this.iframe.contentWindow;
+      if (!target || !this.snapshot) return;
+      this.postTheme();
+      target.postMessage({
+        type: 'snapshot',
+        generation: 1,
+        audio: [],
+        windows: this.snapshot.windows || [],
+        canvases: this.snapshot.canvases || [],
+        modals: this.snapshot.modals || [],
+        output: '',
+      }, '*');
+    }
+
+    // Масштаб: кадр реальных размеров; если он шире колонки — уменьшается целиком.
+    fit() {
+      if (!this.viewport || !this.frame) return;
+      const available = this.viewport.clientWidth;
+      const scale = available > 0 && available < this.frameWidth ? available / this.frameWidth : 1;
+      this.frame.style.transform = scale === 1 ? '' : `scale(${scale})`;
+      this.viewport.style.height = `${Math.round(this.frameHeight * scale)}px`;
+    }
+  }
+
   customElements.define('idyl-code-block', IdylCodeBlock);
   customElements.define('sql-code-block', SqlCodeBlock);
   customElements.define('json-code-block', JsonCodeBlock);
   customElements.define('idyl-output-block', IdylOutputBlock);
   customElements.define('idyl-error-block', IdylErrorBlock);
+  customElements.define('idyl-gui-demo', IdylGuiDemo);
 })();

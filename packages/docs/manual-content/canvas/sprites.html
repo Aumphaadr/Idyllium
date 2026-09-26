@@ -53,6 +53,7 @@ main() {
     hero_picture.load_from_file("cat.png");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 500;
     win.height = 320;
     win.title = "Спрайт на Canvas";
@@ -71,12 +72,12 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content canvas-sprite-demo">
-        <div class="canvas-sprite-surface" data-wasd-demo tabindex="0">
-          <img src="assets/cat.png" alt="Спрайт с картинкой кота">
-          <span>кликните по полю — и W A S D</span>
-        </div>
+    <!-- Единственная ручная имитация в учебнике (вердикт владельца 2026-09-27): живое демо
+         на клавишах, настоящий снимок программы его бы не заменил. -->
+    <div class="canvas-sprite-demo">
+      <div class="canvas-sprite-surface" data-wasd-demo tabindex="0">
+        <img src="assets/cat.png" alt="Спрайт с картинкой кота">
+        <span>кликните по полю — и W A S D</span>
       </div>
     </div>
     <div class="coord-note">
@@ -254,6 +255,7 @@ main() {
     walk.load_from_file("walk.gif");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 360;
     win.height = 260;
 
@@ -270,13 +272,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content canvas-animation-demo">
-        <div class="canvas-animation-surface">
-          <img src="assets/walk.gif" alt="Анимированный спрайт">
-        </div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       Кадры переключаются автоматически. <code>on_update</code> понадобится,
       только если спрайт должен ещё и двигаться или менять своё состояние.

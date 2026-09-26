@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <!-- Hero -->
     
 
@@ -24,6 +12,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 180;
     win.title = "Видимость прогрессбаров";
@@ -48,17 +37,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 130px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 30px; width: 310px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 75%; border-radius: 4px;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">75%</div>
-              </div>
-            </div>
-            <!-- Второй прогрессбар скрыт — не отображается -->
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           👻 Второй прогрессбар (<code>visible = false</code>) не виден, хотя код добавления присутствует.
         </div>
@@ -79,6 +58,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 180;
     win.title = "Скрытие и показ";
@@ -117,13 +97,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 130px; position: relative;">
-            <div style="position: absolute; left: 50px; top: 30px; color: #cdd6f4; font-size: 16px;" id="demoLabel">Я видимый лейбл!</div>
-            <button class="idyl-button" style="position: absolute; left: 30px; top: 80px; width: 140px;" id="hideBtn">Скрыть лейбл</button>
-            <button class="idyl-button" style="position: absolute; left: 190px; top: 80px; width: 150px;" id="showBtn">Показать лейбл</button>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🕹️ Кнопка «Скрыть» делает лейбл невидимым, «Показать» — возвращает на экран.
         </div>
@@ -141,6 +115,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 160;
     win.title = "Согласие с правилами";
@@ -173,14 +148,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 130px; position: relative;">
-            <label style="position: absolute; left: 20px; top: 25px; color: #cdd6f4; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="enabledDemoAgree"> Я прочитал правила игры
-            </label>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 75px; width: 150px;" id="enabledDemoStart" disabled>Начать игру</button>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🔒 Кнопка на месте, но выключена. Поставьте галочку — кнопка оживёт; снимите — снова уснёт. Нажать спящую не выйдет при всём желании.
         </div>
@@ -204,6 +172,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 280;
     win.title = "Скрытие контейнера";
@@ -268,21 +237,7 @@ main() {
       </p>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 240px; position: relative;">
-            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 360px; height: 170px;" id="demoFrame">
-              <legend class="idyl-frame-title">Панель управления</legend>
-              <div class="idyl-frame-content" style="position: relative; height: 100%;">
-                <div style="position: absolute; left: 15px; top: 10px; color: #cdd6f4;">Имя пользователя:</div>
-                <div style="position: absolute; left: 15px; top: 35px;">
-                  <input type="text" class="idyl-lineedit" style="width: 200px;">
-                </div>
-                <button class="idyl-button" style="position: absolute; left: 15px; top: 75px; width: 200px;">Кнопка внутри рамки</button>
-              </div>
-            </fieldset>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 210px; width: 160px;" id="toggleFrameBtn">Скрыть панель</button>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           📦 Нажмите на кнопку — скроется вся рамка вместе с её содержимым. Повторное нажатие вернёт всё обратно.
         </div>
@@ -323,47 +278,3 @@ label.visible = false;  // спрятали при старте...
 
     <!-- Lesson navigation -->
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 2: скрытие и показ лейбла
-    const demoLabel = document.getElementById('demoLabel');
-    const hideBtn = document.getElementById('hideBtn');
-    const showBtn = document.getElementById('showBtn');
-    if (demoLabel && hideBtn && showBtn) {
-      hideBtn.addEventListener('click', () => {
-        demoLabel.style.display = 'none';
-      });
-      showBtn.addEventListener('click', () => {
-        demoLabel.style.display = '';
-      });
-    }
-
-    // Пример 2b: enabled по галочке
-    const enabledDemoAgree = document.getElementById('enabledDemoAgree');
-    const enabledDemoStart = document.getElementById('enabledDemoStart');
-    if (enabledDemoAgree && enabledDemoStart) {
-      enabledDemoAgree.addEventListener('change', () => {
-        enabledDemoStart.disabled = !enabledDemoAgree.checked;
-      });
-      enabledDemoStart.addEventListener('click', () => {
-        enabledDemoStart.textContent = 'Поехали!';
-      });
-    }
-
-    // Пример 3: скрытие контейнера
-    const demoFrame = document.getElementById('demoFrame');
-    const toggleFrameBtn = document.getElementById('toggleFrameBtn');
-    if (demoFrame && toggleFrameBtn) {
-      toggleFrameBtn.addEventListener('click', () => {
-        if (demoFrame.style.display === 'none') {
-          demoFrame.style.display = '';
-          toggleFrameBtn.textContent = 'Скрыть панель';
-        } else {
-          demoFrame.style.display = 'none';
-          toggleFrameBtn.textContent = 'Показать панель';
-        }
-      });
-    }
-  });
-</script>
