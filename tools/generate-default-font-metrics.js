@@ -6,7 +6,7 @@ const path = require('path');
 const fontkit = require('fontkit');
 
 const rootDir = path.resolve(__dirname, '..');
-const fontPath = path.join(rootDir, 'packages', 'gui-renderer', 'fonts', 'SourceCodePro-Regular.woff2');
+const fontPath = path.join(rootDir, 'packages', 'fonts', 'SourceCodePro-Regular.woff2');
 const outputPath = path.join(rootDir, 'src', 'runtime', 'default-font-metrics.ts');
 
 if (!fs.existsSync(fontPath)) {

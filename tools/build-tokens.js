@@ -10,7 +10,12 @@
 //                                             живёт на чужих страницах одним файлом и не может грузить
 //                                             site-tokens.css, поэтому значения вписываются числами;
 //   packages/gui-renderer/renderer.css      — блок между /* @tokens:renderer:start */ … end */: рамка
-//                                             предпросмотра окна программы (в VS Code — --vscode-*).
+//                                             предпросмотра окна программы (в VS Code — --vscode-*);
+//                                             блок @tokens:renderer-theme — тема окна «idyllium»;
+//   packages/vscode-idyllium/themes/*.json  — цветовые темы VS Code: те же редактор и подсветка, что у
+//                                             Monaco в Web IDE (этап 6 стилевой базы);
+//   кадр юнита также получает словарь подсветки .hl-* из site-components.css (блок @shared:hl) — один
+//                                             словарь на сайт и кадр, без ручной копии.
 // Запуск: node tools/build-tokens.js (стоит в npm run build перед tsc). Модуль экспортирует generate()
 // для стража tests/design-tokens.test.ts — он сверяет файлы в репозитории со свежей генерацией.
 
@@ -125,9 +130,9 @@ export function token(theme, name) {
 }
 
 /** Меняет содержимое между маркерами; маркеры остаются на своих строках. */
-function replaceBlock(text, name, body, relative) {
-  const start = `/* @tokens:${name}:start */`;
-  const end = `/* @tokens:${name}:end */`;
+function replaceBlock(text, name, body, relative, kind = 'tokens') {
+  const start = `/* @${kind}:${name}:start */`;
+  const end = `/* @${kind}:${name}:end */`;
   const from = text.indexOf(start);
   const to = text.indexOf(end);
   if (from < 0 || to < 0 || to < from) throw new Error(`${relative}: нет маркеров ${start} … ${end}`);
@@ -142,9 +147,8 @@ const FRAME_VARS = [
   ['run-bg', 'color-run'], ['run-bg-hover', 'color-run-hover'], ['danger', 'color-danger'],
   ['editor-bg', 'editor-bg'], ['editor-text', 'editor-text'], ['editor-muted', 'editor-muted'], ['editor-caret', 'editor-caret'],
   ['selection', 'color-selection'], ['output-bg', 'color-bg'], ['output-text', 'color-text'],
-  ['keyword', 'syntax-keyword'], ['type-name', 'syntax-type'], ['class-name', 'syntax-class'], ['string', 'syntax-string'],
-  ['number', 'syntax-number'], ['comment', 'syntax-comment'], ['function', 'syntax-function'], ['object', 'syntax-object'],
-  ['brackets', 'syntax-brackets'],
+  // Подсветка — под общими именами: словарь .hl-* приходит из site-components.css как есть.
+  ...Object.keys(tokens.syntax).map((name) => [`syntax-${name}`, `syntax-${name}`]),
   ['ok-bg', 'color-success-bg'], ['ok-text', 'color-success'], ['fail-bg', 'color-warning-bg'], ['fail-text', 'color-warning'],
   ['soft-bg', 'color-info-bg'], ['soft-text', 'color-info'],
   ...Object.keys(tokens.ansi).map((name) => [`ansi-${name}`, `ansi-${name}`]),
@@ -191,19 +195,101 @@ ${mapped(RENDERER_VARS, 1, '  ')}
 }`;
 }
 
+// Тема окна программы «idyllium» — из группы windowTheme источника (одна тема, значения — как есть).
+function rendererThemeBlock() {
+  const lines = Object.entries(tokens.windowTheme).map(([name, value]) => `  --w-${name}: ${value};`);
+  return `/* ГЕНЕРАТ (tools/build-tokens.js из packages/design/tokens.js, группа windowTheme): палитра сайта в окне ученика. */
+.window.theme-idyllium,
+.modal-backdrop.theme-idyllium {
+${lines.join('\n')}
+}`;
+}
+
+// Темы VS Code — тот же редактор и та же подсветка, что у Monaco в Web IDE (monaco-grammar.js):
+// цвета редактора из группы editor, слова — из syntax; семантические токены и TextMate-области
+// раскрашены одинаково, чтобы базовая раскраска и раскраска компилятора совпадали.
+function vscodeTheme(theme) {
+  const index = theme === 'light' ? 1 : 0;
+  const t = Object.fromEntries(themedPairs(index));
+  const colors = {
+    'editor.background': t['editor-bg'],
+    'editor.foreground': t['editor-text'],
+    'editorLineNumber.foreground': t['editor-muted'],
+    'editorLineNumber.activeForeground': t['syntax-brackets'],
+    'editorCursor.foreground': t['editor-caret'],
+    'editor.selectionBackground': t['editor-selection'],
+    'editor.inactiveSelectionBackground': t['editor-selection-inactive'],
+    'editor.lineHighlightBackground': t['editor-line-highlight'],
+    'editor.lineHighlightBorder': '#00000000',
+  };
+  for (let level = 1; level <= 6; level += 1) colors[`editorBracketHighlight.foreground${level}`] = t['syntax-brackets'];
+  Object.assign(colors, {
+    'editorBracketMatch.background': t['editor-bracket-match-bg'],
+    'editorBracketMatch.border': t['editor-bracket-match-border'],
+    'editorIndentGuide.background1': t['editor-indent-guide'],
+    'editorIndentGuide.activeBackground1': t['editor-indent-guide-active'],
+  });
+  for (const value of Object.values(colors)) {
+    if (!/^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/u.test(value)) throw new Error(`build-tokens: тема VS Code ждёт hex-цвет, получила ${value}`);
+  }
+  const rule = (scope, tokenName, extra = {}) => ({ scope, settings: { foreground: t[tokenName], ...extra } });
+  return `${JSON.stringify({
+    $schema: 'vscode://schemas/color-theme',
+    name: theme === 'light' ? 'Idyllium Light' : 'Idyllium Dark',
+    type: theme,
+    semanticHighlighting: true,
+    colors,
+    semanticTokenColors: {
+      namespace: t['syntax-object'],
+      class: t['syntax-class'],
+      function: t['syntax-function'],
+      method: t['syntax-function'],
+      property: t['syntax-object'],
+      variable: t['syntax-variable'],
+      parameter: t['syntax-object'],
+      'variable.readonly': t['syntax-object'],
+    },
+    tokenColors: [
+      rule(['keyword.control.idyllium', 'keyword.control.import.idyllium', 'keyword.declaration.idyllium', 'keyword.operator.logical.idyllium', 'constant.language.idyllium', 'variable.language.idyllium'], 'syntax-keyword'),
+      rule(['storage.type.primitive.idyllium'], 'syntax-type'),
+      rule(['entity.name.type.class.idyllium'], 'syntax-class'),
+      rule(['entity.name.function.idyllium', 'entity.name.function.member.idyllium'], 'syntax-function'),
+      rule(['entity.name.namespace.idyllium', 'variable.other.member.idyllium', 'variable.other.idyllium'], 'syntax-object'),
+      rule(['string.quoted.double.idyllium', 'string.quoted.single.idyllium', 'constant.character.escape.idyllium'], 'syntax-string'),
+      rule(['constant.numeric.idyllium'], 'syntax-number'),
+      rule(['comment.block.idyllium', 'comment.line.double-slash.idyllium'], 'syntax-comment', { fontStyle: 'italic' }),
+      rule(['keyword.operator.idyllium', 'punctuation.idyllium', 'punctuation.accessor.idyllium'], 'syntax-brackets'),
+    ],
+  }, null, 2)}\n`;
+}
+
+// Словарь подсветки .hl-* — из site-components.css (между /* @hl:start */ и /* @hl:end */), без отступа слоя.
+function sharedHighlightBlock() {
+  const relative = 'packages/web-ide/assets/site-components.css';
+  const css = fs.readFileSync(path.join(rootDir, relative), 'utf8');
+  const start = css.indexOf('/* @hl:start */');
+  const end = css.indexOf('/* @hl:end */');
+  if (start < 0 || end < 0 || end < start) throw new Error(`${relative}: нет маркеров /* @hl:start */ … /* @hl:end */`);
+  const body = css.slice(css.indexOf('\n', start) + 1, end).split('\n').map((line) => line.replace(/^ {2}/u, '')).join('\n').trim();
+  return `/* ГЕНЕРАТ (tools/build-tokens.js из ${relative}): словарь подсветки сайта, один на всех. */\n${body}`;
+}
+
 function generate() {
   validate();
   const outputs = {
     'packages/web-ide/assets/site-tokens.css': siteTokensCss(),
     'packages/web-ide/src/design-tokens.js': designTokensJs(),
+    'packages/vscode-idyllium/themes/idyllium-dark-color-theme.json': vscodeTheme('dark'),
+    'packages/vscode-idyllium/themes/idyllium-light-color-theme.json': vscodeTheme('light'),
   };
-  for (const [relative, name, block] of [
-    ['packages/embed/frame.css', 'frame', frameBlock()],
-    ['packages/gui-renderer/renderer.css', 'renderer', rendererBlock()],
-  ]) {
-    const current = fs.readFileSync(path.join(rootDir, relative), 'utf8');
-    outputs[relative] = replaceBlock(current, name, block, relative);
-  }
+  const frame = 'packages/embed/frame.css';
+  let frameCss = fs.readFileSync(path.join(rootDir, frame), 'utf8');
+  frameCss = replaceBlock(frameCss, 'frame', frameBlock(), frame);
+  outputs[frame] = replaceBlock(frameCss, 'hl', sharedHighlightBlock(), frame, 'shared');
+  const renderer = 'packages/gui-renderer/renderer.css';
+  let rendererCss = fs.readFileSync(path.join(rootDir, renderer), 'utf8');
+  rendererCss = replaceBlock(rendererCss, 'renderer', rendererBlock(), renderer);
+  outputs[renderer] = replaceBlock(rendererCss, 'renderer-theme', rendererThemeBlock(), renderer);
   return outputs;
 }
 

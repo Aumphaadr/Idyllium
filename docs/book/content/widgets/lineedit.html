@@ -32,7 +32,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="302" data-frame-height="130"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":100,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Знакомство","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.LineEdit","properties":{"x":20,"y":30,"width":260,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          ✏️ Пустое текстовое поле. Попробуйте что-нибудь написать.
+          ✏️ Пустое текстовое поле — в него можно писать.
         </div>
       </div>
     </div>
@@ -87,7 +87,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="352" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Приветствие","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.LineEdit","properties":{"x":20,"y":20,"width":310,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":70,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Поздороваться","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Label","properties":{"x":20,"y":110,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          💬 Введите имя, нажмите кнопку — текст появится на лейбле.
+          💬 По нажатию кнопки текст из поля появляется на лейбле.
         </div>
       </div>
     </div>
@@ -180,7 +180,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="352" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Приветствие без кнопки","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.LineEdit","properties":{"x":20,"y":20,"width":310,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"Имя и Enter","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":["enter_pressed"]},{"id":3,"type":"gui.Label","properties":{"x":20,"y":70,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          ⏎ Наберите имя и нажмите Enter — кнопка не нужна.
+          ⏎ Имя подтверждается клавишей Enter — кнопка не нужна.
         </div>
       </div>
 
@@ -389,7 +389,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="352" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"TextEdit","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.TextEdit","properties":{"x":20,"y":20,"width":310,"height":130,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"Введите многострочный текст...","placeholder_color":"#b4b4b4","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          📝 Многострочное поле. Нажмите Enter — появится новая строка.
+          📝 Многострочное поле: Enter начинает новую строку.
         </div>
       </div>
 
@@ -452,11 +452,11 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="352" data-frame-height="250"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":220,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Чтение из TextEdit","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.TextEdit","properties":{"x":20,"y":20,"width":310,"height":100,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"Напишите что-нибудь...","placeholder_color":"#b4b4b4","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":140,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Показать текст","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Label","properties":{"x":20,"y":180,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          📋 Напишите несколько строк в поле, нажмите кнопку — программа покажет длину текста.
+          📋 По нажатию кнопки программа показывает длину текста в поле.
         </div>
       </div>
 
-      <div class="tip-box" style="margin-top: 1em;">
+      <div class="tip-box">
         <strong>💡 Важно:</strong> TextEdit поддерживает перенос строк. Свойство <code>text</code> будет содержать символы <code>\n</code> там, где пользователь нажал Enter.
       </div>
     </div>

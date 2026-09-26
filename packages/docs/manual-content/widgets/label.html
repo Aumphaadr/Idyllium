@@ -57,12 +57,15 @@ main() {
 
     gui.Label small;
     small.text = "Маленький текст";
+    small.width = 200;
     small.x = 20;
     small.y = 30;
     small.font_size = 12;
 
     gui.Label big;
     big.text = "Большой текст";
+    big.width = 240;
+    big.height = 40;
     big.x = 20;
     big.y = 80;
     big.font_size = 24;
@@ -118,7 +121,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
-          🖱️ Нажмите на кнопку — текст лейбла изменится прямо на ваших глазах.
+          🖱️ По нажатию кнопки текст лейбла меняется.
         </div>
       </div>
     </div>
@@ -249,6 +252,7 @@ main() {
     label.x = 24;
     label.y = 34;
     label.text = "Длинный текст лейбла тянется вправо";
+    label.width = 330;
 
     gui.Button btn;
     btn.x = 205;
@@ -287,7 +291,7 @@ win.add_child(btn);
 win.add_child(label);  // label выше
 </script></idyl-code-block>
 
-      <div class="tip-box" style="margin-top: 1em;">
+      <div class="tip-box">
         <strong>💡 Вывод:</strong> Всегда планируйте размещение виджетов так, чтобы они <strong>не залезали друг на друга</strong>. Проверяйте координаты и размеры. Если виджеты должны перекрываться — управляйте порядком с помощью <code>add_child</code>.
       </div>
     </div>

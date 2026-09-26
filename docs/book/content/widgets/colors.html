@@ -214,16 +214,19 @@ main() {
 
     gui.Label label1;
     label1.text = "Я беру цвет у окна";
+    label1.width = 240;
     label1.x = 40;
     label1.y = 45;
 
     gui.Label label2;
     label2.text = "Я тоже беру цвет у окна";
+    label2.width = 240;
     label2.x = 40;
     label2.y = 90;
 
     gui.Label label3;
     label3.text = "А я сам выбираю синий";
+    label3.width = 240;
     label3.x = 40;
     label3.y = 135;
     label3.text_color = colors.BLUE;
@@ -236,7 +239,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <idyl-gui-demo data-frame-width="522" data-frame-height="290"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":520,"height":260,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#ff0000","background_color":"#ffffff","font":null,"font_size":13,"title":"Наследование цветов","theme":"idyllium","__explicit_properties":["text_color","theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":40,"y":45,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я беру цвет у окна","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":40,"y":90,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я тоже беру цвет у окна","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":4,"type":"gui.Label","properties":{"x":40,"y":135,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#0000ff","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"А я сам выбираю синий","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["text_color"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+    <idyl-gui-demo data-frame-width="522" data-frame-height="290"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":520,"height":260,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#ff0000","background_color":"#ffffff","font":null,"font_size":13,"title":"Наследование цветов","theme":"idyllium","__explicit_properties":["text_color","theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":40,"y":45,"width":240,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я беру цвет у окна","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":40,"y":90,"width":240,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я тоже беру цвет у окна","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":4,"type":"gui.Label","properties":{"x":40,"y":135,"width":240,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#0000ff","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"А я сам выбираю синий","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["text_color"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       Первые два лейбла не задают цвет сами, поэтому они унаследовали красный цвет окна.
     </div>

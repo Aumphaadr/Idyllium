@@ -1,14 +1,3 @@
-<style data-lesson-style>
-.warning-message {
-      background: rgba(249, 226, 175, 0.12);
-      border-left: 3px solid #f9e2af;
-      padding: 0.75em 1em;
-      color: #f9e2af;
-      margin: 0.5em 0 1em 0;
-      border-radius: 0 6px 6px 0;
-    }
-</style>
-
 <!-- Hero -->
     
 
@@ -42,6 +31,7 @@ main() {
     label.y = 50;
     label.font_size = 24;
     label.text = "0";
+    label.height = 36;
 
     gui.Timer timer;
     timer.interval = 1000;  // 1 секунда
@@ -132,6 +122,7 @@ main() {
     gui.Label time_label;
     time_label.text = "0";
     time_label.font_size = 48;
+    time_label.height = 60;
     time_label.x = 100;
     time_label.y = 30;
     
@@ -173,7 +164,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
-          ⏱️ Нажмите «Старт» — счётчик начнёт увеличиваться каждую секунду. «Стоп» — остановит.
+          ⏱️ «Старт» запускает счётчик — он растёт каждую секунду; «Стоп» останавливает его.
         </div>
       </div>
     </div>
@@ -220,7 +211,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
-          ⏰ Нажмите на кнопку — через 3 секунды она исчезнет. Таймер сработает только один раз.
+          ⏰ Через 3 секунды после нажатия кнопка исчезает: таймер срабатывает только один раз.
         </div>
       </div>
     </div>

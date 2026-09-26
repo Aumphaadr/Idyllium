@@ -74,11 +74,11 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="202" data-frame-height="310"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":200,"height":280,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Массив лейблов","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":20,"y":20,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Лейбл 0","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":20,"y":50,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Лейбл 1","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":4,"type":"gui.Label","properties":{"x":20,"y":80,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Лейбл 2","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":5,"type":"gui.Label","properties":{"x":20,"y":110,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Лейбл 3","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":6,"type":"gui.Label","properties":{"x":20,"y":140,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Лейбл 4","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":7,"type":"gui.Label","properties":{"x":20,"y":170,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Лейбл 5","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":8,"type":"gui.Label","properties":{"x":20,"y":200,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Лейбл 6","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":9,"type":"gui.Button","properties":{"x":20,"y":230,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Сменить текст","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          🏷️ Нажмите на кнопку — все 7 лейблов изменят свой текст одновременно.
+          🏷️ Одно нажатие кнопки — и все 7 лейблов меняют свой текст одновременно.
         </div>
       </div>
 
-      <div class="tip-box" style="margin-top: 1em;">
+      <div class="tip-box">
         <strong>💡 Опорный паттерн.</strong> Работа с массивом виджетов почти всегда выглядит одинаково: <strong>создать массив → настроить каждый элемент в цикле → добавить в окно через <code>add_child</code> в том же цикле</strong>. В <code>array&lt;gui.Label, 7&gt;</code> все 7 лейблов уже готовы к работе сразу после объявления — остаётся задать им координаты и текст.
       </div>
     </div>
@@ -167,7 +167,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="352" data-frame-height="330"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":300,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Добавление слайдеров","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":20,"y":20,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Добавить слайдер","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          ➕ Нажимайте кнопку — новые слайдеры будут появляться один под другим.
+          ➕ Каждое нажатие кнопки добавляет новый слайдер под предыдущими.
         </div>
       </div>
     </div>
@@ -226,7 +226,7 @@ main() {
         </div>
       </div>
 
-      <div class="tip-box" style="margin-top: 1em;">
+      <div class="tip-box">
         <strong>💡 Важно:</strong> <code>visible = false</code> прячет виджет, <code>remove_at()</code> убирает его из списка — а сам виджет продолжает существовать в памяти. Это два разных действия, и ни одно не заменяет другое: уберёте только из массива — виджет останется висеть на экране; только спрячете — он останется в массиве и будет мешать подсчётам через <code>length</code>.
       </div>
     </div>

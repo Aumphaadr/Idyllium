@@ -28,7 +28,7 @@ main() {
   <div class="interactive-demo">
     <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
-      ✅ Обычный флажок с текстом. Попробуйте поставить/снять галочку.
+      ✅ Обычный флажок с текстом: галочка ставится и снимается щелчком.
     </div>
   </div>
 </div>
@@ -108,11 +108,13 @@ main() {
     cb.x = 20;
     cb.y = 20;
     cb.text = "Согласен на получение рассылки";
+    cb.width = 280;
 
     gui.Label label;
     label.x = 20;
     label.y = 70;
     label.text = "Вы не согласны на рассылку";
+    label.width = 280;
 
     cb.on_change = void function() {
         if (cb.is_checked) {

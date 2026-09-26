@@ -24,6 +24,8 @@ const domPurifySource = path.join(rootDir, 'node_modules', 'dompurify', 'dist', 
 const vendorOutputDir = path.join(outputWebDir, 'vendor');
 const browserEntry = path.join(distDir, 'src', 'browser.js');
 const sqlJsWasmSource = path.join(rootDir, 'node_modules', 'sql.js', 'dist', 'sql-wasm-browser.wasm');
+// Шрифт холста рендерера и его лицензии — из единой папки шрифтов (см. copyRendererFonts).
+const RENDERER_FONT_FILES = ['SourceCodePro-Regular.woff2', 'SourceCodePro-LICENSE.txt', 'SourceCodePro-COPYRIGHT.txt'];
 // Хост кадра-рендерера на сайте: сообщения рендерера (rendererReady, guiEvent, …)
 // уходят родительской странице как { type: 'idylliumGuiEvent', message }.
 const SITE_GUI_HOST_BOOTSTRAP = "window.IdylliumGuiHost = { postMessage: function(message) { var target = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*'; parent.postMessage({ type: 'idylliumGuiEvent', message: message }, target); } };";
@@ -70,6 +72,7 @@ if (!fs.existsSync(monacoSourceDir)) {
 fs.cpSync(monacoSourceDir, monacoOutputDir, { recursive: true });
 
 fs.cpSync(rendererSourceDir, rendererOutputDir, { recursive: true });
+copyRendererFonts(sourceFontsDir, rendererOutputDir);
 if (!fs.existsSync(papaParseSource)) {
   console.error('Papa Parse was not found. Run npm install first.');
   process.exit(1);
@@ -220,6 +223,21 @@ async function validateBrowserBundle(source) {
     : null;
   if (output !== 'сборка жива: 4\n') {
     throw new Error(`bundle smoke program output mismatch: ${JSON.stringify(output)}`);
+  }
+}
+
+// Шрифт холста по умолчанию (IdylliumCanvasDefault в renderer.css) — из единой папки шрифтов сайта:
+// у рендерера своей копии нет (стилевая база, этап 6), файл кладётся рядом с ним сборкой вместе с лицензией.
+function copyRendererFonts(fontsDir, rendererDir) {
+  const target = path.join(rendererDir, 'fonts');
+  fs.mkdirSync(target, { recursive: true });
+  for (const name of RENDERER_FONT_FILES) {
+    const source = path.join(fontsDir, name);
+    if (!fs.existsSync(source)) {
+      console.error(`Renderer font file was not found: ${source}`);
+      process.exit(1);
+    }
+    fs.copyFileSync(source, path.join(target, name));
   }
 }
 

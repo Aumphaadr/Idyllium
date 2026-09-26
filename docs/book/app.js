@@ -255,7 +255,8 @@
 
       const hero = renderHero(lesson);
       const footer = renderLessonFooter(lesson);
-      els.view.innerHTML = `${hero}<div class="lesson-body">${content}</div>${footer}`;
+      // .prose — метка слоя содержимого (assets/site-content.css): проза урока, задачи, проекта.
+      els.view.innerHTML = `${hero}<div class="lesson-body prose">${content}</div>${footer}`;
       executeLessonScripts();
       document.title = `${lesson.title} — ${UI.titleSuffix}`;
       renderToc();

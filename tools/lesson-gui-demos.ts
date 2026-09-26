@@ -339,6 +339,17 @@ function numberValue(value: unknown): number {
 
 /** Размер кадра: окна — по раскладке рендерера, холсты без окон — столбиком с промежутком. */
 function frameSize(snapshot: Record<string, unknown>): FrameSize | null {
+  const size = contentFrameSize(snapshot);
+  const modals = snapshot.modals as readonly unknown[];
+  if (!size || modals.length === 0) return size;
+  // Диалог рисуется поверх кадра (.modal-dialog: до 420 px шириной, поля 24 px, заголовок,
+  // текст, поле ввода и кнопки): маленькое окно не должно обрезать его.
+  return { width: Math.max(size.width, MODAL_FRAME_MIN.width), height: Math.max(size.height, MODAL_FRAME_MIN.height) };
+}
+
+const MODAL_FRAME_MIN: FrameSize = { width: 468, height: 300 };
+
+function contentFrameSize(snapshot: Record<string, unknown>): FrameSize | null {
   const windows = snapshot.windows as readonly WidgetLike[];
   const canvases = snapshot.canvases as readonly WidgetLike[];
   const modals = snapshot.modals as readonly unknown[];
@@ -376,7 +387,7 @@ function frameSize(snapshot: Record<string, unknown>): FrameSize | null {
     height += WINDOW_LAYOUT_GAP * (canvases.length - 1);
     return { width: Math.ceil(width), height: Math.ceil(height) };
   }
-  // Диалог без окна: кадр под .modal-dialog рендерера (420 px + поля 24 px).
-  if (modals.length > 0) return { width: 468, height: 260 };
+  // Диалог без окна: кадр под .modal-dialog рендерера.
+  if (modals.length > 0) return MODAL_FRAME_MIN;
   return null;
 }

@@ -17,8 +17,7 @@ use gui;
       <h2>Создание окна</h2>
       <p>Создать окно так же просто, как создать переменную <code>int</code>:</p>
 
-      <div class="demo-group">
-        <idyl-code-block><script type="text/plain">
+      <idyl-code-block><script type="text/plain">
 use gui;
 
 main() {
@@ -27,11 +26,10 @@ main() {
 }
 </script></idyl-code-block>
 
-        <div class="gui-demo-container" style="margin-top: 1em;">
-          <idyl-gui-demo data-frame-width="642" data-frame-height="450"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":640,"height":420,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"","theme":"default"},"children":[],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
-          <div class="coord-note">
-            💡 Программа создала окно и показала его. Пока внутри ничего нет.
-          </div>
+      <div class="gui-demo-container">
+        <idyl-gui-demo data-frame-width="642" data-frame-height="450"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":640,"height":420,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"","theme":"default"},"children":[],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+        <div class="coord-note">
+          💡 Программа создала окно и показала его. Пока внутри ничего нет.
         </div>
       </div>
 
@@ -164,7 +162,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <div class="gui-demo-container" style="margin-top: 1em;">
+      <div class="gui-demo-container">
         <idyl-gui-demo data-frame-width="402" data-frame-height="330"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":300,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Окно с кнопкой","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":0,"y":0,"width":120,"height":40,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Нажми меня","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           💡 Кнопка прижалась к левому верхнему углу: мы не сказали ей, где стоять, а координаты по умолчанию равны <code>(0, 0)</code>. Как расставлять виджеты по местам — в следующей секции.

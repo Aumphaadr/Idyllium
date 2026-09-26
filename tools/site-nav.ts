@@ -238,6 +238,7 @@ export function siteNavAssetsHtml(prefix: string, density: SiteDensity = 'prose'
     `<link rel="stylesheet" href="${prefix}assets/site-tokens.css">`,
     `<link rel="stylesheet" href="${prefix}fonts/fonts.css">`,
     `<link rel="stylesheet" href="${prefix}assets/site-base.css">`,
+    `<link rel="stylesheet" href="${prefix}assets/site-content.css">`,
     `<link rel="stylesheet" href="${prefix}assets/site-components.css">`,
     `<script src="${prefix}assets/site-nav.js" defer></script>`,
   ].join('\n  ');

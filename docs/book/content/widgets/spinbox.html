@@ -33,7 +33,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="202" data-frame-height="130"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":200,"height":100,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Лобби игры","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.SpinBox","properties":{"x":20,"y":20,"width":100,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"value":2,"min":0,"max":100,"step":1,"__explicit_properties":["value"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          🔢 SpinBox для целых чисел. Попробуйте покрутить стрелки или ввести число вручную — «котик» не пройдёт.
+          🔢 SpinBox для целых чисел: стрелки меняют значение, а вручную можно ввести только число — «котик» не пройдёт.
         </div>
       </div>
     </div>
@@ -179,7 +179,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="352" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Лобби игры","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.SpinBox","properties":{"x":20,"y":20,"width":100,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"value":2,"min":2,"max":8,"step":1,"__explicit_properties":["max","min","value"]},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":140,"y":25,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Игроков: 2","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          📢 Меняйте значение — подпись рядом обновляется автоматически через <code>on_change</code>.
+          📢 Подпись рядом обновляется при каждом изменении значения через <code>on_change</code>.
         </div>
       </div>
     </div>

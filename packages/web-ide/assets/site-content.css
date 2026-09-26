@@ -1,0 +1,485 @@
+/* Слой содержимого сайта (стилевая база 1.6.4, этап 5; спека Idyllium-backstage/tech/spec/
+   some_style_base/01 §5.7): проза уроков, задач и проектов, их врезки и таблицы, ленты
+   задачника, карточки проектов и учебные демо. Контейнер прозы — .prose: учебник, задачник и
+   проекты ставят его на .lesson-body (packages/docs-book/app.js). Правила слоя content уступают
+   компонентам (ui-*) и разделам по порядку слоёв, не по специфичности. Цвета — только из
+   токенов; в уроках нет ни <style>, ни цветов, ни style="" (страж §5.9 п. 7). Подключается
+   tools/site-nav.ts после базы на каждой странице: на страницах без прозы правила спят. */
+@layer content {
+  /* ── строчный код в прозе ─────────────────────────────────────────────────────
+     Шрифт и размер — из базы сайта (site-base.css); здесь только перенос: инлайн-код
+     с пробелами (win.theme = "неоновый") не разрывается между строками — читается как
+     один жетон (решение владельца, 2026-08-14). Внутри блоков кода правило неприменимо. */
+  .prose code {
+    white-space: nowrap;
+  }
+
+  .prose idyl-code-block code,
+  .prose pre code {
+    white-space: inherit;
+  }
+
+  /* ── разделы урока ──────────────────────────────────────────────────────────── */
+  .docs-section {
+    min-width: 0;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+
+  .docs-section:first-child {
+    padding-top: 0;
+  }
+
+  .docs-section h2,
+  .docs-section h3,
+  .docs-section h4 {
+    margin: 0 0 14px;
+    color: var(--color-text);
+    line-height: 1.18;
+    letter-spacing: 0;
+    scroll-margin-top: calc(var(--topbar-height) + 18px);
+  }
+
+  .docs-section h2 {
+    font-size: 30px;
+  }
+
+  .docs-section h3 {
+    font-size: 24px;
+  }
+
+  .docs-section p,
+  .docs-section ul,
+  .docs-section ol {
+    margin: 0 0 16px;
+    color: var(--color-text-soft);
+  }
+
+  .docs-section li {
+    margin: 7px 0;
+  }
+
+  .docs-section code:not(.idyl-code):not(.sql-code):not(.json-code) {
+    padding: 0.1em 0.32em;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 5px;
+    background: var(--color-panel-raised);
+    color: var(--color-text);
+  }
+
+  .docs-section strong {
+    color: var(--color-text);
+  }
+
+  .docs-section table {
+    width: 100%;
+    max-width: 100%;
+    margin: 18px 0 20px;
+    /* Обычная табличная раскладка: колонки растягиваются на всю ширину,
+       последний столбец дотягивается до края таблицы. */
+    display: table;
+    border: 1px solid var(--color-border);
+    border-collapse: collapse;
+    background: var(--color-panel);
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  @media (max-width: 700px) {
+    /* На узких экранах — прежнее поведение: горизонтальный скролл внутри блока. */
+    .docs-section table {
+      display: block;
+      overflow-x: auto;
+    }
+  }
+
+  .docs-section th,
+  .docs-section td {
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  .docs-section th {
+    background: var(--color-panel-raised);
+    color: var(--color-text);
+    font-weight: 700;
+  }
+
+  .docs-section caption {
+    padding: 0 0 8px;
+    color: var(--color-text-soft);
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .docs-placeholder {
+    padding: 26px;
+    border: 1px dashed var(--color-border);
+    border-radius: 12px;
+    background: var(--color-panel);
+  }
+
+  /* ── врезки ─────────────────────────────────────────────────────────────────── */
+  .coord-note,
+  .tip-box {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 8px;
+    background: var(--color-accent-soft);
+    color: var(--color-text-soft);
+    font-size: 15px;
+  }
+
+  /* «Внимание» уроков про ошибки, таймер и клавиатуру: раньше — жёлтый текст на жёлтом
+     из чужой палитры в трёх копиях <style>; теперь — роль warning обеих тем. */
+  .warning-message {
+    margin: 8px 0 16px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--color-warning);
+    border-radius: 0 var(--radius-8) var(--radius-8) 0;
+    background: var(--color-warning-bg);
+    color: var(--color-text-soft);
+  }
+
+  .task-note {
+    margin: 0;
+    padding: 12px 18px;
+    border-left: 3px solid var(--color-accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--color-panel-raised);
+    color: var(--color-text-soft);
+  }
+
+  .task-note > :first-child {
+    margin-top: 0;
+  }
+
+  .task-note > :last-child {
+    margin-bottom: 0;
+  }
+
+  .task-pre {
+    overflow-x: auto;
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-panel);
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  /* SVG-превью в задачниках (черепашьи рисунки): картинка, не листинг. */
+  .task-svg-preview {
+    display: flex;
+    justify-content: center;
+    margin: 14px 0;
+  }
+
+  .task-svg-preview svg {
+    width: min(320px, 100%);
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+  }
+
+  /* ── содержимое файла и биты числа (уроки «Файлы», «JSON», «Типы») ───────────
+     Блок .file — то, что лежит в файле рядом с программой: моноширинный, переносы как
+     в файле. Раньше — светлая «бумага» из чужой палитры в двух копиях <style>. */
+  .file {
+    margin: 16px 0;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-8);
+    background: var(--color-code-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .bit-group {
+    display: inline-block;
+    margin: 0 2px;
+    font-family: var(--font-mono);
+  }
+
+  .bit-sign { color: var(--ansi-red); }
+  .bit-exponent { color: var(--ansi-green); }
+  .bit-mantissa { color: var(--ansi-blue); }
+
+  /* ── цвета консольного вывода в уроках ──────────────────────────────────────
+     Светлые значения (контраст ≥ 4,5 — методисты, 2026-08-22) живут в токенах --ansi-*. */
+  .color-red { color: var(--ansi-red); }
+  .color-green { color: var(--ansi-green); }
+  .color-yellow { color: var(--ansi-yellow); }
+  .color-blue { color: var(--ansi-blue); }
+  .color-magenta { color: var(--ansi-magenta); }
+  .color-cyan { color: var(--ansi-cyan); }
+  .color-reset { color: var(--color-text); }
+  /* «Светлый чёрный» \e[90m — им же среда печатает служебные строки. */
+  .color-bright-black { color: var(--color-text-muted); }
+
+  /* ── ленты задачника и карточки проектов ──────────────────────────────────────
+     Иерархия мягких лент (идея — из методических страниц, палитра и шрифты наши):
+     блок — лента во всю ширину, группа практики — узкая капсула, задание — лента-язычок
+     неполной ширины. Задания со звёздочкой — жёлтые. */
+  body[data-docs-mode='tasks'] .prose h2 {
+    margin: 8px 0 4px;
+    padding: 10px 18px;
+    border-left: 4px solid var(--color-accent);
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--color-accent-soft), transparent 82%);
+    color: var(--color-text);
+    font-size: 24px;
+    line-height: 1.25;
+  }
+
+  .prose .task-group {
+    width: fit-content;
+    margin: 30px 0 0;
+    padding: 5px 16px;
+    border-radius: 999px;
+    background: var(--color-panel-soft);
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  .prose .task-item {
+    width: fit-content;
+    min-width: min(340px, 75%);
+    margin: 34px 0 0;
+    padding: 8px 26px 8px 15px;
+    border-left: 3px solid var(--color-accent);
+    border-radius: 0 999px 999px 0;
+    background: linear-gradient(90deg, var(--color-accent-soft), transparent 92%);
+    color: var(--color-text);
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  /* Со звёздочкой: та же лента, но жёлтая — необязательное и посложнее. */
+  .prose .task-item.task-star {
+    border-left-color: var(--color-warning);
+    background: linear-gradient(90deg, var(--color-warning-bg), transparent 92%);
+  }
+
+  /* Страницы проектов: шапка-строка «Сцена · Сложность · Место» — рядом чипов. */
+  .prose .project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 20px;
+  }
+
+  .prose .project-chip {
+    padding: 5px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 14px;
+    color: var(--color-text-soft);
+  }
+
+  .prose .project-chip strong {
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  /* Этап проекта — лента в духе task-item, но с зелёным штрихом:
+     каждый этап по регламенту заканчивается работающей программой. */
+  .prose .stage-item {
+    width: fit-content;
+    min-width: min(340px, 75%);
+    margin: 34px 0 0;
+    padding: 8px 26px 8px 15px;
+    border-left: 3px solid var(--color-success);
+    border-radius: 0 999px 999px 0;
+    background: linear-gradient(90deg, var(--color-success-bg), transparent 92%);
+    color: var(--color-text);
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  /* Критерий приёмки этапа. */
+  .prose .stage-done {
+    color: var(--color-success);
+    font-size: 15px;
+  }
+
+  .prose .stage-done em {
+    font-weight: 700;
+  }
+
+  /* Скриншоты оконных и канвовых проектов: пара кадров «старт → успех». */
+  .prose .project-screen {
+    margin: 14px 0;
+  }
+
+  .prose .project-screen img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-popup);
+  }
+
+  /* ── блоки кода учебника: крючки IdylCodeBlock (app.js) ─────────────────────── */
+  .idyl-code,
+  .sql-code,
+  .json-code {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  .sql-code-wrapper .idyl-pre,
+  .json-code-wrapper .idyl-pre {
+    padding-top: 42px;
+  }
+
+  /* ── учебные демо ─────────────────────────────────────────────────────────────
+     Обёртка демо — одна на весь учебник (раньше — 17 копий .interactive-demo в <style>
+     уроков); внутри — <idyl-gui-demo> (настоящий снимок окна, компонент ui-gui-demo)
+     и заметка .coord-note. */
+  .interactive-demo,
+  .gui-demo-container {
+    margin: 20px 0;
+    padding: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-panel);
+    box-shadow: var(--shadow-popup);
+    overflow-x: auto;
+  }
+
+  /* Витрина тем (урок «Первое окно»): пять демо-окон в пяти темах рядами. */
+  .gui-demo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+    gap: 14px;
+  }
+
+  .gui-demo-gallery .ui-gui-demo-caption {
+    font-family: var(--font-mono);
+  }
+
+  .image-mirrored-y {
+    transform: scaleY(-1);
+  }
+
+  .image-faded {
+    opacity: 0.3;
+  }
+
+  /* Единственная ручная имитация на сайте — живой кот на WASD (canvas/sprites):
+     вердикт владельца 2026-09-27, остаётся интерактивом урока. Тёмное поле — цвет
+     холста программы, не палитра сайта. */
+  .canvas-sprite-demo {
+    display: grid;
+    place-items: center;
+    padding: 6px 0;
+  }
+
+  .canvas-sprite-surface {
+    position: relative;
+    width: min(100%, 450px);
+    height: 250px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: rgb(20, 24, 32);
+    overflow: hidden;
+  }
+
+  .canvas-sprite-surface[tabindex] {
+    cursor: pointer;
+  }
+
+  .canvas-sprite-surface[tabindex]:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .canvas-sprite-surface img {
+    position: absolute;
+    left: 40%;
+    top: 36%;
+    width: 67px;
+    height: 60px;
+    display: block;
+    object-fit: contain;
+  }
+
+  .canvas-sprite-surface span {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    color: rgba(255, 255, 255, 0.58);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  @media (max-width: 650px) {
+    .canvas-sprite-surface {
+      height: 200px;
+    }
+  }
+
+  /* Поле-демо повтора клавиш (canvas/keyboard). */
+  .key-repeat-demo {
+    display: block;
+    width: min(100%, 520px);
+    height: 44px;
+    margin: 16px 0 20px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0 14px;
+    background: var(--color-panel-raised);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .key-repeat-demo:focus {
+    outline: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+    outline-offset: 2px;
+  }
+
+  /* ── кнопка-призыв урока «Установка» ─────────────────────────────────────────── */
+  .big-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 28px;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 48%, transparent);
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-success));
+    color: var(--color-on-accent);
+    font-size: 20px;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: var(--shadow-popup);
+    transition: transform 0.14s ease, box-shadow 0.14s ease;
+  }
+
+  .big-button:hover {
+    color: var(--color-on-accent);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-dialog);
+  }
+
+  .setup-ide-action {
+    margin: 24px 0;
+    text-align: center;
+  }
+}

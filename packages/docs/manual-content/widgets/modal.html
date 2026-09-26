@@ -51,9 +51,9 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <idyl-gui-demo></idyl-gui-demo>
+        <idyl-gui-demo events='[{"type":"gui.Button","event":"click"}]' caption="Окно после нажатия кнопки: диалог открыт"></idyl-gui-demo>
         <div class="coord-note">
-          📢 Нажмите на кнопку — появится модальное окно с сообщением и кнопкой «Понятно».
+          📢 По нажатию кнопки появляется модальное окно с сообщением и кнопкой «Понятно».
         </div>
       </div>
 
@@ -116,9 +116,9 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <idyl-gui-demo></idyl-gui-demo>
+        <idyl-gui-demo events='[{"type":"gui.Button","event":"click"}]' caption="Окно после нажатия кнопки: диалог ждёт ответа"></idyl-gui-demo>
         <div class="coord-note">
-          ❓ Нажмите на кнопку — появится диалог с выбором «Да» или «Нет». Результат отобразится на лейбле.
+          ❓ По нажатию кнопки появляется диалог с выбором «Да» или «Нет»; результат отображается на лейбле.
         </div>
       </div>
 
@@ -191,9 +191,9 @@ main() {
       <p>Обратите внимание: <code>on_confirm</code> срабатывает <strong>только</strong> при нажатии «Сохранить». Если пользователь нажал «Отмена» — вызывается <code>on_cancel</code>, а введённый текст никуда не попадает.</p>
 
       <div class="interactive-demo">
-        <idyl-gui-demo></idyl-gui-demo>
+        <idyl-gui-demo events='[{"type":"gui.Button","event":"click"}]' caption="Окно после нажатия кнопки: диалог ждёт имя"></idyl-gui-demo>
         <div class="coord-note">
-          ✏️ Введите имя в появившемся диалоге — оно отобразится на лейбле. Нажмёте «Отмена» — лейбл покажет «Ввод отменён».
+          ✏️ Имя из диалога отображается на лейбле; после «Отмена» лейбл показывает «Ввод отменён».
         </div>
       </div>
 
@@ -226,16 +226,19 @@ main() {
     
     gui.Button alert_btn;
     alert_btn.text = "Показать Alert";
+    alert_btn.width = 170;
     alert_btn.x = 30;
     alert_btn.y = 30;
     
     gui.Button confirm_btn;
     confirm_btn.text = "Показать Confirm";
+    confirm_btn.width = 170;
     confirm_btn.x = 30;
     confirm_btn.y = 80;
     
     gui.Button input_btn;
     input_btn.text = "Показать Input";
+    input_btn.width = 170;
     input_btn.x = 30;
     input_btn.y = 130;
     
