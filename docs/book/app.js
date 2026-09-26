@@ -159,10 +159,23 @@
       document.body.classList.toggle('sidebar-open');
     });
 
+    // Крестик очистки — свой значок «close» из набора; виден, пока в поле что-то есть.
+    els.searchClear = document.getElementById('lesson-search-clear');
+    if (els.searchClear && window.IdylliumIcons) els.searchClear.innerHTML = window.IdylliumIcons.svg('close', { size: 14 });
+    const syncSearchClear = () => { if (els.searchClear) els.searchClear.hidden = els.search.value === ''; };
     els.search.addEventListener('input', () => {
       state.search = els.search.value.trim().toLowerCase();
+      syncSearchClear();
       renderNavigation();
     });
+    if (els.searchClear) {
+      els.searchClear.addEventListener('click', () => {
+        els.search.value = '';
+        els.search.dispatchEvent(new Event('input', { bubbles: true }));
+        els.search.focus();
+      });
+    }
+    syncSearchClear();
 
     document.addEventListener('click', (event) => {
       const link = event.target.closest('a');
@@ -260,7 +273,7 @@
     overlay.className = 'lesson-loading';
     overlay.innerHTML = `
       <div class="lesson-loading-box" role="status" aria-live="polite">
-        <span class="lesson-loading-spinner" aria-hidden="true"></span>
+        <span class="ui-spinner lesson-loading-spinner" aria-hidden="true"></span>
         <span>${UI.loading}</span>
       </div>
     `;
@@ -355,24 +368,24 @@
   function showDocsModal({ title, message, mode, value }) {
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
-      overlay.className = 'docs-modal-overlay';
+      overlay.className = 'ui-backdrop docs-modal-overlay';
       const lines = String(message ?? '').split('\n').filter((line) => line.trim().length > 0);
       const body = lines.length > 0 ? lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('') : '<p></p>';
       const input = mode === 'input'
-        ? `<input class="docs-modal-input" type="text" value="${escapeHtml(value ?? '')}">`
+        ? `<input class="ui-field docs-modal-input" type="text" value="${escapeHtml(value ?? '')}">`
         : '';
       const buttons = mode === 'confirm'
-        ? '<button type="button" data-result="false">Нет</button><button class="primary" type="button" data-result="true">Да</button>'
+        ? '<button class="ui-button" type="button" data-result="false">Нет</button><button class="ui-button ui-button--tonal primary" type="button" data-result="true">Да</button>'
         : mode === 'input'
-          ? '<button type="button" data-result="null">Отмена</button><button class="primary" type="button" data-result="input">OK</button>'
-          : '<button class="primary" type="button" data-result="true">OK</button>';
+          ? '<button class="ui-button" type="button" data-result="null">Отмена</button><button class="ui-button ui-button--tonal primary" type="button" data-result="input">OK</button>'
+          : '<button class="ui-button ui-button--tonal primary" type="button" data-result="true">OK</button>';
 
       overlay.innerHTML = `
-        <div class="docs-modal" role="dialog" aria-modal="true">
-          <h3>${escapeHtml(title)}</h3>
-          <div class="docs-modal-message">${body}</div>
+        <div class="ui-dialog ui-dialog--sm docs-modal" role="dialog" aria-modal="true">
+          <h3 class="ui-dialog-title">${escapeHtml(title)}</h3>
+          <div class="ui-dialog-body docs-modal-message">${body}</div>
           ${input}
-          <div class="docs-modal-actions">${buttons}</div>
+          <div class="ui-dialog-actions docs-modal-actions">${buttons}</div>
         </div>
       `;
 
@@ -479,10 +492,10 @@
 
       return `
         <section class="nav-section ${collapsed ? 'collapsed' : ''}" data-section="${section.id}">
-          <button class="nav-section-button" type="button" data-section-toggle="${section.id}">
+          <button class="ui-nav-group-button nav-section-button" type="button" data-section-toggle="${section.id}">
             <span>${sectionIcon(section.icon)}</span>
             <span class="nav-section-title">${escapeHtml(section.title)}</span>
-            <span class="nav-section-count">${lessons.length}</span>
+            <span class="ui-nav-count nav-section-count">${lessons.length}</span>
           </button>
           <div class="nav-lessons">
             ${lessons.map((lesson) => navLesson(section, lesson, current)).join('')}
@@ -504,7 +517,7 @@
   function navLesson(section, lesson, current) {
     const active = current && current.sectionId === section.id && current.id === lesson.id;
     return `
-      <a class="nav-lesson ${active ? 'active' : ''}" href="${lessonUrl(section.id, lesson.id)}">
+      <a class="ui-nav-link nav-lesson ${active ? 'is-active active' : ''}" href="${lessonUrl(section.id, lesson.id)}">
         <span class="lesson-number">${String(lesson.number).padStart(2, '0')}</span>
         <span class="lesson-label">${escapeHtml(lesson.title)}</span>
       </a>
@@ -525,9 +538,9 @@
     });
 
     els.toc.innerHTML = `
-      <div class="toc-title">На странице</div>
+      <div class="ui-toc-title toc-title">На странице</div>
       ${headings.map((heading) => `
-        <a class="toc-link" href="#" data-target="${heading.id}">${escapeHtml(heading.textContent.trim())}</a>
+        <a class="ui-toc-link toc-link" href="#" data-target="${heading.id}">${escapeHtml(heading.textContent.trim())}</a>
       `).join('')}
     `;
   }
@@ -592,7 +605,7 @@
     // обновить страницу решает почти все такие случаи (просьба владельца,
     // 2026-08-29).
     els.view.innerHTML = `
-      <div class="error-card">
+      <div class="ui-state ui-state--error error-card">
         <h1>${escapeHtml(UI.fatal)}</h1>
         <p>${escapeHtml(String(error?.message ?? error))}</p>
         <p>Попробуйте обновить страницу — чаще всего этого достаточно.
@@ -999,8 +1012,8 @@
     const wrapper = document.createElement('div');
     const languageId = language.toLowerCase();
     wrapper.className = languageId
-      ? `idyl-code-wrapper ${languageId}-code-wrapper`
-      : 'idyl-code-wrapper';
+      ? `ui-code idyl-code-wrapper ${languageId}-code-wrapper`
+      : 'ui-code idyl-code-wrapper';
 
     const pre = document.createElement('pre');
     pre.className = 'idyl-pre';
@@ -1008,22 +1021,22 @@
 
     if (language) {
       const label = document.createElement('span');
-      label.className = 'code-language';
+      label.className = 'ui-code-lang code-language';
       label.textContent = language;
       wrapper.appendChild(label);
     }
 
     const button = document.createElement('button');
-    button.className = 'idyl-copy-btn';
+    button.className = 'ui-button ui-button--sm ui-code-copy idyl-copy-btn';
     button.type = 'button';
     button.textContent = 'Копировать';
     button.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(code);
-        button.classList.add('copied');
+        button.classList.add('copied', 'is-done');
         button.textContent = 'Скопировано';
         setTimeout(() => {
-          button.classList.remove('copied');
+          button.classList.remove('copied', 'is-done');
           button.textContent = 'Копировать';
         }, 1000);
       } catch {
@@ -1078,7 +1091,8 @@
       if (this.dataset.ready === '1') return;
       this.dataset.ready = '1';
       const div = document.createElement('div');
-      div.className = 'idyl-output';
+      div.className = 'ui-code ui-code--output idyl-output';
+      div.dataset.label = 'Вывод';
       div.innerHTML = (this.innerHTML ?? '').replace(/^\n/, '').replace(/\n\s*$/, '');
       this.innerHTML = '';
       this.appendChild(div);
@@ -1090,7 +1104,8 @@
       if (this.dataset.ready === '1') return;
       this.dataset.ready = '1';
       const div = document.createElement('div');
-      div.className = 'idyl-error';
+      div.className = 'ui-code ui-code--error idyl-error';
+      div.dataset.label = 'Ошибка';
       div.textContent = (this.textContent ?? '').replace(/^\n/, '').replace(/\n\s*$/, '');
       this.innerHTML = '';
       this.appendChild(div);

@@ -39,79 +39,7 @@
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
 
-.reference-sidebar {
-  position: sticky;
-  top: var(--topbar-height);
-  height: calc(100vh - var(--topbar-height));
-  overflow: auto;
-  border-right: 1px solid var(--border);
-  background: var(--panel);
-}
-
-.sidebar-search {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  padding: 14px;
-  border-bottom: 1px solid var(--border);
-  background: var(--panel);
-}
-
-.sidebar-search label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.search-field {
-  position: relative;
-}
-
-.sidebar-search input {
-  width: 100%;
-  height: 36px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  outline: 0;
-  padding: 0 34px 0 10px;
-  background: var(--code-bg);
-  color: var(--text);
-}
-
 /* Крестик очистки — свой, из единого набора значков; браузерный спрятан. */
-.sidebar-search input::-webkit-search-cancel-button,
-.sidebar-search input::-webkit-search-decoration {
-  -webkit-appearance: none;
-  appearance: none;
-  display: none;
-}
-
-.search-clear {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  transform: translateY(-50%);
-}
-
-.search-clear:hover {
-  color: var(--text);
-  background: var(--panel-soft);
-}
-
 .search-clear[hidden] {
   display: none;
 }
@@ -119,45 +47,6 @@
 .search-clear svg {
   display: block;
   fill: currentColor;
-}
-
-.sidebar-search input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.reference-nav {
-  padding: 10px;
-}
-
-.nav-heading {
-  margin: 14px 8px 5px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.nav-link {
-  min-height: 34px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 9px;
-  border-radius: 8px;
-  color: var(--text-soft);
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.nav-link:hover {
-  background: var(--panel-raised);
-  color: var(--text);
-}
-
-.nav-link.active {
-  background: var(--accent-soft);
-  color: var(--text);
 }
 
 .nav-module {
@@ -190,12 +79,6 @@
   white-space: nowrap;
 }
 
-.search-empty {
-  padding: 18px 9px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
 .reference-main {
   min-width: 0;
   padding: 34px clamp(24px, 5vw, 72px) 70px;
@@ -204,14 +87,6 @@
 .reference-view {
   max-width: 1040px;
   margin: 0 auto;
-}
-
-.loading-state,
-.error-state {
-  padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
 }
 
 .error-state {
@@ -259,22 +134,6 @@
 
 .api-qualified-name {
   font-family: var(--font-mono);
-}
-
-.kind-badge,
-.readonly-badge,
-.owner-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 23px;
-  padding: 1px 7px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel-raised);
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
 }
 
 .kind-badge.type {
@@ -528,56 +387,8 @@
   margin: 7px 0;
 }
 
-.code-sample {
-  position: relative;
-  margin: 0;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 18px 52px 18px 20px;
-  background: var(--code-bg);
-  color: var(--text);
-  box-shadow: var(--shadow);
-  font: 16px/1.58 var(--font-mono);
-  white-space: pre;
-}
-
 .json-code-sample {
   padding-top: 42px;
-}
-
-.code-language {
-  position: absolute;
-  top: 12px;
-  left: 20px;
-  color: var(--muted);
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.copy-button {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  min-width: 34px;
-  height: 29px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--panel-raised);
-  color: var(--text-soft);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.copy-button:hover {
-  border-color: var(--accent);
-  color: var(--text);
-}
-
-.copy-button.copied {
-  color: var(--green);
 }
 
 .full-example-list {
@@ -595,17 +406,6 @@
   color: var(--text-soft);
 }
 
-.hl-keyword { color: var(--hl-keyword); font-weight: 700; }
-.hl-typeName { color: var(--hl-typeName); }
-.hl-className { color: var(--hl-className); }
-.hl-function { color: var(--hl-function); }
-.hl-object { color: var(--hl-object); }
-.hl-string { color: var(--hl-string); }
-.hl-number { color: var(--hl-number); }
-.hl-comment { color: var(--hl-comment); font-style: italic; }
-.hl-brackets { color: var(--hl-brackets); }
-.hl-jsonKey { color: var(--hl-json-key); }
-
 .extends-line {
   margin: 12px 0 0;
   color: var(--muted);
@@ -621,11 +421,6 @@
 }
 
 @media (max-width: 820px) {
-  /* Шапка — общая (assets/site-nav.css); здесь только показать гамбургер боковой колонки. */
-  .menu-toggle {
-    display: inline-flex;
-  }
-
   .reference-shell {
     display: block;
   }
@@ -673,7 +468,7 @@
     font-size: 28px;
   }
 
-  .code-sample {
+  .code-sample > pre {
     padding: 50px 16px 16px;
   }
 }

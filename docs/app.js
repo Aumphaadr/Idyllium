@@ -4432,25 +4432,25 @@
       const rest = source.slice(index);
       const comment = /^\/\/[^\n]*/u.exec(rest);
       if (comment) {
-        html += span("tok-comment", comment[0]);
+        html += span("hl-comment", comment[0]);
         index += comment[0].length;
         continue;
       }
       const string = /^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/u.exec(rest);
       if (string) {
-        html += span("tok-string", string[0]);
+        html += span("hl-string", string[0]);
         index += string[0].length;
         continue;
       }
       const number = /^\b\d+(?:\.\d+)?\b/u.exec(rest);
       if (number) {
-        html += span("tok-number", number[0]);
+        html += span("hl-number", number[0]);
         index += number[0].length;
         continue;
       }
       const member = /^(\.)([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)/u.exec(rest);
       if (member) {
-        html += escapeHtml(member[1]) + span("tok-property", member[2]);
+        html += escapeHtml(member[1]) + span("hl-object", member[2]);
         index += member[0].length;
         continue;
       }
@@ -4462,11 +4462,11 @@
         const isDeclaredClass = /\b(?:class|extends)\s*$/u.test(beforeWord);
         const isTypePosition = /^[A-ZА-ЯЁ]/u.test(word) && /^\s+[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*\s*(?:[=;,)\[]|$)/u.test(afterWord);
         if (KEYWORDS.has(word)) {
-          html += span("tok-keyword", word);
+          html += span("hl-keyword", word);
         } else if (BUILTIN_TYPES.has(word) || CLASS_NAMES.has(word) || QUALIFIED_TYPES.has(word) || isDeclaredClass || isTypePosition) {
-          html += span("tok-type", word);
+          html += span("hl-typeName", word);
         } else if (/^\s*\(/u.test(afterWord)) {
-          html += span("tok-function", word);
+          html += span("hl-function", word);
         } else {
           html += escapeHtml(word);
         }
@@ -7532,10 +7532,10 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const canShareFile = Boolean(currentItem && currentItem.kind !== "asset");
       let scope = readStored(SCOPE_STORAGE_KEY) === "file" && canShareFile ? "file" : "project";
       host.modal.replaceChildren();
-      const card = element("div", "file-props-card share-card");
+      const card = element("div", "ui-dialog ui-dialog--lg file-props-card share-card");
       const head = element("div", "share-head");
-      head.appendChild(element("h3", "file-props-title", "Поделиться"));
-      const closeButton = element("button", "share-close", "Закрыть");
+      head.appendChild(element("h3", "ui-dialog-title file-props-title", "Поделиться"));
+      const closeButton = element("button", "ui-button share-close", "Закрыть");
       closeButton.type = "button";
       head.appendChild(closeButton);
       card.appendChild(head);
@@ -7556,11 +7556,11 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const zipSize = element("p", "share-way-fact");
       zipWay.appendChild(zipSize);
       const zipButtons = element("div", "share-way-actions");
-      const downloadButton = element("button", "share-primary", "Скачать проект");
+      const downloadButton = element("button", "ui-button ui-button--primary share-primary", "Скачать проект");
       downloadButton.type = "button";
       zipButtons.appendChild(downloadButton);
       let zipFileForShare = null;
-      const systemShareButton = element("button", "", "Отправить…");
+      const systemShareButton = element("button", "ui-button", "Отправить…");
       systemShareButton.type = "button";
       systemShareButton.title = "Системное «Поделиться»: архив уходит прямо в мессенджер или почту";
       zipWay.appendChild(zipButtons);
@@ -7574,7 +7574,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const scopeRow = element("div", "share-scope");
       const scopeButtons = {};
       for (const [value, label] of [["project", "Весь проект"], ["file", `Только ${shortFileName(host.currentFile())}`]]) {
-        const button = element("button", "share-scope-button", label);
+        const button = element("button", "ui-button ui-button--sm share-scope-button", label);
         button.type = "button";
         button.disabled = value === "file" && !canShareFile;
         button.addEventListener("click", () => {
@@ -7606,7 +7606,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const assetsNote = element("div", "share-assets");
       linkWay.appendChild(assetsNote);
       const linkButtons = element("div", "share-way-actions");
-      const copyButton = element("button", "share-primary", "Скопировать ссылку");
+      const copyButton = element("button", "ui-button ui-button--primary share-primary", "Скопировать ссылку");
       copyButton.type = "button";
       linkButtons.appendChild(copyButton);
       linkWay.appendChild(linkButtons);
@@ -7621,9 +7621,9 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const qrNote = element("p", "share-way-fact");
       qrWay.appendChild(qrNote);
       const qrButtons = element("div", "share-way-actions");
-      const saveImage = element("button", "", "Скачать картинку");
+      const saveImage = element("button", "ui-button", "Скачать картинку");
       saveImage.type = "button";
-      const copyImage = element("button", "share-primary", "Скопировать картинку");
+      const copyImage = element("button", "ui-button ui-button--primary share-primary", "Скопировать картинку");
       copyImage.type = "button";
       const canCopyImage = Boolean(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
       if (canCopyImage) qrButtons.appendChild(copyImage);
@@ -7775,8 +7775,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     function openQrReader() {
       host.hideMenus();
       host.modal.replaceChildren();
-      const card = element("div", "file-props-card share-reader-card");
-      card.appendChild(element("h3", "file-props-title", "Открыть проект из QR-картинки"));
+      const card = element("div", "ui-dialog file-props-card share-reader-card");
+      card.appendChild(element("h3", "ui-dialog-title file-props-title", "Открыть проект из QR-картинки"));
       card.appendChild(element(
         "p",
         "share-lead",
@@ -7793,10 +7793,10 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       picker.accept = "image/*";
       picker.hidden = true;
       card.appendChild(picker);
-      const actions = element("div", "file-props-actions share-actions");
-      const choose = element("button", "share-primary", "Выбрать картинку…");
+      const actions = element("div", "ui-dialog-actions file-props-actions share-actions");
+      const choose = element("button", "ui-button ui-button--primary share-primary", "Выбрать картинку…");
       choose.type = "button";
-      const close = element("button", "", "Закрыть");
+      const close = element("button", "ui-button", "Закрыть");
       close.type = "button";
       actions.append(choose, close);
       card.appendChild(actions);
@@ -7999,13 +7999,13 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       }
       if (details.length > 0) text.appendChild(element("p", guest.missing.length > 0 ? "guest-banner-details is-warn" : "guest-banner-details", details.join(" ")));
       const buttons = element("div", "guest-banner-actions");
-      const save = element("button", "share-primary", "Сохранить к себе");
+      const save = element("button", "ui-button ui-button--primary share-primary", "Сохранить к себе");
       save.type = "button";
       save.addEventListener("click", () => {
         const base = guest.from ? `${guest.name} — ${guest.from}` : guest.name;
         host.saveGuest(host.uniqueProjectName(base)).catch((error) => setStatus(error instanceof Error ? error.message : String(error), true));
       });
-      const close = element("button", "", "Закрыть");
+      const close = element("button", "ui-button", "Закрыть");
       close.type = "button";
       close.title = "Вернуться к своему проекту; работа по ссылке не сохранится";
       close.addEventListener("click", () => host.leaveGuest().catch((error) => setStatus(error instanceof Error ? error.message : String(error), true)));
@@ -8046,6 +8046,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "color-text-soft": "#c9bdd6",
       "color-text-muted": "#8e819d",
       "color-on-accent": "#0c0515",
+      "color-on-solid": "#ffffff",
       "color-border": "#342846",
       "color-border-soft": "rgba(255, 255, 255, 0.08)",
       "color-accent": "#87bfff",
@@ -8061,6 +8062,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "color-info-bg": "rgba(135, 191, 255, 0.12)",
       "color-run": "#179f5b",
       "color-run-hover": "#1fba6d",
+      "color-stop": "#c7728a",
+      "color-stop-hover": "#f38ba8",
       "color-focus": "#87bfff",
       "color-selection": "rgba(135, 191, 255, 0.28)",
       "editor-bg": "#100b1a",
@@ -8124,6 +8127,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "color-text-soft": "#463b56",
       "color-text-muted": "#6d637b",
       "color-on-accent": "#ffffff",
+      "color-on-solid": "#ffffff",
       "color-border": "#c8bed5",
       "color-border-soft": "rgba(33, 26, 46, 0.14)",
       "color-accent": "#275f9e",
@@ -8139,6 +8143,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "color-info-bg": "rgba(39, 95, 158, 0.13)",
       "color-run": "#177b49",
       "color-run-hover": "#12683d",
+      "color-stop": "#931f19",
+      "color-stop-hover": "#b3261e",
       "color-focus": "#275f9e",
       "color-selection": "rgba(39, 95, 158, 0.22)",
       "editor-bg": "#f2edf7",
@@ -9469,7 +9475,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   fileAppMenu.addEventListener("click", handleFileAppMenuClick);
   editAppMenu.addEventListener("click", handleEditAppMenuClick);
   colorPickerButton.addEventListener("click", toggleColorPickerMenu);
-  document.querySelectorAll('.site-nav-collapsed [data-role="color-picker-button"]').forEach((button) => {
+  document.querySelectorAll('.ui-nav-collapsed [data-role="color-picker-button"]').forEach((button) => {
     button.addEventListener("click", toggleColorPickerMenu);
   });
   themeDarkButton.addEventListener("click", () => {
@@ -10510,13 +10516,14 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   function openDeleteConfirm(path, type, left, top) {
     fileContextMenu.replaceChildren();
     const label = document.createElement("div");
-    label.className = "file-delete-prompt";
+    label.className = "ui-menu-caption file-delete-prompt";
     label.textContent = "Удалить?";
     fileContextMenu.appendChild(label);
     const actions = document.createElement("div");
     actions.className = "file-delete-actions";
     const yes = document.createElement("button");
     yes.type = "button";
+    yes.className = "ui-button ui-button--sm ui-button--danger";
     yes.textContent = "Да";
     yes.addEventListener("click", () => {
       hideFileContextMenu();
@@ -10524,6 +10531,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     });
     const no = document.createElement("button");
     no.type = "button";
+    no.className = "ui-button ui-button--sm";
     no.textContent = "Нет";
     no.addEventListener("click", hideFileContextMenu);
     actions.append(yes, no);
@@ -10599,7 +10607,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     for (const [label, action] of actions) {
       const button = document.createElement("button");
       button.type = "button";
-      if (window.IdylliumIcons && CONTEXT_ICONS[label]) button.appendChild(window.IdylliumIcons.element(CONTEXT_ICONS[label], { size: 16, className: "menu-icon" }));
+      button.className = "ui-menu-item";
+      if (window.IdylliumIcons && CONTEXT_ICONS[label]) button.appendChild(window.IdylliumIcons.element(CONTEXT_ICONS[label], { size: 16, className: "ui-menu-icon menu-icon" }));
       button.appendChild(document.createTextNode(label));
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -10798,9 +10807,9 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     }
     filePropsModal.replaceChildren();
     const card = document.createElement("div");
-    card.className = "file-props-card";
+    card.className = "ui-dialog file-props-card";
     const heading = document.createElement("h3");
-    heading.className = "file-props-title";
+    heading.className = "ui-dialog-title file-props-title";
     heading.textContent = title;
     card.appendChild(heading);
     const table = document.createElement("table");
@@ -10825,9 +10834,10 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       }
     }
     const actions = document.createElement("div");
-    actions.className = "file-props-actions";
+    actions.className = "ui-dialog-actions file-props-actions";
     const close = document.createElement("button");
     close.type = "button";
+    close.className = "ui-button";
     close.textContent = "Закрыть";
     close.addEventListener("click", hideFileProperties);
     actions.appendChild(close);
@@ -12159,12 +12169,13 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     actions.className = "app-menu-form-actions";
     const cancel = document.createElement("button");
     cancel.type = "button";
+    cancel.className = "ui-button ui-button--sm";
     cancel.textContent = "Отмена";
     cancel.addEventListener("click", resetFileAppMenu);
     actions.appendChild(cancel);
     const submit = document.createElement("button");
     submit.type = "submit";
-    submit.className = "primary";
+    submit.className = "ui-button ui-button--sm ui-button--tonal primary";
     submit.textContent = options.submitLabel;
     actions.appendChild(submit);
     form.appendChild(actions);
@@ -12214,6 +12225,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     for (const entry of sorted) {
       const button = document.createElement("button");
       button.type = "button";
+      button.className = "ui-menu-item";
       const name = document.createElement("strong");
       name.textContent = entry.name;
       button.appendChild(name);
@@ -12244,12 +12256,13 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     actions.className = "app-menu-form-actions";
     const cancel = document.createElement("button");
     cancel.type = "button";
+    cancel.className = "ui-button ui-button--sm";
     cancel.textContent = "Нет";
     cancel.addEventListener("click", resetFileAppMenu);
     actions.appendChild(cancel);
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "app-menu-danger";
+    remove.className = "ui-button ui-button--sm ui-button--danger app-menu-danger";
     remove.textContent = "Да, удалить";
     remove.addEventListener("click", async () => {
       remove.disabled = true;
@@ -12272,6 +12285,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     header.className = "app-menu-panel-header";
     const back = document.createElement("button");
     back.type = "button";
+    back.className = "ui-button ui-button--sm ui-button--icon";
     back.textContent = "‹";
     back.title = "Назад";
     back.setAttribute("aria-label", "Назад");
@@ -12419,7 +12433,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     hideUploadMenu();
     hideThemeMenu();
     colorPickerButton.setAttribute("aria-expanded", "true");
-    const anchor = Array.from(document.querySelectorAll('.site-nav-group[data-group="tools"] > .site-nav-button, .site-nav-collapsed > .site-nav-button')).find((button) => button.offsetParent !== null);
+    const anchor = Array.from(document.querySelectorAll('.ui-nav-group[data-group="tools"] > .ui-topbar-button, .site-nav-collapsed > .site-nav-button')).find((button) => button.offsetParent !== null);
     const anchorRect = anchor ? anchor.getBoundingClientRect() : null;
     if (!colorPicker) return;
     colorPicker.open(anchorRect ? { left: anchorRect.left + anchorRect.width / 2 - 230, top: anchorRect.bottom + 8 } : void 0);

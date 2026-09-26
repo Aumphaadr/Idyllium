@@ -99,7 +99,7 @@ function renderTests() {
     row.className = 'test-row';
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'btn remove';
+    remove.className = 'ui-button ui-button--sm ui-button--icon btn remove';
     remove.textContent = '×';
     remove.title = 'Убрать тест';
     remove.addEventListener('click', () => update({ tests: state.tests.filter((_, position) => position !== index) }, true));
@@ -108,7 +108,7 @@ function renderTests() {
       const mini = (text) => { const span = document.createElement('span'); span.className = 'label-mini'; span.textContent = text; return span; };
       const field = (value, onInput) => {
         const input = document.createElement('input');
-        input.type = 'number'; input.className = 'small'; input.value = value;
+        input.type = 'number'; input.className = 'ui-field ui-field--sm small'; input.value = value;
         if (test.kind === 'float') input.step = 'any';
         input.addEventListener('input', () => onInput(Number(input.value)));
         return input;
@@ -121,7 +121,7 @@ function renderTests() {
       );
       // Целые или дробные: дробные нужны задачам, где ввод читается через get_float.
       const kind = document.createElement('select');
-      kind.className = 'kind';
+      kind.className = 'ui-field ui-field--sm kind';
       kind.title = 'Какие числа подставлять';
       for (const [value, text] of [['int', 'целые'], ['float', 'дробные']]) kind.append(new Option(text, value));
       kind.value = test.kind === 'float' ? 'float' : 'int';
@@ -163,10 +163,11 @@ function renderRules() {
     const row = document.createElement('div');
     row.className = 'rule-row';
     const when = document.createElement('input');
-    when.className = 'when';
+    when.className = 'ui-field ui-field--sm ui-field--mono when';
     when.placeholder = 'когда (пусто — всегда)';
     when.value = rule.when;
     const expr = document.createElement('input');
+    expr.className = 'ui-field ui-field--sm ui-field--mono';
     expr.placeholder = 'условие: {out1} == {in1} * 2';
     expr.value = rule.expr;
     const commit = () => setRules(currentRules().map((item, position) => (position === index ? { when: when.value, expr: expr.value } : item)));
@@ -176,7 +177,7 @@ function renderRules() {
     }
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'btn remove';
+    remove.className = 'ui-button ui-button--sm ui-button--icon btn remove';
     remove.textContent = '×';
     remove.addEventListener('click', () => setRules(currentRules().filter((_, position) => position !== index), true));
     row.append(when, expr, remove);
@@ -249,7 +250,7 @@ function issueLine(issue) {
     // Дыра в тестах найдена вместе с тестом, который её закрывает.
     const fix = document.createElement('button');
     fix.type = 'button';
-    fix.className = 'btn btn-fix';
+    fix.className = 'ui-button ui-button--sm ui-button--tonal btn btn-fix';
     fix.textContent = `+ тест «${issue.suggestTest.join(' ')}»`;
     fix.title = 'Добавить этот тест в список';
     fix.addEventListener('click', () => update({ tests: [...state.tests, { in: issue.suggestTest.join(' ') }] }, true));

@@ -245,10 +245,10 @@ export function setupShare(host) {
     let scope = readStored(SCOPE_STORAGE_KEY) === 'file' && canShareFile ? 'file' : 'project';
 
     host.modal.replaceChildren();
-    const card = element('div', 'file-props-card share-card');
+    const card = element('div', 'ui-dialog ui-dialog--lg file-props-card share-card');
     const head = element('div', 'share-head');
-    head.appendChild(element('h3', 'file-props-title', 'Поделиться'));
-    const closeButton = element('button', 'share-close', 'Закрыть');
+    head.appendChild(element('h3', 'ui-dialog-title file-props-title', 'Поделиться'));
+    const closeButton = element('button', 'ui-button share-close', 'Закрыть');
     closeButton.type = 'button';
     head.appendChild(closeButton);
     card.appendChild(head);
@@ -266,11 +266,11 @@ export function setupShare(host) {
     const zipSize = element('p', 'share-way-fact');
     zipWay.appendChild(zipSize);
     const zipButtons = element('div', 'share-way-actions');
-    const downloadButton = element('button', 'share-primary', 'Скачать проект');
+    const downloadButton = element('button', 'ui-button ui-button--primary share-primary', 'Скачать проект');
     downloadButton.type = 'button';
     zipButtons.appendChild(downloadButton);
     let zipFileForShare = null;
-    const systemShareButton = element('button', '', 'Отправить…');
+    const systemShareButton = element('button', 'ui-button', 'Отправить…');
     systemShareButton.type = 'button';
     systemShareButton.title = 'Системное «Поделиться»: архив уходит прямо в мессенджер или почту';
     // Кнопка появляется, только если браузер умеет отдавать файлы в системное «Поделиться»
@@ -289,7 +289,7 @@ export function setupShare(host) {
     const scopeRow = element('div', 'share-scope');
     const scopeButtons = {};
     for (const [value, label] of [['project', 'Весь проект'], ['file', `Только ${shortFileName(host.currentFile())}`]]) {
-      const button = element('button', 'share-scope-button', label);
+      const button = element('button', 'ui-button ui-button--sm share-scope-button', label);
       button.type = 'button';
       button.disabled = value === 'file' && !canShareFile;
       button.addEventListener('click', () => { scope = value; writeStored(SCOPE_STORAGE_KEY, scope); refresh(); });
@@ -319,7 +319,7 @@ export function setupShare(host) {
     const assetsNote = element('div', 'share-assets');
     linkWay.appendChild(assetsNote);
     const linkButtons = element('div', 'share-way-actions');
-    const copyButton = element('button', 'share-primary', 'Скопировать ссылку');
+    const copyButton = element('button', 'ui-button ui-button--primary share-primary', 'Скопировать ссылку');
     copyButton.type = 'button';
     linkButtons.appendChild(copyButton);
     linkWay.appendChild(linkButtons);
@@ -336,9 +336,9 @@ export function setupShare(host) {
     const qrNote = element('p', 'share-way-fact');
     qrWay.appendChild(qrNote);
     const qrButtons = element('div', 'share-way-actions');
-    const saveImage = element('button', '', 'Скачать картинку');
+    const saveImage = element('button', 'ui-button', 'Скачать картинку');
     saveImage.type = 'button';
-    const copyImage = element('button', 'share-primary', 'Скопировать картинку');
+    const copyImage = element('button', 'ui-button ui-button--primary share-primary', 'Скопировать картинку');
     copyImage.type = 'button';
     const canCopyImage = Boolean(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
     if (canCopyImage) qrButtons.appendChild(copyImage);
@@ -493,8 +493,8 @@ export function setupShare(host) {
   function openQrReader() {
     host.hideMenus();
     host.modal.replaceChildren();
-    const card = element('div', 'file-props-card share-reader-card');
-    card.appendChild(element('h3', 'file-props-title', 'Открыть проект из QR-картинки'));
+    const card = element('div', 'ui-dialog file-props-card share-reader-card');
+    card.appendChild(element('h3', 'ui-dialog-title file-props-title', 'Открыть проект из QR-картинки'));
     card.appendChild(element('p', 'share-lead',
       'Вам прислали проект QR-кодом? Выберите картинку, вставьте её из буфера (Ctrl+V) или перетащите сюда. '
       + 'Подойдёт и снимок экрана, на котором виден код.'));
@@ -509,10 +509,10 @@ export function setupShare(host) {
     picker.accept = 'image/*';
     picker.hidden = true;
     card.appendChild(picker);
-    const actions = element('div', 'file-props-actions share-actions');
-    const choose = element('button', 'share-primary', 'Выбрать картинку…');
+    const actions = element('div', 'ui-dialog-actions file-props-actions share-actions');
+    const choose = element('button', 'ui-button ui-button--primary share-primary', 'Выбрать картинку…');
     choose.type = 'button';
-    const close = element('button', '', 'Закрыть');
+    const close = element('button', 'ui-button', 'Закрыть');
     close.type = 'button';
     actions.append(choose, close);
     card.appendChild(actions);
@@ -701,13 +701,13 @@ export function setupShare(host) {
     if (details.length > 0) text.appendChild(element('p', guest.missing.length > 0 ? 'guest-banner-details is-warn' : 'guest-banner-details', details.join(' ')));
 
     const buttons = element('div', 'guest-banner-actions');
-    const save = element('button', 'share-primary', 'Сохранить к себе');
+    const save = element('button', 'ui-button ui-button--primary share-primary', 'Сохранить к себе');
     save.type = 'button';
     save.addEventListener('click', () => {
       const base = guest.from ? `${guest.name} — ${guest.from}` : guest.name;
       host.saveGuest(host.uniqueProjectName(base)).catch((error) => setStatus(error instanceof Error ? error.message : String(error), true));
     });
-    const close = element('button', '', 'Закрыть');
+    const close = element('button', 'ui-button', 'Закрыть');
     close.type = 'button';
     close.title = 'Вернуться к своему проекту; работа по ссылке не сохранится';
     close.addEventListener('click', () => host.leaveGuest().catch((error) => setStatus(error instanceof Error ? error.message : String(error), true)));

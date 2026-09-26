@@ -45,124 +45,24 @@
   --brackets: var(--syntax-brackets);
 }
 
-button {
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-raised);
-  color: var(--text);
-  font: 600 13px var(--ui-font);
-  padding: 0 12px;
-  cursor: pointer;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-button:hover {
-  border-color: var(--accent);
-  background: var(--panel-soft);
-}
-
 button:active {
   transform: translateY(1px);
-}
-
-.run-button {
-  gap: 7px;
-  background: var(--run-bg);
-  border-color: var(--run-bg);
-  color: #ffffff;
-}
-
-.run-button:hover {
-  background: var(--run-bg-hover);
-  border-color: var(--run-bg-hover);
-}
-
-.run-button svg,
-.stop-button svg {
-  width: 15px;
-  height: 15px;
-  fill: currentColor;
-}
-
-.stop-button {
-  gap: 7px;
-  background: color-mix(in srgb, var(--danger) 82%, #000000);
-  border-color: color-mix(in srgb, var(--danger) 70%, #000000);
-  color: #ffffff;
-}
-
-.stop-button:hover:not(:disabled) {
-  background: var(--danger);
-  border-color: var(--danger);
-}
-
-button:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
-button:disabled:hover {
-  border-color: var(--border);
-  background: var(--panel-raised);
 }
 
 button:disabled:active {
   transform: none;
 }
 
-/* Шапка — в едином стиле с учебником, задачником и справочником (вердикт владельца, 1.6.2):
-   та же высота, отступы, полупрозрачный фон, логотип, подпись раздела и кнопки-ссылки. */
-.topbar {
-  position: relative;
-  z-index: 30;
-  height: var(--topbar-height);
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 20px;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border);
-  background: var(--color-topbar-bg);
-  backdrop-filter: blur(18px);
-}
-
-/* Кнопки шапки — как ссылки-кнопки учебника: выше, круглее, крупнее текст. Выпадающих меню не касается. */
-.topbar > .actions > button,
-.topbar > .actions > div > button,
-.topbar .run-actions > button {
-  height: 34px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
-}
-
-.actions {
-  position: relative;
-  display: flex;
-  justify-content: flex-start;
-  gap: 8px;
-  align-items: center;
-  min-width: 0;
-  overflow: visible;
-  padding-bottom: 1px;
-}
-
-.run-actions {
-  display: inline-flex;
-  justify-content: flex-end;
-  gap: 8px;
-  align-items: center;
-}
-
 .upload-wrapper {
   position: relative;
   display: inline-flex;
+}
+
+.upload-menu {
+  top: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  padding: 10px;
 }
 
 .app-menu-wrapper {
@@ -175,90 +75,16 @@ button:disabled:active {
   display: inline-flex;
 }
 
-.upload-menu {
-  position: absolute;
-  z-index: 10;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 280px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-raised);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
-}
-
 .app-menu {
-  position: absolute;
-  z-index: 20;
   top: calc(100% + 8px);
   left: 0;
   width: 292px;
-  max-height: min(620px, calc(100vh - 72px));
-  overflow: auto;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-raised);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
 }
 
 .app-menu[hidden],
 .app-menu-panel[hidden],
 .appearance-label-short {
   display: none;
-}
-
-.app-menu button {
-  width: 100%;
-  height: 32px;
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  justify-content: stretch;
-  border-color: transparent;
-  background: transparent;
-  text-align: left;
-}
-
-.app-menu button > span:first-of-type {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Значки пунктов — единый набор сайта (gui-renderer/icons.js). */
-.menu-icon {
-  display: block;
-  color: var(--muted);
-}
-
-.app-menu button:hover:not(:disabled) .menu-icon,
-.file-context-menu button:hover:not(:disabled) .menu-icon {
-  color: inherit;
-}
-
-.app-menu button:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-}
-
-.app-menu button.app-menu-danger:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--danger) 62%, var(--border));
-  background: color-mix(in srgb, var(--danger) 15%, transparent);
-  color: var(--danger);
-}
-
-.app-menu kbd {
-  align-self: center;
-  color: var(--muted);
-  font: 11px var(--mono-font);
-}
-
-.app-menu-separator {
-  height: 1px;
-  margin: 6px 4px;
-  background: var(--border);
 }
 
 .app-menu-current-project {
@@ -297,14 +123,6 @@ button:disabled:active {
   align-items: center;
   gap: 6px;
   min-height: 34px;
-}
-
-.app-menu-panel-header button {
-  width: 32px;
-  grid-template-columns: 1fr;
-  justify-items: center;
-  padding: 0;
-  font-size: 18px;
 }
 
 .app-menu-panel-header strong {
@@ -346,17 +164,6 @@ button:disabled:active {
   display: flex;
   justify-content: flex-end;
   gap: 7px;
-}
-
-.app-menu-form-actions button {
-  width: auto;
-  display: inline-flex;
-  padding: 0 10px;
-}
-
-.app-menu-form-actions button.primary {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .app-menu-error {
@@ -404,16 +211,9 @@ button:disabled:active {
 }
 
 .theme-menu {
-  position: absolute;
-  z-index: 10;
   top: calc(100% + 8px);
   right: 0;
   width: 176px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-raised);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
 }
 
 .color-picker-menu {
@@ -421,27 +221,9 @@ button:disabled:active {
   display: block;
 }
 
-.theme-menu button {
-  width: 100%;
-  justify-content: flex-start;
-  border-color: transparent;
-  background: transparent;
-}
-
 .theme-menu button > .menu-icon {
   flex: 0 0 auto;
   margin-right: 8px;
-}
-
-.theme-menu button.active {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
-.theme-menu-separator {
-  height: 1px;
-  margin: 8px 2px;
-  background: var(--border);
 }
 
 .font-size-row {
@@ -472,56 +254,7 @@ button:disabled:active {
   cursor: pointer;
 }
 
-.font-size-control {
-  height: 32px;
-  display: grid;
-  grid-template-columns: 32px 34px auto 32px;
-  align-items: center;
-  width: max-content;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel-soft);
-  color: var(--text);
-}
-
-.font-size-control button {
-  width: 32px;
-  height: 100%;
-  justify-content: center;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  padding: 0;
-  font-size: 17px;
-}
-
-.font-size-control button:hover {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
 /* Внутри капсулы кнопка не «подпрыгивает»: сдвиг рвал заливку от рамки. */
-.font-size-control button:active {
-  transform: none;
-  background: color-mix(in srgb, var(--accent) 28%, transparent);
-}
-
-.font-size-control input {
-  width: 34px;
-  height: 30px;
-  border: 0;
-  border-left: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  font: 600 13px var(--mono-font);
-  text-align: right;
-  outline: 0;
-  padding: 0 2px 0 6px;
-  -moz-appearance: textfield;
-}
-
 .font-size-control button:last-child {
   border-left: 1px solid var(--border);
 }
@@ -530,13 +263,6 @@ button:disabled:active {
 .font-size-control input::-webkit-inner-spin-button {
   margin: 0;
   -webkit-appearance: none;
-}
-
-.font-size-control span {
-  color: var(--muted);
-  padding: 0 8px 0 2px;
-  text-align: center;
-  text-transform: none;
 }
 
 .drop-area {
@@ -600,39 +326,12 @@ button:disabled:active {
   margin-top: 3px;
 }
 
-.upload-conflict-actions button {
-  min-height: 30px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-soft);
-  color: var(--text);
-  padding: 0 10px;
-}
-
-.upload-conflict-actions button.primary {
-  border-color: var(--accent-strong);
-  background: var(--accent);
-  color: #ffffff;
-}
-
 .workspace {
   height: calc(100vh - var(--topbar-height) - var(--guest-banner-height, 0px));
   display: grid;
   grid-template-columns: var(--files-width, 220px) 6px minmax(280px, 1fr) 6px var(--runtime-width, 42vw);
   gap: 0;
   background: var(--border);
-}
-
-.column-resizer {
-  min-width: 6px;
-  background: var(--border);
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.column-resizer:hover,
-.column-resizer.dragging {
-  background: var(--accent);
 }
 
 .files,
@@ -648,18 +347,6 @@ button:disabled:active {
 .files {
   display: flex;
   flex-direction: column;
-}
-
-.pane-title {
-  height: 34px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
 }
 
 .files-title {
@@ -721,14 +408,6 @@ button:disabled:active {
   white-space: nowrap;
 }
 
-.pane-action-button {
-  height: 26px;
-  padding: 0 9px;
-  border-radius: 6px;
-  font-size: 12px;
-  flex: 0 0 auto;
-}
-
 .pane-action-button[hidden] {
   display: none;
 }
@@ -739,31 +418,8 @@ button:disabled:active {
   align-items: center;
 }
 
-.icon-button {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border-radius: 6px;
-  font: 700 16px var(--ui-font);
-  line-height: 1;
-}
-
-.icon-button svg {
-  width: 17px;
-  height: 17px;
-  fill: currentColor;
-}
-
 /* Значки кнопок панели — тем же приглушённым цветом, что значки в меню шапки: один и тот же
    SVG ярко-белым читался как «более жирный» (находка владельца 2026-09-26); ярче — при наведении. */
-.icon-button {
-  color: var(--muted);
-}
-
-.icon-button:hover:not(:disabled) {
-  color: var(--text);
-}
-
 .file-list {
   flex: 1;
   min-height: 0;
@@ -898,41 +554,13 @@ button:disabled:active {
 }
 
 .file-context-menu {
-  position: fixed;
-  z-index: 30;
-  /* Ширина — по самому длинному пункту: grid растягивает кнопки до самой
-     широкой, а width:100% у детей не раздувает max-content-расчёт. */
   display: grid;
   width: max-content;
   min-width: 0;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-raised);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.36);
 }
 
 .file-context-menu[hidden] {
   display: none;
-}
-
-.file-context-menu button {
-  justify-content: flex-start;
-  gap: 8px;
-  border-color: transparent;
-  background: transparent;
-  color: var(--text);
-  white-space: nowrap;
-}
-
-.file-props-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
 }
 
 .file-props-backdrop[hidden] {
@@ -940,23 +568,8 @@ button:disabled:active {
 }
 
 .file-props-card {
+  width: min(440px, 100%);
   min-width: 320px;
-  max-width: min(440px, calc(100vw - 32px));
-  max-height: calc(100vh - 64px);
-  overflow: auto;
-  padding: 16px 18px 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel-raised);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-}
-
-.file-props-title {
-  margin: 0 0 10px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-  word-break: break-all;
 }
 
 .file-props-table {
@@ -1009,11 +622,6 @@ button:disabled:active {
 
 .file-delete-actions button {
   justify-content: center;
-}
-
-.file-delete-actions button:first-child {
-  color: #ffffff;
-  background: color-mix(in srgb, var(--danger) 82%, #000000);
 }
 
 .editor-pane {
@@ -2386,47 +1994,9 @@ summary.json-node-line:hover {
   background: color-mix(in srgb, var(--editor-bg) 90%, var(--panel));
 }
 
-.tok-keyword {
-  color: var(--keyword);
-  font-weight: 700;
-}
-
-.tok-type {
-  color: var(--type);
-  font-weight: 650;
-}
-
-.tok-string {
-  color: var(--string);
-}
-
-.tok-number {
-  color: var(--number);
-}
-
-.tok-comment {
-  color: var(--comment);
-  font-style: italic;
-}
-
-.tok-function {
-  color: var(--function);
-}
-
-.tok-property {
-  color: var(--property);
-}
-
 .completion-popup {
-  position: absolute;
-  z-index: 4;
   width: min(360px, calc(100% - 24px));
-  max-height: 260px;
-  overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-raised);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+  padding: 4px;
 }
 
 .completion-item {
@@ -2458,18 +2028,6 @@ summary.json-node-line:hover {
   grid-template-rows: minmax(120px, var(--output-height, 32%)) 6px 1fr;
   gap: 0;
   background: var(--border);
-}
-
-.runtime-row-resizer {
-  min-height: 6px;
-  background: var(--border);
-  cursor: row-resize;
-  touch-action: none;
-}
-
-.runtime-row-resizer:hover,
-.runtime-row-resizer.dragging {
-  background: var(--accent);
 }
 
 .output-pane,
@@ -2623,12 +2181,6 @@ summary.json-node-line:hover {
 }
 
 @media (max-width: 980px) {
-  .topbar {
-    height: auto;
-    grid-template-columns: 1fr;
-    padding: 10px;
-  }
-
   .workspace {
     height: auto;
     min-height: calc(100vh - 108px);
@@ -2657,13 +2209,6 @@ summary.json-node-line:hover {
     width: calc(100vw - 28px);
   }
 
-  .color-picker-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .color-preview {
-    max-width: 180px;
-  }
 }
 
 @media (max-width: 1180px) and (min-width: 981px) {
@@ -2675,14 +2220,6 @@ summary.json-node-line:hover {
     display: inline;
   }
 
-  .actions {
-    gap: 5px;
-  }
-
-  button {
-    padding-right: 9px;
-    padding-left: 9px;
-  }
 }
 
 /* ─── «Поделиться»: диалог и гостевой режим «Работа по ссылке» (1.6.1) ─── */
@@ -2975,4 +2512,40 @@ summary.json-node-line:hover {
 .share-reader-card [hidden],
 .guest-banner [hidden] {
   display: none !important;
+}
+
+/* Переходный слой (стилевая база 1.6.4, этап 3): умолчания для кнопок, ещё не переведённых
+   на ui-button (просмотрщики, редакторы данных). Лежит в слое base, поэтому ui-button его
+   перекрывает; исчезнет на этапе 4, когда последняя кнопка IDE получит класс компонента. */
+@layer base {
+  button {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel-raised);
+    color: var(--text);
+    font: 600 13px var(--ui-font);
+    padding: 0 12px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  button:hover {
+    border-color: var(--accent);
+    background: var(--panel-soft);
+  }
+
+  button:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  button:disabled:hover {
+    border-color: var(--border);
+    background: var(--panel-raised);
+  }
 }

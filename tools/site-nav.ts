@@ -7,7 +7,7 @@
 // страниц собирает один генератор; сборщики подставляют её на место маркеров
 // `<!-- @site-topbar -->` (документы) или `<!-- @site-brand -->` + `<!-- @site-nav -->`
 // (Web IDE со своими кнопками Файл/Правка/Внешний вид); JS-сборщики берут его из
-// dist/tools/site-nav.js после tsc. Страж —
+// dist/tools/site-nav.js после tsc. Стили шапки — в assets/site-components.css (ui-topbar…). Страж —
 // tests/smoke-tooling: из каждого раздела достижим каждый.
 //
 // Грамматика шапки: слева лого (ведёт в Web IDE) + версия + бейдж раздела;
@@ -90,7 +90,7 @@ export const GROUPS: readonly NavGroup[] = [
   { id: 'about', title: 'О проекте' },
 ];
 
-const THEME_TOGGLE_HTML = '<button class="site-theme-toggle" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема">'
+const THEME_TOGGLE_HTML = '<button class="ui-button ui-button--lg ui-button--icon ui-topbar-theme" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема">'
   + iconSvg('sun', { size: 17, className: 'icon-sun' }) + iconSvg('moon', { size: 17, className: 'icon-moon' }) + '</button>';
 
 function escapeHtml(value: unknown): string {
@@ -113,39 +113,39 @@ export function siteBrandHtml(sectionId: string, options: SiteNavOptions): strin
   const section = sectionById(sectionId);
   const prefix = options.prefix;
   const version = escapeHtml(options.version || '');
-  const inner = `<img class="brand-mark" src="${prefix}assets/idyllium.svg" alt="" width="28" height="28">`
-    + '<span class="brand-text">Idyllium</span>'
-    + `<span class="idyllium-version" id="version">v${version}</span>`;
+  const inner = `<img class="ui-brand-mark" src="${prefix}assets/idyllium.svg" alt="" width="28" height="28">`
+    + '<span class="ui-brand-text">Idyllium</span>'
+    + `<span class="ui-brand-version" id="version">v${version}</span>`;
   const brand = sectionId === 'ide'
-    ? `<span class="brand" title="Вы в Web IDE">${inner}</span>`
-    : `<a class="brand" href="${prefix}" title="Открыть Web IDE">${inner}</a>`;
+    ? `<span class="ui-brand" title="Вы в Web IDE">${inner}</span>`
+    : `<a class="ui-brand" href="${prefix}" title="Открыть Web IDE">${inner}</a>`;
   const hamburger = section.sidebar
-    ? `<button class="icon-button menu-toggle" id="menu-toggle" type="button" title="Показать навигацию" aria-label="Показать навигацию">${iconSvg('menu', { size: 18 })}</button>`
+    ? `<button class="ui-button ui-button--lg ui-button--icon ui-topbar-toggle" id="menu-toggle" type="button" title="Показать навигацию" aria-label="Показать навигацию">${iconSvg('menu', { size: 18 })}</button>`
     : '';
-  return `<div class="topbar-left">${hamburger}${brand}<span class="topbar-badge">${escapeHtml(section.badge)}</span></div>`;
+  return `<div class="ui-topbar-left">${hamburger}${brand}<span class="ui-badge ui-topbar-badge">${escapeHtml(section.badge)}</span></div>`;
 }
 
 /** Значок пункта + текст (подпись и подсказка) — одна разметка у всех пунктов меню. */
 function itemBody(icon: IconName | undefined, label: string, hint?: string, trailing = ''): string {
-  const iconHtml = icon ? `<span class="site-nav-icon">${iconSvg(icon, { size: 16 })}</span>` : '<span class="site-nav-icon"></span>';
+  const iconHtml = icon ? `<span class="ui-menu-icon">${iconSvg(icon, { size: 16 })}</span>` : '<span class="ui-menu-icon"></span>';
   const hintHtml = hint ? `<small>${escapeHtml(hint)}</small>` : '';
-  return `${iconHtml}<span class="site-nav-text"><span class="site-nav-label">${label}${trailing}</span>${hintHtml}</span>`;
+  return `${iconHtml}<span class="ui-menu-text"><span class="ui-menu-label">${label}${trailing}</span>${hintHtml}</span>`;
 }
 
 function menuItem(section: SiteSection, currentId: string, prefix: string, host: 'ide' | 'docs' = 'docs'): string {
-  const soon = section.stub ? ' <span class="site-nav-soon" title="Страница в работе">скоро</span>' : '';
+  const soon = section.stub ? ' <span class="ui-badge ui-badge--accent" title="Страница в работе">скоро</span>' : '';
   if (section.id === currentId) {
-    const check = `<span class="site-nav-current-mark" title="Вы здесь">${iconSvg('check', { size: 14 })}</span>`;
-    return `<span class="site-nav-item is-current" role="menuitem" aria-current="page">${itemBody(section.icon, escapeHtml(section.title), section.hint, soon + check)}</span>`;
+    const check = `<span class="ui-menu-mark" title="Вы здесь">${iconSvg('check', { size: 14 })}</span>`;
+    return `<span class="ui-menu-item is-current" role="menuitem" aria-current="page">${itemBody(section.icon, escapeHtml(section.title), section.hint, soon + check)}</span>`;
   }
   // Из Web IDE разделы открываются в новой вкладке — открытый проект остаётся на месте (вердикт владельца 2026-09-26).
   const blank = host === 'ide' ? ' target="_blank" rel="noopener"' : '';
-  return `<a class="site-nav-item" role="menuitem" href="${sectionHref(section, prefix)}"${blank}>${itemBody(section.icon, escapeHtml(section.title), section.hint, soon)}</a>`;
+  return `<a class="ui-menu-item" role="menuitem" href="${sectionHref(section, prefix)}"${blank}>${itemBody(section.icon, escapeHtml(section.title), section.hint, soon)}</a>`;
 }
 
 function externalItem(item: ExternalItem): string {
-  const arrow = `<span class="site-nav-ext" aria-hidden="true">${iconSvg('external', { size: 12 })}</span>`;
-  return `<a class="site-nav-item is-external" role="menuitem" href="${escapeHtml(item.href)}" target="_blank" rel="noopener">`
+  const arrow = `<span class="ui-menu-ext" aria-hidden="true">${iconSvg('external', { size: 12 })}</span>`;
+  return `<a class="ui-menu-item is-external" role="menuitem" href="${escapeHtml(item.href)}" target="_blank" rel="noopener">`
     + `${itemBody(item.icon, escapeHtml(item.title), item.hint, ` ${arrow}`)}</a>`;
 }
 
@@ -153,12 +153,12 @@ function externalItem(item: ExternalItem): string {
 function colorToolItem(host: 'ide' | 'docs', prefix: string, colorTool: 'button' | 'link'): string {
   const label = itemBody('palette', 'Генератор цвета', 'RGB, HEX, HSL и пипетка');
   if (colorTool === 'button') {
-    return `<button type="button" class="site-nav-item" role="menuitem" id="color-picker-button" aria-haspopup="dialog" aria-expanded="false">${label}</button>`;
+    return `<button type="button" class="ui-menu-item" role="menuitem" id="color-picker-button" aria-haspopup="dialog" aria-expanded="false">${label}</button>`;
   }
-  return `<a class="site-nav-item" role="menuitem" href="${prefix}#tool=color">${label}</a>`;
+  return `<a class="ui-menu-item" role="menuitem" href="${prefix}#tool=color">${label}</a>`;
 }
 
-const SEPARATOR = '<div class="site-nav-separator" role="separator"></div>';
+const SEPARATOR = '<div class="ui-menu-separator" role="separator"></div>';
 
 function groupItems(group: NavGroup, currentId: string, prefix: string, host: 'ide' | 'docs', colorTool: 'button' | 'link'): string {
   const items: string[] = [];
@@ -172,7 +172,7 @@ function groupItems(group: NavGroup, currentId: string, prefix: string, host: 'i
     items.push(colorToolItem(host, prefix, colorTool));
     items.push(...SITE_SECTIONS.filter((section) => section.group === 'tools').map((section) => menuItem(section, currentId, prefix, host)));
     items.push(SEPARATOR);
-    items.push('<div class="site-nav-caption">Соседние сайты</div>');
+    items.push('<div class="ui-menu-caption">Соседние сайты</div>');
     items.push(...NEIGHBOUR_SITES.map(externalItem));
   } else {
     items.push(...SITE_SECTIONS.filter((section) => section.group === 'about').map((section) => menuItem(section, currentId, prefix, host)));
@@ -190,31 +190,31 @@ export function siteNavHtml(sectionId: string, options: SiteNavOptions): string 
   const colorTool: 'button' | 'link' = options.colorTool || (host === 'ide' ? 'button' : 'link');
   const groups = GROUPS.map((group) => {
     const here = current.group === group.id ? ' is-here' : '';
-    return `<div class="site-nav-group${here}" data-group="${group.id}">`
-      + `<button type="button" class="site-nav-button" aria-haspopup="menu" aria-expanded="false">${group.title}</button>`
-      + `<div class="site-nav-menu" role="menu" aria-label="${group.title}">${groupItems(group, sectionId, prefix, host, colorTool)}</div>`
+    return `<div class="ui-nav-group${here}" data-group="${group.id}">`
+      + `<button type="button" class="ui-topbar-button" aria-haspopup="menu" aria-expanded="false">${group.title}</button>`
+      + `<div class="ui-menu ui-nav-menu" role="menu" aria-label="${group.title}">${groupItems(group, sectionId, prefix, host, colorTool)}</div>`
       + '</div>';
   }).join('');
   // Схлопнутая форма — то же дерево одним списком: подпись группы, потом её пункты.
-  const collapsed = GROUPS.map((group) => `<div class="site-nav-caption">${group.title}</div>${groupItems(group, sectionId, prefix, host, colorTool).replace(/id="color-picker-button"/g, 'data-role="color-picker-button"').replace(/id="/g, 'data-id="')}`).join(SEPARATOR);
-  return `<nav class="site-nav" data-host="${host}" aria-label="Разделы сайта">${groups}`
-    + '<div class="site-nav-group site-nav-collapsed" data-group="all">'
-    + '<button type="button" class="site-nav-button" aria-haspopup="menu" aria-expanded="false">Разделы</button>'
-    + `<div class="site-nav-menu" role="menu" aria-label="Разделы сайта">${collapsed}</div>`
+  const collapsed = GROUPS.map((group) => `<div class="ui-menu-caption">${group.title}</div>${groupItems(group, sectionId, prefix, host, colorTool).replace(/id="color-picker-button"/g, 'data-role="color-picker-button"').replace(/id="/g, 'data-id="')}`).join(SEPARATOR);
+  return `<nav class="ui-nav" data-host="${host}" aria-label="Разделы сайта">${groups}`
+    + '<div class="ui-nav-group ui-nav-collapsed" data-group="all">'
+    + '<button type="button" class="ui-topbar-button" aria-haspopup="menu" aria-expanded="false">Разделы</button>'
+    + `<div class="ui-menu ui-nav-menu" role="menu" aria-label="Разделы сайта">${collapsed}</div>`
     + '</div></nav>';
 }
 
 /** Справа у документов: главное действие «Открыть IDE» и переключатель темы. */
 export function siteTopbarRightHtml(options: SiteNavOptions): string {
   // На телефоне (≤480 px) подпись укорачивается до «IDE» — иначе шапка не влезает в 360 px.
-  return `<div class="topbar-right"><a class="site-action" href="${options.prefix}" title="Открыть Web IDE">`
-    + '<span class="site-action-full">Открыть IDE</span><span class="site-action-short">IDE</span></a>'
+  return `<div class="ui-topbar-right"><a class="ui-button ui-button--lg ui-button--primary ui-topbar-action" href="${options.prefix}" title="Открыть Web IDE">`
+    + '<span class="ui-topbar-action-full">Открыть IDE</span><span class="ui-topbar-action-short">IDE</span></a>'
     + `${THEME_TOGGLE_HTML}</div>`;
 }
 
 /** Целая шапка страницы-документа. */
 export function siteTopbarHtml(sectionId: string, options: SiteNavOptions): string {
-  return `<header class="site-topbar" data-section="${sectionById(sectionId).id}">`
+  return `<header class="ui-topbar" data-section="${sectionById(sectionId).id}" data-sidebar="${sectionById(sectionId).sidebar ? 'true' : 'false'}">`
     + siteBrandHtml(sectionId, options)
     + siteNavHtml(sectionId, { prefix: options.prefix, host: 'docs', colorTool: options.colorTool })
     + siteTopbarRightHtml(options)
@@ -225,8 +225,8 @@ export function siteTopbarHtml(sectionId: string, options: SiteNavOptions): stri
  * Общие стили и скрипты — в <head> каждой страницы, всегда в одном порядке (стилевая база 1.6.4,
  * спека some_style_base/01 §5.8): тема (без defer — атрибут html[data-theme] должен стоять до первой
  * отрисовки; плотность страницы едет атрибутом data-density), токены (объявляют слои каскада),
- * шрифты, база (сброс, страница, полосы прокрутки), шапка. Стили своего раздела страница
- * подключает уже после маркера.
+ * шрифты, база (сброс, страница, полосы прокрутки), общие компоненты (в них же шапка).
+ * Стили своего раздела страница подключает уже после маркера.
  */
 export function siteNavAssetsHtml(prefix: string, density: SiteDensity = 'prose'): string {
   return [
@@ -234,7 +234,7 @@ export function siteNavAssetsHtml(prefix: string, density: SiteDensity = 'prose'
     `<link rel="stylesheet" href="${prefix}assets/site-tokens.css">`,
     `<link rel="stylesheet" href="${prefix}fonts/fonts.css">`,
     `<link rel="stylesheet" href="${prefix}assets/site-base.css">`,
-    `<link rel="stylesheet" href="${prefix}assets/site-nav.css">`,
+    `<link rel="stylesheet" href="${prefix}assets/site-components.css">`,
     `<script src="${prefix}assets/site-nav.js" defer></script>`,
   ].join('\n  ');
 }

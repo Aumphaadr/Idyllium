@@ -1146,6 +1146,7 @@ function showContextMenu(x, y, item) {
   const add = (label, action, disabled = false) => {
     const button = document.createElement('button');
     button.type = 'button';
+    button.className = 'ui-menu-item';
     button.textContent = label;
     button.disabled = disabled;
     button.addEventListener('click', () => { hideContextMenu(); action(); });
@@ -1153,7 +1154,7 @@ function showContextMenu(x, y, item) {
   };
   const separator = () => {
     const line = document.createElement('div');
-    line.className = 'context-separator';
+    line.className = 'ui-menu-separator context-separator';
     menu.appendChild(line);
   };
   const isPage = item.tabTitle !== undefined;
@@ -1423,7 +1424,7 @@ function renderInspector() {
   }
   if (def && def.hint) {
     const note = document.createElement('p');
-    note.className = 'inspector-empty';
+    note.className = 'ui-empty inspector-empty';
     note.textContent = def.hint;
     container.appendChild(note);
   }
@@ -1436,7 +1437,7 @@ function renderGroupInspector(container) {
   els.inspectorTitle.textContent = `Выбрано: ${ids.length}`;
   const box = groupBox('Выделение');
   const list = document.createElement('p');
-  list.className = 'inspector-empty';
+  list.className = 'ui-empty inspector-empty';
   list.textContent = `${ids.map((id) => widgetById(id).name).join(', ')}. Опора выравнивания — ${anchor.name} (выделен первым); двигать всех — мышью или стрелками.`;
   box.appendChild(list);
   const grid = document.createElement('div');
@@ -1454,7 +1455,7 @@ function renderGroupInspector(container) {
   box.appendChild(grid);
   const remove = document.createElement('button');
   remove.type = 'button';
-  remove.className = 'inspector-action';
+  remove.className = 'ui-button ui-button--sm inspector-action';
   remove.textContent = `Удалить выделенные (${ids.length})`;
   remove.addEventListener('click', () => deleteWidgets(ids));
   box.appendChild(remove);
@@ -1485,7 +1486,7 @@ function fontsEditor() {
   const fonts = fontsOf(model);
   if (fonts.length === 0) {
     const note = document.createElement('p');
-    note.className = 'inspector-empty';
+    note.className = 'ui-empty inspector-empty';
     note.textContent = 'Пока нет. Файл TTF, OTF, WOFF или WOFF2 станет переменной fonts.Font, а виджет получит свойство font.';
     box.appendChild(note);
   }
@@ -1501,7 +1502,7 @@ function fontsEditor() {
     if (!fontFiles.has(font.file)) row.classList.add('is-missing');
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'field-reset';
+    remove.className = 'ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset';
     remove.title = 'Убрать шрифт из макета (виджеты вернутся к шрифту по умолчанию)';
     if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else remove.textContent = '×';
     remove.style.visibility = 'visible';
@@ -1511,7 +1512,7 @@ function fontsEditor() {
   }
   const add = document.createElement('button');
   add.type = 'button';
-  add.className = 'inspector-action';
+  add.className = 'ui-button ui-button--sm inspector-action';
   add.id = 'add-font-button';
   add.textContent = 'Добавить шрифт из файла…';
   add.addEventListener('click', () => { pendingFontTarget = null; els.fontInput.click(); });
@@ -1623,6 +1624,7 @@ function textField(label, title, value, onCommit) {
   labelEl.title = title;
   const input = document.createElement('input');
   input.type = 'text';
+  input.className = 'ui-field ui-field--sm';
   input.value = value || '';
   input.addEventListener('change', () => onCommit(input.value));
   input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); onCommit(input.value); } });
@@ -1657,7 +1659,7 @@ function propertyField(prop, props, onChange, item) {
     // Имя значка: сетка значков с поиском (список на 117 строк в <select> нечитаем, а его полоса прокрутки — не наша).
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'icon-choice';
+    button.className = 'ui-button ui-button--sm icon-choice';
     const current = explicit ? String(props[prop.name]) : String(prop.default);
     if (window.IdylliumIcons && window.IdylliumIcons.has(current)) button.appendChild(window.IdylliumIcons.element(current, { size: 18 }));
     const name = document.createElement('span');
@@ -1669,6 +1671,7 @@ function propertyField(prop, props, onChange, item) {
   } else if (prop.kind === 'font') {
     // Шрифт из файла: переменные fonts.Font макета или новый файл — он станет переменной сам.
     const select = document.createElement('select');
+    select.className = 'ui-field ui-field--sm';
     const none = document.createElement('option');
     none.value = '';
     none.textContent = 'по умолчанию';
@@ -1697,6 +1700,7 @@ function propertyField(prop, props, onChange, item) {
   } else if (prop.kind === 'enum') {
     // Только настоящие значения; выбор умолчания снимает свойство (строка уйдёт из кода).
     const select = document.createElement('select');
+    select.className = 'ui-field ui-field--sm';
     for (const value of prop.values) {
       const option = document.createElement('option');
       option.value = value;
@@ -1711,13 +1715,14 @@ function propertyField(prop, props, onChange, item) {
     wrap.className = 'field-color';
     const swatch = document.createElement('button');
     swatch.type = 'button';
-    swatch.className = 'color-swatch';
+    swatch.className = 'ui-button ui-button--sm ui-button--icon color-swatch';
     swatch.title = 'Открыть генератор цвета';
     if (explicit) {
       swatch.classList.add('is-set');
       swatch.style.background = normalizeHex(props[prop.name]);
     }
     const hex = document.createElement('input');
+    hex.className = 'ui-field ui-field--sm ui-field--mono';
     hex.type = 'text';
     hex.placeholder = 'по умолчанию';
     hex.value = explicit ? normalizeHex(props[prop.name]) : '';
@@ -1735,7 +1740,7 @@ function propertyField(prop, props, onChange, item) {
     control = wrap;
   } else if (prop.kind === 'int' || prop.kind === 'float') {
     const wrap = document.createElement('div');
-    wrap.className = 'number-control';
+    wrap.className = 'ui-stepper ui-stepper--sm number-control';
     const minus = document.createElement('button');
     minus.type = 'button';
     minus.textContent = '−';
@@ -1780,7 +1785,7 @@ function propertyField(prop, props, onChange, item) {
   }
   const reset = document.createElement('button');
   reset.type = 'button';
-  reset.className = 'field-reset';
+  reset.className = 'ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset';
   reset.title = 'Вернуть значение по умолчанию (строка уйдёт из кода)';
   if (window.IdylliumIcons) reset.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else reset.textContent = '×';
   reset.addEventListener('click', () => onChange(null));
@@ -1906,7 +1911,7 @@ function dataEditor(item, def) {
       input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); save(); } });
       const remove = document.createElement('button');
       remove.type = 'button';
-      remove.className = 'data-remove';
+      remove.className = 'ui-button ui-button--sm ui-button--icon data-remove';
       remove.title = 'Убрать';
       if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else remove.textContent = '×';
       remove.addEventListener('click', () => onCommit(list.filter((_, other) => other !== index)));
@@ -1915,7 +1920,7 @@ function dataEditor(item, def) {
     });
     const add = document.createElement('button');
     add.type = 'button';
-    add.className = 'data-add';
+    add.className = 'ui-button ui-button--sm data-add';
     add.textContent = '+ Добавить';
     add.addEventListener('click', () => onCommit([...list, `${placeholder} ${list.length + 1}`]));
     wrap.appendChild(add);
@@ -1966,7 +1971,7 @@ function dataEditor(item, def) {
       }
       const remove = document.createElement('button');
       remove.type = 'button';
-      remove.className = 'data-remove';
+      remove.className = 'ui-button ui-button--sm ui-button--icon data-remove';
       remove.title = 'Убрать';
       if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else remove.textContent = '×';
       remove.addEventListener('click', () => commit({ entries: entries.filter((_, other) => other !== index) }));
@@ -1975,7 +1980,7 @@ function dataEditor(item, def) {
     });
     const add = document.createElement('button');
     add.type = 'button';
-    add.className = 'data-add';
+    add.className = 'ui-button ui-button--sm data-add';
     add.textContent = '+ Добавить';
     add.addEventListener('click', () => commit({ entries: [...entries, { label: `Подпись ${entries.length + 1}`, value: 1 }] }));
     wrap.appendChild(add);
@@ -1993,7 +1998,7 @@ function dataEditor(item, def) {
     box.appendChild(input);
   }
   const note = document.createElement('p');
-  note.className = 'inspector-empty';
+  note.className = 'ui-empty inspector-empty';
   note.textContent = shape === 'table'
     ? 'В коде: set_columns(…) и add_row(…) — строка подгоняется под число колонок.'
     : `В коде: ${def.data.method}(…) на каждое значение.`;
@@ -2007,13 +2012,13 @@ let iconPicker = null;
 function openIconPicker(anchor, current, onPick) {
   if (!iconPicker) {
     const root = document.createElement('div');
-    root.className = 'icon-picker';
+    root.className = 'ui-popover ui-popover--fixed icon-picker';
     root.hidden = true;
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'Выбор значка');
     const search = document.createElement('input');
     search.type = 'text';
-    search.className = 'icon-picker-search';
+    search.className = 'ui-field ui-field--sm icon-picker-search';
     search.placeholder = 'поиск по имени: play, file, arrow…';
     search.spellcheck = false;
     const grid = document.createElement('div');
@@ -2041,7 +2046,7 @@ function openIconPicker(anchor, current, onPick) {
       }
       if (grid.childElementCount === 0) {
         const empty = document.createElement('p');
-        empty.className = 'inspector-empty';
+        empty.className = 'ui-empty inspector-empty';
         empty.textContent = 'Такого значка нет';
         grid.appendChild(empty);
       }
@@ -2095,7 +2100,7 @@ function tabsEditor(tabs) {
     title.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); commit(); } });
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'tabs-remove';
+    remove.className = 'ui-button ui-button--sm ui-button--icon tabs-remove';
     remove.textContent = '×';
     remove.title = 'Удалить вкладку вместе с содержимым';
     remove.disabled = pages.length <= 1;
@@ -2106,7 +2111,7 @@ function tabsEditor(tabs) {
   box.appendChild(list);
   const add = document.createElement('button');
   add.type = 'button';
-  add.className = 'tabs-add';
+  add.className = 'ui-button ui-button--sm tabs-add';
   add.textContent = '+ Добавить вкладку';
   add.addEventListener('click', () => applyChange(() => {
     const target = widgetById(tabs.id);
@@ -2135,12 +2140,12 @@ function renderCode() {
 function highlight(code) {
   const escaped = escapeHtml(code);
   return escaped
-    .replace(/(\/\/[^\n]*)/gu, '<span class="cm">$1</span>')
-    .replace(/(&quot;(?:[^&]|&(?!quot;))*&quot;)/gu, '<span class="str">$1</span>')
-    .replace(/\b(use|main|void|function)\b/gu, '<span class="kw">$1</span>')
-    .replace(/\b(gui|colors)\.([A-Z][A-Za-z]*)\b/gu, '$1.<span class="ty">$2</span>')
-    .replace(/\.(add_child|add_tab|show|HEX)\(/gu, '.<span class="fn">$1</span>(')
-    .replace(/\b(\d+(?:\.\d+)?)\b(?![^<]*>)/gu, '<span class="num">$1</span>');
+    .replace(/(\/\/[^\n]*)/gu, '<span class="hl-comment">$1</span>')
+    .replace(/(&quot;(?:[^&]|&(?!quot;))*&quot;)/gu, '<span class="hl-string">$1</span>')
+    .replace(/\b(use|main|void|function)\b/gu, '<span class="hl-keyword">$1</span>')
+    .replace(/\b(gui|colors)\.([A-Z][A-Za-z]*)\b/gu, '$1.<span class="hl-typeName">$2</span>')
+    .replace(/\.(add_child|add_tab|show|HEX)\(/gu, '.<span class="hl-function">$1</span>(')
+    .replace(/\b(\d+(?:\.\d+)?)\b(?![^<]*>)/gu, '<span class="hl-number">$1</span>');
 }
 
 async function copyCode() {

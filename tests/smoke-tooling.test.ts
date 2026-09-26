@@ -1027,16 +1027,16 @@ test('the site header is one source and every section reaches every other', () =
   for (const [file, markers] of shells) {
     const html = read(file);
     for (const marker of markers) assert(html.includes(marker), `${file} must carry the header marker ${marker}`);
-    for (const piece of ['class="brand', 'topbar-badge', 'topbar-link', 'section-badge', 'doc-link', 'docs-topbar', 'reference-topbar', 'color-picker-wrapper']) {
+    for (const piece of ['class="brand', 'class="ui-brand', 'topbar-badge', 'topbar-link', 'section-badge', 'doc-link', 'docs-topbar', 'reference-topbar', 'color-picker-wrapper']) {
       assert(!html.includes(piece), `${file}: the header is generated — hand-written '${piece}' found`);
     }
   }
   // Общие правила шапки живут в одном файле; стили разделов их не дублируют (раньше блок
   // «ЕДИНАЯ ШАПКА» повторялся в четырёх файлах и расходился).
-  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css']) {
+  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css']) {
     const css = read(file);
-    for (const selector of ['.brand {', '.brand-mark {', '.brand-text {', '.topbar-badge {', '.idyllium-version {', '.site-nav', 'ЕДИНАЯ ШАПКА', '.topbar-link', '.section-badge']) {
-      assert(!css.includes(selector), `${file} must not restyle the shared header ('${selector}' found) — edit packages/web-ide/assets/site-nav.css`);
+    for (const selector of ['.brand {', '.brand-mark {', '.brand-text {', '.topbar-badge {', '.idyllium-version {', '.site-nav', '.ui-topbar', '.ui-brand', '.ui-nav', '.menu-toggle', 'ЕДИНАЯ ШАПКА', '.topbar-link', '.section-badge']) {
+      assert(!css.includes(selector), `${file} must not restyle the shared header ('${selector}' found) — edit packages/web-ide/assets/site-components.css`);
     }
   }
 
@@ -1049,7 +1049,7 @@ test('the site header is one source and every section reaches every other', () =
   }
   const fontsCss = read('packages/fonts/fonts.css');
   assert((fontsCss.match(/@font-face/gu) || []).length >= 17, 'fonts.css is the only place for @font-face and must carry the whole set');
-  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css', 'packages/web-ide/assets/site-nav.css', 'packages/web-ide/assets/color-picker.css']) {
+  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css', 'packages/web-ide/assets/site-components.css', 'packages/web-ide/assets/color-picker.css']) {
     const css = read(file);
     // Глобальные ::selection и полосы прокрутки — только в базе; свои ::selection у конкретных элементов разделу можно.
     for (const piece of ['::-webkit-scrollbar', '@font-face', '\n::selection {', 'scrollbar-width', 'body.light-theme {', 'body.theme-light {', 'body.theme-dark {']) {
@@ -1060,7 +1060,7 @@ test('the site header is one source and every section reaches every other', () =
   // 3. Собранный сайт: у каждого раздела общая шапка, свой бейдж, все ссылки живые.
   const docsRoot = path.resolve(process.cwd(), 'docs');
   const pageOf = (section: { id: string; path: string }): string => (section.id === 'ide' ? 'index.html' : `${section.path}index.html`);
-  const menuHrefs = (html: string): string[] => [...html.matchAll(/class="site-nav-item[^"]*" role="menuitem" href="([^"]+)"/gu)].map((match) => match[1]);
+  const menuHrefs = (html: string): string[] => [...html.matchAll(/class="ui-menu-item[^"]*" role="menuitem" href="([^"]+)"/gu)].map((match) => match[1]);
   const checkPage = (relativePath: string, section: { id: string; badge: string; path: string }): void => {
     const pagePath = path.join(docsRoot, relativePath);
     assert(fs.existsSync(pagePath), `page is missing from the site: ${relativePath}`);
@@ -1074,12 +1074,12 @@ test('the site header is one source and every section reaches every other', () =
       return fs.statSync(target).isFile() || fs.existsSync(path.join(target, 'index.html'));
     };
     // Общие стили и скрипты — одним набором в одном порядке (стилевая база 1.6.4): тема, токены, шапка.
-    for (const asset of ['assets/site-theme.js', 'assets/site-tokens.css', 'fonts/fonts.css', 'assets/site-base.css', 'assets/site-nav.css', 'assets/site-nav.js']) {
+    for (const asset of ['assets/site-theme.js', 'assets/site-tokens.css', 'fonts/fonts.css', 'assets/site-base.css', 'assets/site-components.css', 'assets/site-nav.js']) {
       const match = new RegExp(`(?:href|src)="([^"]*${asset.replace('.', '\\.')})"`, 'u').exec(html);
       assert(match !== null, `${relativePath} must load ${asset}`);
       assert(resolves(match![1]), `${relativePath}: ${match![1]} does not resolve to a file`);
     }
-    assert(html.includes(`class="topbar-badge">${section.badge}<`), `${relativePath}: the badge must read «${section.badge}»`);
+    assert(html.includes(`class="ui-badge ui-topbar-badge">${section.badge}<`), `${relativePath}: the badge must read «${section.badge}»`);
     for (const group of ['materials', 'tools', 'about', 'all']) {
       assert(html.includes(`data-group="${group}"`), `${relativePath}: menu group '${group}' is missing`);
     }
@@ -1087,7 +1087,7 @@ test('the site header is one source and every section reaches every other', () =
     for (const other of SITE_SECTIONS) {
       if (other.id === 'ide') continue; // в IDE ведут лого и «Открыть IDE» — проверяются ниже
       if (other.id === section.id) {
-        assert(html.includes('class="site-nav-item is-current"'), `${relativePath} must mark itself as the current section`);
+        assert(html.includes('class="ui-menu-item is-current"'), `${relativePath} must mark itself as the current section`);
         continue;
       }
       const own = hrefs.filter((href) => href.replace(/^(?:\.\.\/)*/u, '') === other.path);
@@ -1099,17 +1099,17 @@ test('the site header is one source and every section reaches every other', () =
     }
     assert(html.includes(`href="${GITHUB_URL}" target="_blank" rel="noopener"`), `${relativePath}: the GitHub link must open in a new tab`);
     for (const stub of SITE_SECTIONS.filter((item) => item.stub)) {
-      assert(html.includes(`${stub.title} <span class="site-nav-soon"`), `${relativePath}: «${stub.title}» is a stub and must be marked «скоро»`);
+      assert(html.includes(`${stub.title} <span class="ui-badge ui-badge--accent"`), `${relativePath}: «${stub.title}» is a stub and must be marked «скоро»`);
     }
     if (section.id === 'ide') {
       assert((html.match(/id="color-picker-button"/gu) || []).length === 1, 'the IDE must have exactly one #color-picker-button (inside the «Инструменты» menu)');
       assert(html.includes('data-role="color-picker-button"'), 'the collapsed «Разделы» menu of the IDE must keep the colour generator');
-      assert(!html.includes('class="site-action"'), 'the IDE header has no «Открыть IDE»');
-      assert(html.includes('<span class="brand"'), 'in the IDE the logo is not a link (a reload would drop a guest and stop the program)');
+      assert(!/ui-topbar-action(?!s)/u.test(html), 'the IDE header has no «Открыть IDE»');
+      assert(html.includes('<span class="ui-brand"'), 'in the IDE the logo is not a link (a reload would drop a guest and stop the program)');
     } else {
-      const logo = /<a class="brand" href="([^"]*)"/u.exec(html);
+      const logo = /<a class="ui-brand" href="([^"]*)"/u.exec(html);
       assert(logo !== null && resolves(logo[1]), `${relativePath}: the logo must link to the Web IDE`);
-      const action = /<a class="site-action" href="([^"]*)"/u.exec(html);
+      const action = /<a class="[^"]*ui-topbar-action" href="([^"]*)"/u.exec(html);
       assert(action !== null && resolves(action[1]), `${relativePath}: «Открыть IDE» must link to the Web IDE`);
       if (section.id === 'gui-designer') {
         // Конструктор открывает генератор цвета у себя (замечание владельца 2026-09-25).
@@ -1140,7 +1140,7 @@ test('handouts page is baked with every manifest file present', () => {
   const seen = new Set<string>();
   // Раздатка — такая же страница сайта, как остальные: общая шапка, общий стиль (а с ним палитра
   // обеих тем и полосы прокрутки), переключатель темы. Раньше жила с зашитой тёмной палитрой.
-  for (const piece of ['../book/app.css', 'class="site-topbar"', 'class="topbar-badge">Раздатка<', 'id="theme-toggle"', 'assets/site-theme.js']) {
+  for (const piece of ['../book/app.css', 'class="ui-topbar"', 'class="ui-badge ui-topbar-badge">Раздатка<', 'id="theme-toggle"', 'assets/site-theme.js']) {
     assert(page.includes(piece), `handouts page must share the site design: ${piece} is missing`);
   }
   const pageStyle = page.slice(page.indexOf('<style>'), page.indexOf('</style>'));

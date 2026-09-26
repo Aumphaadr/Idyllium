@@ -3368,6 +3368,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     const add = (label, action, disabled = false) => {
       const button = document.createElement("button");
       button.type = "button";
+      button.className = "ui-menu-item";
       button.textContent = label;
       button.disabled = disabled;
       button.addEventListener("click", () => {
@@ -3378,7 +3379,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     };
     const separator = () => {
       const line = document.createElement("div");
-      line.className = "context-separator";
+      line.className = "ui-menu-separator context-separator";
       menu.appendChild(line);
     };
     const isPage = item.tabTitle !== void 0;
@@ -3645,7 +3646,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     }
     if (def && def.hint) {
       const note = document.createElement("p");
-      note.className = "inspector-empty";
+      note.className = "ui-empty inspector-empty";
       note.textContent = def.hint;
       container.appendChild(note);
     }
@@ -3656,7 +3657,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     els.inspectorTitle.textContent = `\u0412\u044B\u0431\u0440\u0430\u043D\u043E: ${ids.length}`;
     const box = groupBox("\u0412\u044B\u0434\u0435\u043B\u0435\u043D\u0438\u0435");
     const list = document.createElement("p");
-    list.className = "inspector-empty";
+    list.className = "ui-empty inspector-empty";
     list.textContent = `${ids.map((id) => widgetById(id).name).join(", ")}. \u041E\u043F\u043E\u0440\u0430 \u0432\u044B\u0440\u0430\u0432\u043D\u0438\u0432\u0430\u043D\u0438\u044F \u2014 ${anchor.name} (\u0432\u044B\u0434\u0435\u043B\u0435\u043D \u043F\u0435\u0440\u0432\u044B\u043C); \u0434\u0432\u0438\u0433\u0430\u0442\u044C \u0432\u0441\u0435\u0445 \u2014 \u043C\u044B\u0448\u044C\u044E \u0438\u043B\u0438 \u0441\u0442\u0440\u0435\u043B\u043A\u0430\u043C\u0438.`;
     box.appendChild(list);
     const grid = document.createElement("div");
@@ -3674,7 +3675,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     box.appendChild(grid);
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "inspector-action";
+    remove.className = "ui-button ui-button--sm inspector-action";
     remove.textContent = `\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u043D\u044B\u0435 (${ids.length})`;
     remove.addEventListener("click", () => deleteWidgets(ids));
     box.appendChild(remove);
@@ -3704,7 +3705,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     const fonts = (0, import_codegen.fontsOf)(model);
     if (fonts.length === 0) {
       const note = document.createElement("p");
-      note.className = "inspector-empty";
+      note.className = "ui-empty inspector-empty";
       note.textContent = "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442. \u0424\u0430\u0439\u043B TTF, OTF, WOFF \u0438\u043B\u0438 WOFF2 \u0441\u0442\u0430\u043D\u0435\u0442 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 fonts.Font, \u0430 \u0432\u0438\u0434\u0436\u0435\u0442 \u043F\u043E\u043B\u0443\u0447\u0438\u0442 \u0441\u0432\u043E\u0439\u0441\u0442\u0432\u043E font.";
       box.appendChild(note);
     }
@@ -3720,7 +3721,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       if (!fontFiles.has(font.file)) row.classList.add("is-missing");
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.className = "field-reset";
+      remove.className = "ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset";
       remove.title = "\u0423\u0431\u0440\u0430\u0442\u044C \u0448\u0440\u0438\u0444\u0442 \u0438\u0437 \u043C\u0430\u043A\u0435\u0442\u0430 (\u0432\u0438\u0434\u0436\u0435\u0442\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u0441\u044F \u043A \u0448\u0440\u0438\u0444\u0442\u0443 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E)";
       if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
       else remove.textContent = "\xD7";
@@ -3731,7 +3732,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     }
     const add = document.createElement("button");
     add.type = "button";
-    add.className = "inspector-action";
+    add.className = "ui-button ui-button--sm inspector-action";
     add.id = "add-font-button";
     add.textContent = "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0448\u0440\u0438\u0444\u0442 \u0438\u0437 \u0444\u0430\u0439\u043B\u0430\u2026";
     add.addEventListener("click", () => {
@@ -3841,6 +3842,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     labelEl.title = title;
     const input = document.createElement("input");
     input.type = "text";
+    input.className = "ui-field ui-field--sm";
     input.value = value || "";
     input.addEventListener("change", () => onCommit(input.value));
     input.addEventListener("keydown", (event) => {
@@ -3877,7 +3879,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     } else if (prop.kind === "enum" && prop.name === "icon") {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "icon-choice";
+      button.className = "ui-button ui-button--sm icon-choice";
       const current = explicit ? String(props[prop.name]) : String(prop.default);
       if (window.IdylliumIcons && window.IdylliumIcons.has(current)) button.appendChild(window.IdylliumIcons.element(current, { size: 18 }));
       const name = document.createElement("span");
@@ -3888,6 +3890,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       control = button;
     } else if (prop.kind === "font") {
       const select2 = document.createElement("select");
+      select2.className = "ui-field ui-field--sm";
       const none = document.createElement("option");
       none.value = "";
       none.textContent = "\u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E";
@@ -3915,6 +3918,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       control = select2;
     } else if (prop.kind === "enum") {
       const select2 = document.createElement("select");
+      select2.className = "ui-field ui-field--sm";
       for (const value of prop.values) {
         const option = document.createElement("option");
         option.value = value;
@@ -3929,13 +3933,14 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       wrap.className = "field-color";
       const swatch = document.createElement("button");
       swatch.type = "button";
-      swatch.className = "color-swatch";
+      swatch.className = "ui-button ui-button--sm ui-button--icon color-swatch";
       swatch.title = "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u0433\u0435\u043D\u0435\u0440\u0430\u0442\u043E\u0440 \u0446\u0432\u0435\u0442\u0430";
       if (explicit) {
         swatch.classList.add("is-set");
         swatch.style.background = (0, import_codegen.normalizeHex)(props[prop.name]);
       }
       const hex = document.createElement("input");
+      hex.className = "ui-field ui-field--sm ui-field--mono";
       hex.type = "text";
       hex.placeholder = "\u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E";
       hex.value = explicit ? (0, import_codegen.normalizeHex)(props[prop.name]) : "";
@@ -3964,7 +3969,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       control = wrap;
     } else if (prop.kind === "int" || prop.kind === "float") {
       const wrap = document.createElement("div");
-      wrap.className = "number-control";
+      wrap.className = "ui-stepper ui-stepper--sm number-control";
       const minus = document.createElement("button");
       minus.type = "button";
       minus.textContent = "\u2212";
@@ -4025,7 +4030,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     }
     const reset = document.createElement("button");
     reset.type = "button";
-    reset.className = "field-reset";
+    reset.className = "ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset";
     reset.title = "\u0412\u0435\u0440\u043D\u0443\u0442\u044C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E (\u0441\u0442\u0440\u043E\u043A\u0430 \u0443\u0439\u0434\u0451\u0442 \u0438\u0437 \u043A\u043E\u0434\u0430)";
     if (window.IdylliumIcons) reset.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
     else reset.textContent = "\xD7";
@@ -4155,7 +4160,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         });
         const remove = document.createElement("button");
         remove.type = "button";
-        remove.className = "data-remove";
+        remove.className = "ui-button ui-button--sm ui-button--icon data-remove";
         remove.title = "\u0423\u0431\u0440\u0430\u0442\u044C";
         if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
         else remove.textContent = "\xD7";
@@ -4165,7 +4170,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       });
       const add = document.createElement("button");
       add.type = "button";
-      add.className = "data-add";
+      add.className = "ui-button ui-button--sm data-add";
       add.textContent = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C";
       add.addEventListener("click", () => onCommit([...list, `${placeholder} ${list.length + 1}`]));
       wrap.appendChild(add);
@@ -4224,7 +4229,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         }
         const remove = document.createElement("button");
         remove.type = "button";
-        remove.className = "data-remove";
+        remove.className = "ui-button ui-button--sm ui-button--icon data-remove";
         remove.title = "\u0423\u0431\u0440\u0430\u0442\u044C";
         if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
         else remove.textContent = "\xD7";
@@ -4234,7 +4239,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       });
       const add = document.createElement("button");
       add.type = "button";
-      add.className = "data-add";
+      add.className = "ui-button ui-button--sm data-add";
       add.textContent = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C";
       add.addEventListener("click", () => commit({ entries: [...entries, { label: `\u041F\u043E\u0434\u043F\u0438\u0441\u044C ${entries.length + 1}`, value: 1 }] }));
       wrap.appendChild(add);
@@ -4257,7 +4262,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       box.appendChild(input);
     }
     const note = document.createElement("p");
-    note.className = "inspector-empty";
+    note.className = "ui-empty inspector-empty";
     note.textContent = shape === "table" ? "\u0412 \u043A\u043E\u0434\u0435: set_columns(\u2026) \u0438 add_row(\u2026) \u2014 \u0441\u0442\u0440\u043E\u043A\u0430 \u043F\u043E\u0434\u0433\u043E\u043D\u044F\u0435\u0442\u0441\u044F \u043F\u043E\u0434 \u0447\u0438\u0441\u043B\u043E \u043A\u043E\u043B\u043E\u043D\u043E\u043A." : `\u0412 \u043A\u043E\u0434\u0435: ${def.data.method}(\u2026) \u043D\u0430 \u043A\u0430\u0436\u0434\u043E\u0435 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435.`;
     box.appendChild(note);
     return box;
@@ -4266,13 +4271,13 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
   function openIconPicker(anchor, current, onPick) {
     if (!iconPicker) {
       const root2 = document.createElement("div");
-      root2.className = "icon-picker";
+      root2.className = "ui-popover ui-popover--fixed icon-picker";
       root2.hidden = true;
       root2.setAttribute("role", "dialog");
       root2.setAttribute("aria-label", "\u0412\u044B\u0431\u043E\u0440 \u0437\u043D\u0430\u0447\u043A\u0430");
       const search2 = document.createElement("input");
       search2.type = "text";
-      search2.className = "icon-picker-search";
+      search2.className = "ui-field ui-field--sm icon-picker-search";
       search2.placeholder = "\u043F\u043E\u0438\u0441\u043A \u043F\u043E \u0438\u043C\u0435\u043D\u0438: play, file, arrow\u2026";
       search2.spellcheck = false;
       const grid = document.createElement("div");
@@ -4307,7 +4312,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         }
         if (grid.childElementCount === 0) {
           const empty = document.createElement("p");
-          empty.className = "inspector-empty";
+          empty.className = "ui-empty inspector-empty";
           empty.textContent = "\u0422\u0430\u043A\u043E\u0433\u043E \u0437\u043D\u0430\u0447\u043A\u0430 \u043D\u0435\u0442";
           grid.appendChild(empty);
         }
@@ -4380,7 +4385,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       });
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.className = "tabs-remove";
+      remove.className = "ui-button ui-button--sm ui-button--icon tabs-remove";
       remove.textContent = "\xD7";
       remove.title = "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0432\u043A\u043B\u0430\u0434\u043A\u0443 \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u044B\u043C";
       remove.disabled = pages.length <= 1;
@@ -4391,7 +4396,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     box.appendChild(list);
     const add = document.createElement("button");
     add.type = "button";
-    add.className = "tabs-add";
+    add.className = "ui-button ui-button--sm tabs-add";
     add.textContent = "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0432\u043A\u043B\u0430\u0434\u043A\u0443";
     add.addEventListener("click", () => applyChange(() => {
       const target = widgetById(tabs.id);
@@ -4417,7 +4422,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
   }
   function highlight(code) {
     const escaped = escapeHtml(code);
-    return escaped.replace(/(\/\/[^\n]*)/gu, '<span class="cm">$1</span>').replace(/(&quot;(?:[^&]|&(?!quot;))*&quot;)/gu, '<span class="str">$1</span>').replace(/\b(use|main|void|function)\b/gu, '<span class="kw">$1</span>').replace(/\b(gui|colors)\.([A-Z][A-Za-z]*)\b/gu, '$1.<span class="ty">$2</span>').replace(/\.(add_child|add_tab|show|HEX)\(/gu, '.<span class="fn">$1</span>(').replace(/\b(\d+(?:\.\d+)?)\b(?![^<]*>)/gu, '<span class="num">$1</span>');
+    return escaped.replace(/(\/\/[^\n]*)/gu, '<span class="hl-comment">$1</span>').replace(/(&quot;(?:[^&]|&(?!quot;))*&quot;)/gu, '<span class="hl-string">$1</span>').replace(/\b(use|main|void|function)\b/gu, '<span class="hl-keyword">$1</span>').replace(/\b(gui|colors)\.([A-Z][A-Za-z]*)\b/gu, '$1.<span class="hl-typeName">$2</span>').replace(/\.(add_child|add_tab|show|HEX)\(/gu, '.<span class="hl-function">$1</span>(').replace(/\b(\d+(?:\.\d+)?)\b(?![^<]*>)/gu, '<span class="hl-number">$1</span>');
   }
   async function copyCode() {
     const code = currentCode(false);

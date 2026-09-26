@@ -38,39 +38,15 @@ fieldset, .admin {
 legend { padding: 0 6px; font-weight: 800; }
 .field { display: block; margin: 8px 0; color: var(--text-soft); font-size: 14px; }
 .field.narrow { max-width: 220px; }
-.field input, .field select, .field textarea, textarea.code, .test-row input, .rule-row input {
-  display: block; width: 100%; margin-top: 4px; padding: 7px 9px;
-  border: 1px solid var(--border); border-radius: 8px; background: var(--bg-code); color: var(--text-main); font: inherit;
-  transition: border-color 0.16s ease;
-}
-.field select { appearance: none; padding-right: 28px; cursor: pointer;
-  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
-  background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%; background-size: 5px 5px; background-repeat: no-repeat;
-}
-input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
-textarea.code, .rule-row input, .test-row input { font-family: var(--font-mono); font-size: 14px; line-height: 1.5; }
-textarea { resize: vertical; }
-input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; }
 .hint { margin: 6px 0; color: var(--text-muted); font-size: 13px; }
-.check { display: block; margin: 8px 0; color: var(--text-soft); font-size: 14px; }
 .radio-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 4px 0 8px; color: var(--text-soft); font-size: 14px; }
+.test-row .kind { width: auto; }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chips label { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 14px; color: var(--text-soft); cursor: pointer; }
 .chips label:has(input:checked) { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .chips input { display: none; }
 
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  min-height: 34px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel-2);
-  color: var(--text-soft); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
-}
-.btn svg { width: 16px; height: 16px; flex: 0 0 auto; fill: currentColor; }
-.btn:hover { background: var(--bg-panel-3); border-color: var(--accent); color: var(--text-main); }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--bg-root); }
-.btn-primary:hover { background: var(--accent); color: var(--bg-root); filter: brightness(1.08); }
-.btn-quiet { background: none; color: var(--text-muted); }
 .row-buttons, .file-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
 .file-note { color: var(--text-muted); font-size: 13px; }
 
@@ -78,20 +54,10 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .test-row input, .rule-row input { margin-top: 0; }
 .test-row .answer { flex: 0 0 auto; max-width: 45%; color: var(--ok); font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; }
 .test-row .small { flex: 0 0 74px; }
-.test-row .kind { flex: 0 0 auto; width: auto; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-code); color: var(--text-main); font-size: 13px; cursor: pointer; }
-.btn-fix { display: flex; min-height: 28px; margin-top: 6px; padding: 0 10px; font-size: 13px; font-family: var(--font-mono); font-weight: 600; color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .rule-row .when { flex: 0 0 34%; }
 .remove { flex: 0 0 auto; padding: 4px 9px; }
 .label-mini { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
 
-.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
-.tab {
-  min-height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel-2);
-  color: var(--text-soft); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
-}
-.tab:hover { border-color: var(--accent); color: var(--text-main); }
-.tab.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .tokens { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
 .token { padding: 2px 8px; border: 1px dashed var(--accent); border-radius: 6px; background: none; color: var(--accent); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
 .token:hover { background: var(--accent-soft); }
@@ -122,3 +88,9 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .issue-warning { color: var(--warn); } .issue-warning::before { content: "!"; }
 .issue-error { color: var(--bad); } .issue-error::before { content: "✗"; }
 .issue small { display: block; color: var(--text-soft); white-space: pre-wrap; }
+
+/* Переходный слой (стилевая база 1.6.4, этап 3): умолчания для полей вне ui-field; уйдёт на этапе 4. */
+@layer base {
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+  textarea { resize: vertical; }
+}

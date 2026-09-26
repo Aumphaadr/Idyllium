@@ -1185,7 +1185,7 @@ function buildHandoutsPage(outputRoot: string): number {
     const count = groups.reduce((sum, group) => sum + group.items.length, 0);
     total += count;
 
-    tabs.push(`      <button type="button" class="tab" data-tab="${escapeHtml(category.id)}" role="tab" aria-selected="false">`
+    tabs.push(`      <button type="button" class="ui-tab tab" data-tab="${escapeHtml(category.id)}" role="tab" aria-selected="false">`
       + `<span class="tab-icon">${categoryIcon(category.icon)}</span>${escapeHtml(category.title)}`
       + `<span class="tab-count">${count}</span></button>`);
 
@@ -1241,16 +1241,6 @@ ${groupsHtml}
     .handouts-main { min-width: 0; }
     h1 { margin: 0 0 6px; font-size: 30px; }
     .lead { margin: 0 0 10px; color: var(--text-soft); font-size: 15px; }
-    .search { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
-      background: var(--bg-panel); color: var(--text-main); font: 15px "Geologica", system-ui, sans-serif; }
-    .search::placeholder { color: var(--text-muted); }
-    .search:focus { outline: none; border-color: var(--accent); }
-    .tabs { display: grid; gap: 4px; }
-    .tab { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px;
-      border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text-soft);
-      font: 700 15px "Geologica", system-ui, sans-serif; text-align: left; cursor: pointer; }
-    .tab:hover { border-color: var(--border); background: var(--bg-panel); color: var(--text-main); }
-    .tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text-main); }
     .tab-icon { display: inline-flex; flex: 0 0 auto; color: var(--text-muted); }
     .tab[aria-selected="true"] .tab-icon { color: var(--accent); }
     .tab-icon svg { display: block; }
@@ -1314,8 +1304,8 @@ ${siteTopbarHtml('handouts', { prefix: '../', version: handoutsVersion })}
         <h1>Файлы для заданий</h1>
         <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
       </div>
-      <input type="search" class="search" id="search" placeholder="Поиск: «гильдия», «.json»…" aria-label="Поиск файлов">
-      <div class="tabs" role="tablist">
+      <input type="search" class="ui-field ui-field--lg search" id="search" placeholder="Поиск: «гильдия», «.json»…" aria-label="Поиск файлов">
+      <div class="ui-tabs ui-tabs--column tabs" role="tablist">
 ${tabs.join('\n')}
       </div>
     </aside>
@@ -2184,23 +2174,24 @@ function tasksShell(sectionId: 'tasks' | 'projects' = 'tasks'): string {
 ${siteTopbarHtml(sectionId, { prefix: '../', version: SITE_VERSION })}
 
   <div class="docs-shell">
-    <aside class="docs-sidebar" id="docs-sidebar">
-      <div class="sidebar-head">
-        <label class="search-box">
-          <span>Поиск</span>
-          <input id="lesson-search" type="search" autocomplete="off" placeholder="Найти тему">
-        </label>
+    <aside class="ui-sidebar docs-sidebar" id="docs-sidebar">
+      <div class="ui-sidebar-head sidebar-head">
+        <label class="ui-sidebar-label search-box" for="lesson-search">Поиск</label>
+        <div class="ui-search">
+          <input id="lesson-search" class="ui-field ui-field--lg" type="search" autocomplete="off" placeholder="Найти тему">
+          <button id="lesson-search-clear" class="ui-search-clear" type="button" hidden title="Очистить" aria-label="Очистить поиск"></button>
+        </div>
       </div>
-      <nav class="lesson-nav" id="lesson-nav" aria-label="Темы"></nav>
+      <nav class="ui-sidebar-nav lesson-nav" id="lesson-nav" aria-label="Темы"></nav>
     </aside>
 
     <main class="docs-main" id="docs-main" tabindex="-1">
       <article class="lesson-view" id="lesson-view">
-        <div class="loading-card">Загрузка задачника...</div>
+        <div class="ui-state loading-card">Загрузка задачника...</div>
       </article>
     </main>
 
-    <aside class="docs-toc" id="docs-toc" aria-label="Разделы страницы"></aside>
+    <aside class="ui-toc docs-toc" id="docs-toc" aria-label="Разделы страницы"></aside>
   </div>
 </body>
 </html>

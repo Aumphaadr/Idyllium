@@ -19,20 +19,20 @@
   <!-- @site-topbar -->
 
   <div class="reference-shell">
-    <aside class="reference-sidebar" id="reference-sidebar">
-      <div class="sidebar-search">
-        <label for="reference-search">Поиск по API</label>
-        <div class="search-field">
-          <input id="reference-search" type="search" autocomplete="off" placeholder="Например: set_image">
-          <button id="reference-search-clear" class="search-clear" type="button" hidden title="Очистить" aria-label="Очистить поиск"></button>
+    <aside class="ui-sidebar reference-sidebar" id="reference-sidebar">
+      <div class="ui-sidebar-head sidebar-search">
+        <label class="ui-sidebar-label" for="reference-search">Поиск по API</label>
+        <div class="ui-search search-field">
+          <input id="reference-search" class="ui-field ui-field--lg" type="search" autocomplete="off" placeholder="Например: set_image">
+          <button id="reference-search-clear" class="ui-search-clear search-clear" type="button" hidden title="Очистить" aria-label="Очистить поиск"></button>
         </div>
       </div>
-      <nav id="reference-nav" class="reference-nav" aria-label="Документация Idyllium"></nav>
+      <nav id="reference-nav" class="ui-sidebar-nav reference-nav" aria-label="Документация Idyllium"></nav>
     </aside>
 
     <main class="reference-main" id="reference-main" tabindex="-1">
       <article id="reference-view" class="reference-view">
-        <div class="loading-state">Загрузка документации...</div>
+        <div class="ui-state loading-state">Загрузка документации...</div>
       </article>
     </main>
   </div>
