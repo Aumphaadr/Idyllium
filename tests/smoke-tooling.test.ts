@@ -1332,4 +1332,23 @@ test('every test file that registers through smoke-harness also runs its tests',
   assert(offenders.length === 0, `test files that never run their tests (add \`void runTests();\`): ${offenders.join(', ')}`);
 });
 
+test('recipes pages carry no build-time stamps: a rebuild must not change docs/', () => {
+  // Рецепты печатают время завершения; в страницу оно идёт шаблоном. Настоящая метка в запечённом
+  // выводе значила бы, что каждая пересборка меняет docs/ и страж чистоты CI падает (2026-09-27).
+  const dir = path.resolve(process.cwd(), 'docs', 'recipes');
+  if (!fs.existsSync(dir)) return; // сайт ещё не собран — сверять нечего
+  const pages = (fs.readdirSync(dir) as string[]).filter((name) => name.endsWith('.html'));
+  assert(pages.length >= 11, `expected the recipes index and ten recipe pages, found ${pages.length}`);
+  let outputs = 0;
+  for (const page of pages) {
+    const html = fs.readFileSync(path.join(dir, page), 'utf8') as string;
+    for (const block of html.match(/data-label="Вывод на образцах">[\s\S]*?<\/div>/gu) ?? []) {
+      outputs += 1;
+      assert(!/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/u.test(block), `${page}: the baked output carries a real time stamp — it changes on every rebuild`);
+      assert(!block.includes('Готово') || block.includes('ГГГГ-ММ-ДД ЧЧ:ММ:СС'), `${page}: the closing line must show the time as a template`);
+    }
+  }
+  assert(outputs >= 8, `expected baked output on the eight executed recipes, found ${outputs}`);
+});
+
 void runTests();
