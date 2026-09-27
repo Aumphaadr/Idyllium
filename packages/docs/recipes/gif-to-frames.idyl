@@ -1,0 +1,42 @@
+use console;
+use file;
+use image;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string ANIMATION_FILE = "анимация.gif";   // какой GIF разобрать на кадры
+const string FRAMES_FOLDER = "кадры-из-gif";    // куда сложить кадры
+const string FRAME_PREFIX = "кадр";             // имена кадров: кадр01.png, кадр02.png, …
+const string TIMEZONE = "Europe/Moscow";        // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- Положите GIF в панель «Файлы» слева: перетащите файл или «Файл → Загрузить файл…».
+// <--- Нажмите «Запустить». Папка с кадрами появится в «Файлах»; любой кадр можно
+//      скачать.
+
+string function two_digits(int n) {
+    if (n < 10) {
+        return "0" + to_string(n);
+    }
+    return to_string(n);
+}
+
+main() {
+    console.clear();
+    image.Animation animation;
+    animation.load_from_file(ANIMATION_FILE);
+    console.writeln("Кадров в файле «", ANIMATION_FILE, "»: ", animation.frame_count,
+        ", размер ", animation.width, "×", animation.height,
+        ", каждый показывается ", animation.frame_duration, " с. Разбираю…");
+
+    file.create_directory(FRAMES_FOLDER);
+    for (int i = 0; i < animation.frame_count; i = i + 1) {
+        image.Static frame = animation.get_frame(i);
+        string name = FRAMES_FOLDER + "/" + FRAME_PREFIX + two_digits(i + 1) + ".png";
+        frame.export_to_file(name);
+        console.writeln("  ", name);
+    }
+
+    console.writeln("Готово: кадров в папке «", FRAMES_FOLDER, "»: ",
+        animation.frame_count, ", ", time.now(TIMEZONE).to_string());
+}

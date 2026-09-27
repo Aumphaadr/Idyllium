@@ -1017,7 +1017,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Обратное преобразование процентного кодирования.',
     }),
     functionSpec('is_valid', [{ name: 'address', type: STRING }], BOOL, {
-      documentation: 'Проверяет, можно ли разобрать строку как адрес.',
+      documentation: 'Проверяет, что строка — полный веб-адрес: http:// или https://, две косые и имя сайта. Без схемы (www.example.org), с одной косой (https:/site), localhost:8080 или javascript:… — false. Это не обещание, что адрес существует и ответит.',
     }),
   ]));
 
@@ -1672,7 +1672,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         { name: 'height', type: INT, defaultValue: '0' },
       ], VOID, {
         minArguments: 1,
-        documentation: 'Сохраняет текущую картинку холста в SVG-файл. Работает на всех платформах, включая консольный запуск (жанр turtle.save_svg) — путь для длинных симуляций с автосейвом кадров. Область — как у to_static(). Ограничение: кастомные шрифты в SVG-снимке заменяются на sans-serif.',
+        documentation: 'Сохраняет текущую картинку холста в SVG-файл. Работает на всех платформах, включая консольный запуск (жанр turtle.save_svg) — путь для длинных симуляций с автосейвом кадров. Область — как у to_static(). Шрифты текста едут вместе со снимком: шрифт из файла встраивается data-URI, шрифт по умолчанию подставляет Web IDE при растеризации.',
       }),
     ], guiWidget),
     typeSpec('Label', [

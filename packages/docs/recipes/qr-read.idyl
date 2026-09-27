@@ -1,0 +1,28 @@
+use console;
+use image;
+use qr;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string PICTURE_FILE = "qr.png";        // картинка с QR-кодом: снимок экрана или фото
+const string TIMEZONE = "Europe/Moscow";     // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- Положите картинку с QR-кодом в панель «Файлы» слева и впишите её имя выше.
+// <--- Нажмите «Запустить». Текст из кода появится здесь, в консоли.
+
+main() {
+    console.clear();
+    image.Static picture;
+    picture.load_from_file(PICTURE_FILE);
+    console.writeln("Картинка «", PICTURE_FILE, "» ", picture.width, "×", picture.height,
+        ", ищу код…");
+
+    if (not qr.has_code(picture)) {
+        console.writeln("Кода на картинке не видно: попробуйте снимок крупнее и ровнее.");
+    } else {
+        console.writeln("В коде записано: ", qr.decode(picture));
+    }
+
+    console.writeln("Готово: ", time.now(TIMEZONE).to_string());
+}

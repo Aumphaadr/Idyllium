@@ -1,0 +1,32 @@
+use console;
+use file;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string SOURCE_FILE = "старый.txt";         // файл «в кракозябрах»
+const string SOURCE_ENCODING = "windows-1251";   // его кодировка: koi8-r, cp866, cp1251…
+const string RESULT_FILE = "новый.txt";          // куда записать тот же текст в UTF-8
+const string TIMEZONE = "Europe/Moscow";         // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- Перетащите файл в панель «Файлы» слева и впишите его имя выше.
+//      Не знаете кодировку? Пробуйте по очереди windows-1251, koi8-r, cp866: верная даст
+//      читаемый текст.
+// <--- Нажмите «Запустить». Новый файл появится в «Файлах», а текст — здесь, в консоли.
+
+main() {
+    console.clear();
+    file.istream fin = file.open(SOURCE_FILE, "read", SOURCE_ENCODING);
+    string text = fin.read_all();
+    fin.close();
+
+    file.ostream fout = file.open(RESULT_FILE, "write");
+    fout.write(text);
+    fout.close();
+
+    console.writeln("Прочитано из «", SOURCE_FILE, "» как ", SOURCE_ENCODING,
+        ", символов: ", text.length, ". Текст:");
+    console.writeln(text);
+    console.writeln("Готово: ", RESULT_FILE, " в UTF-8, ",
+        time.now(TIMEZONE).to_string());
+}

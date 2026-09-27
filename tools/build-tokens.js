@@ -14,8 +14,8 @@
 //                                             блок @tokens:renderer-theme — тема окна «idyllium»;
 //   packages/vscode-idyllium/themes/*.json  — цветовые темы VS Code: те же редактор и подсветка, что у
 //                                             Monaco в Web IDE (этап 6 стилевой базы);
-//   кадр юнита также получает словарь подсветки .hl-* из site-components.css (блок @shared:hl) — один
-//                                             словарь на сайт и кадр, без ручной копии.
+//   кадр юнита также получает из site-components.css словарь подсветки .hl-* (@shared:hl), кнопки
+//                                             (@shared:buttons) и поле (@shared:fields) — без ручных копий.
 // Запуск: node tools/build-tokens.js (стоит в npm run build перед tsc). Модуль экспортирует generate()
 // для стража tests/design-tokens.test.ts — он сверяет файлы в репозитории со свежей генерацией.
 
@@ -139,21 +139,9 @@ function replaceBlock(text, name, body, relative, kind = 'tokens') {
   return `${text.slice(0, from + start.length)}\n${body}\n${text.slice(to)}`;
 }
 
-// Кадр юнита сохраняет свои имена переменных (frame.css — самодостаточный файл); значения — из ролей.
-const FRAME_VARS = [
-  ['bg', 'color-bg'], ['panel', 'color-panel'], ['panel-soft', 'color-panel-soft'], ['panel-raised', 'color-panel-raised'],
-  ['border', 'color-border'], ['text', 'color-text'], ['muted', 'color-text-muted'], ['on-solid', 'color-on-solid'],
-  ['accent', 'color-accent'], ['accent-strong', 'color-accent-strong'],
-  ['run-bg', 'color-run'], ['run-bg-hover', 'color-run-hover'], ['danger', 'color-danger'],
-  ['editor-bg', 'editor-bg'], ['editor-text', 'editor-text'], ['editor-muted', 'editor-muted'], ['editor-caret', 'editor-caret'],
-  ['selection', 'color-selection'], ['output-bg', 'color-bg'], ['output-text', 'color-text'],
-  // Подсветка — под общими именами: словарь .hl-* приходит из site-components.css как есть.
-  ...Object.keys(tokens.syntax).map((name) => [`syntax-${name}`, `syntax-${name}`]),
-  ['ok-bg', 'color-success-bg'], ['ok-text', 'color-success'], ['fail-bg', 'color-warning-bg'], ['fail-text', 'color-warning'],
-  ['soft-bg', 'color-info-bg'], ['soft-text', 'color-info'],
-  ...Object.keys(tokens.ansi).map((name) => [`ansi-${name}`, `ansi-${name}`]),
-];
-
+// Кадр юнита — самодостаточный файл на чужой странице: site-tokens.css он не грузит, поэтому
+// получает ВСЕ токены сайта числами под общими именами (--color-*, --editor-*, --syntax-*, --ansi-*,
+// шкалы) — и тогда общие блоки компонентов (кнопки, поле) ложатся в него как есть (этап 6–7).
 // Рамка предпросмотра окна программы (стол, заголовок окна) — палитра сайта; в VS Code свои --vscode-*.
 const RENDERER_VARS = [
   ['panel', 'color-bg'], ['text', 'color-text'], ['muted', 'color-text-muted'], ['border', 'color-border'], ['accent', 'color-accent'],
@@ -171,15 +159,17 @@ function mapped(vars, themeIndex, indent) {
 }
 
 function frameBlock() {
-  return `/* ГЕНЕРАТ (tools/build-tokens.js из packages/design/tokens.js): палитра сайта, тёмная тема — по умолчанию. */
+  return `/* ГЕНЕРАТ (tools/build-tokens.js из packages/design/tokens.js): токены сайта под общими именами, тёмная тема — по умолчанию. */
 body {
   color-scheme: dark;
-${mapped(FRAME_VARS, 0, '  ')}
+${declarations(staticPairs(), '  ')}
+${declarations(Object.entries(tokens.density.app), '  ')}
+${declarations(themedPairs(0), '  ')}
 }
 
 body.theme-light {
   color-scheme: light;
-${mapped(FRAME_VARS, 1, '  ')}
+${declarations(themedPairs(1), '  ')}
 }`;
 }
 
@@ -263,15 +253,16 @@ function vscodeTheme(theme) {
   }, null, 2)}\n`;
 }
 
-// Словарь подсветки .hl-* — из site-components.css (между /* @hl:start */ и /* @hl:end */), без отступа слоя.
-function sharedHighlightBlock() {
+// Общий блок компонентов из site-components.css (между /* @имя:start */ и /* @имя:end */), без отступа слоя:
+// словарь подсветки .hl-*, семейство кнопок .ui-button, поле .ui-field — кадр юнита берёт их как есть.
+function sharedBlock(name, title) {
   const relative = 'packages/web-ide/assets/site-components.css';
   const css = fs.readFileSync(path.join(rootDir, relative), 'utf8');
-  const start = css.indexOf('/* @hl:start */');
-  const end = css.indexOf('/* @hl:end */');
-  if (start < 0 || end < 0 || end < start) throw new Error(`${relative}: нет маркеров /* @hl:start */ … /* @hl:end */`);
+  const start = css.indexOf(`/* @${name}:start */`);
+  const end = css.indexOf(`/* @${name}:end */`);
+  if (start < 0 || end < 0 || end < start) throw new Error(`${relative}: нет маркеров /* @${name}:start */ … /* @${name}:end */`);
   const body = css.slice(css.indexOf('\n', start) + 1, end).split('\n').map((line) => line.replace(/^ {2}/u, '')).join('\n').trim();
-  return `/* ГЕНЕРАТ (tools/build-tokens.js из ${relative}): словарь подсветки сайта, один на всех. */\n${body}`;
+  return `/* ГЕНЕРАТ (tools/build-tokens.js из ${relative}): ${title}. */\n${body}`;
 }
 
 function generate() {
@@ -285,7 +276,9 @@ function generate() {
   const frame = 'packages/embed/frame.css';
   let frameCss = fs.readFileSync(path.join(rootDir, frame), 'utf8');
   frameCss = replaceBlock(frameCss, 'frame', frameBlock(), frame);
-  outputs[frame] = replaceBlock(frameCss, 'hl', sharedHighlightBlock(), frame, 'shared');
+  frameCss = replaceBlock(frameCss, 'hl', sharedBlock('hl', 'словарь подсветки сайта, один на всех'), frame, 'shared');
+  frameCss = replaceBlock(frameCss, 'buttons', sharedBlock('buttons', 'кнопки сайта — те же, что в IDE и учебнике'), frame, 'shared');
+  outputs[frame] = replaceBlock(frameCss, 'fields', sharedBlock('fields', 'поле ввода сайта'), frame, 'shared');
   const renderer = 'packages/gui-renderer/renderer.css';
   let rendererCss = fs.readFileSync(path.join(rootDir, renderer), 'utf8');
   rendererCss = replaceBlock(rendererCss, 'renderer', rendererBlock(), renderer);

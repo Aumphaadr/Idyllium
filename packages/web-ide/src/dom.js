@@ -66,17 +66,17 @@ export const editAppMenuButton = document.getElementById('edit-app-menu-button')
 export const editAppMenu = document.getElementById('edit-app-menu');
 // Фабрика SVG-значков интерфейса (дерево файлов, кнопки просмотрщиков).
 export function createIcon(name) {
-  // Единый набор иконок сайта (1.6.3): window.IdylliumIcons из gui-renderer/icons.js.
-  // Старые имена IDE → имена набора; без набора — пустой svg, чтобы вёрстка не поехала.
+  // Единый набор иконок сайта (1.6.3; с 1.6.4 — «точные иконки»): window.IdylliumIcons из gui-renderer/icons.js.
+  // Роли IDE → имена набора; без набора — пустой svg, чтобы вёрстка не поехала.
   const ICON_NAMES = {
     file: 'file', asset: 'file-image', database: 'file-database', folder: 'folder', 'folder-open': 'folder-open',
-    'zoom-in': 'zoom-in', 'zoom-out': 'zoom-out', fit: 'fit', menu: 'more',
+    'zoom-in': 'zoom-in', 'zoom-out': 'zoom-out', fit: 'scan', menu: 'dots-vertical',
   };
   const icons = window.IdylliumIcons;
   const iconName = ICON_NAMES[name] || name;
   if (icons && icons.has(iconName)) return icons.element(iconName, { size: 16 });
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 20 20');
+  svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
   return svg;
 }

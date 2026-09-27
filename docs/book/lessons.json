@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-26T22:45:04.824Z",
+  "generatedAt": "2026-09-27T10:00:55.834Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
       "id": "console",
       "title": "Консоль",
-      "icon": "section-console",
+      "icon": "window-terminal",
       "status": "ready",
       "lessons": [
         {
@@ -344,7 +344,7 @@
     {
       "id": "widgets",
       "title": "Виджеты",
-      "icon": "section-widgets",
+      "icon": "widgets",
       "status": "ready",
       "lessons": [
         {
@@ -690,7 +690,7 @@
     {
       "id": "oop",
       "title": "ООП",
-      "icon": "section-oop",
+      "icon": "sitemap",
       "status": "ready",
       "lessons": [
         {

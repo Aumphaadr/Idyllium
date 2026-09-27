@@ -2,11 +2,11 @@
 import { RuntimeObject, isRuntimeObject } from './runtime-shared';
 import { IdylliumArray, IdylliumColor, IdylliumTimeStamp, colorToCss, valueOps } from './runtime-values';
 import { IdylliumAudioSnapshot, IdylliumCanvasSnapshot, IdylliumDrawableSnapshot, IdylliumGuiWidgetSnapshot, IdylliumModalSnapshot, IdylliumWindowSnapshot, RuntimeObjectState, CanvasSnapshotOptions, IdylliumCanvasCommand, canvasCommands } from './runtime-state';
-import { isDrawableObject, drawableTransform, runtimeFontBytes } from './runtime-drawable';
+import { isDrawableObject, drawableTransform, runtimeFontBytes, fontMimeType } from './runtime-drawable';
 import { isGuiWidget, listenedGuiEvents } from './runtime-gui';
 import { storedStaticImage, storedAnimation, storedBitmap } from './runtime-image';
 import { audioCommands } from './runtime-audio';
-import { detectImageFormat, imageMimeType } from './image-service';
+import { bytesToDataUri, detectImageFormat, imageMimeType } from './image-service';
 import { parseIdylliumStyle } from './style';
 import { IdylliumRuntimeError } from './runtime-errors';
 
@@ -161,7 +161,40 @@ function canvasSpriteHref(imageSnapshot: unknown, state: RuntimeObjectState): st
   }
 }
 
-function canvasDrawableToSvg(object: IdylliumDrawableSnapshot, state: RuntimeObjectState): string {
+/** Шрифты снимка холста: файл-шрифты для <defs><style>@font-face…</style></defs> и признак шрифта по умолчанию. */
+interface CanvasSvgFonts {
+  readonly faces: Map<string, { readonly family: string; readonly dataUri: string; readonly format: string }>;
+  usesDefault: boolean;
+}
+
+const SVG_FONT_FORMATS: Readonly<Record<string, string>> = { ttf: 'truetype', otf: 'opentype', woff: 'woff', woff2: 'woff2' };
+
+/** Имя семейства для <text>: шрифт по умолчанию рендерера, файл-шрифт (встроенный в снимок) или sans-serif. */
+function canvasSvgFontFamily(font: unknown, state: RuntimeObjectState, fonts?: CanvasSvgFonts): string {
+  const props = font && typeof font === 'object' && 'properties' in (font as object)
+    ? (font as { properties: Readonly<Record<string, unknown>> }).properties
+    : (isRuntimeObject(font) ? (font as Readonly<Record<string, unknown>>) : null);
+  if (!props || props.is_loaded !== true) return 'sans-serif';
+  if (props.is_builtin === true) {
+    if (fonts) fonts.usesDefault = true;
+    return "IdylliumCanvasDefault, 'Source Code Pro', monospace";
+  }
+  const key = typeof props.resolved_path === 'string' ? props.resolved_path : '';
+  const loaded = key === '' ? undefined : state.loadedFonts.get(key);
+  if (!loaded || !fonts) return 'sans-serif';
+  let face = fonts.faces.get(key);
+  if (!face) {
+    face = {
+      family: `IdylliumCanvasFont${fonts.faces.size + 1}`,
+      dataUri: bytesToDataUri(loaded.bytes, fontMimeType(loaded.format)),
+      format: SVG_FONT_FORMATS[loaded.format] ?? loaded.format,
+    };
+    fonts.faces.set(key, face);
+  }
+  return `${face.family}, sans-serif`;
+}
+
+function canvasDrawableToSvg(object: IdylliumDrawableSnapshot, state: RuntimeObjectState, fonts?: CanvasSvgFonts): string {
   const props = object.properties ?? {};
   const n = canvasSvgNumber;
   const transform = (scaleX = 1, scaleY = 1): string => {
@@ -206,9 +239,10 @@ function canvasDrawableToSvg(object: IdylliumDrawableSnapshot, state: RuntimeObj
   if (object.type === 'drawable.Text') {
     const fontSize = Math.max(1, n(props.font_size, 16));
     const text = typeof props.text === 'string' ? props.text : String(props.text ?? '');
-    // Кастомные шрифты внутри SVG-картинки недоступны (svg-as-img не грузит
-    // внешние ресурсы) — честный фоллбек на sans-serif.
-    return `<g transform="${transform()}"><text x="${-originX}" y="${-originY}" font-size="${fontSize}" font-family="sans-serif" dominant-baseline="text-before-edge" fill="${canvasSvgColor(props.text_color, '#ffffff')}">${canvasSvgEscape(text)}</text></g>`;
+    // Шрифт — тот же, что на экране: файл-шрифт встраивается в снимок data-URI (SVG-картинка внешних
+    // ресурсов не грузит), шрифт по умолчанию называется по имени — его встраивает хост-растеризатор.
+    const family = canvasSvgFontFamily(props.font, state, fonts);
+    return `<g transform="${transform()}"><text x="${-originX}" y="${-originY}" font-size="${fontSize}" font-family="${family}" dominant-baseline="text-before-edge" fill="${canvasSvgColor(props.text_color, '#ffffff')}">${canvasSvgEscape(text)}</text></g>`;
   }
 
   if (object.type === 'turtle.Path') {
@@ -255,13 +289,21 @@ export function canvasToSvg(canvas: RuntimeObject, region: CanvasCaptureRegion, 
   const base = background instanceof IdylliumColor && background.alpha > 0 ? background.toCss() : '#000000';
   const wholeCanvas = (fill: string): string => `<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="${fill}"/>`;
   parts.push(wholeCanvas(canvasSvgColor(base, '#000000')));
+  const fonts: CanvasSvgFonts = { faces: new Map(), usesDefault: false };
   for (const command of canvasCommands(canvas)) {
     if (command.kind === 'clear') parts.push(wholeCanvas(canvasSvgColor(base, '#000000')));
     if (command.kind === 'fill') parts.push(wholeCanvas(canvasSvgColor(command.color, '#000000')));
     if (command.kind === 'draw' && command.object) {
-      const svg = canvasDrawableToSvg(command.object, state);
+      const svg = canvasDrawableToSvg(command.object, state, fonts);
       if (svg !== '') parts.push(svg);
     }
+  }
+  if (fonts.faces.size > 0) {
+    // Файл-шрифты — внутри снимка: браузер рисует SVG-картинку без внешних ресурсов, data-URI ему доступен.
+    const rules = [...fonts.faces.values()]
+      .map((face) => `@font-face{font-family:'${face.family}';src:url(${face.dataUri}) format('${face.format}');}`)
+      .join('');
+    parts.splice(1, 0, `<defs><style>${rules}</style></defs>`);
   }
   parts.push('</svg>');
   return parts.join('\n');

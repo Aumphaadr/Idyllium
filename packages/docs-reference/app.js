@@ -136,9 +136,9 @@
       document.body.classList.toggle('sidebar-open');
     });
 
-    // Крестик очистки — свой значок «close» из набора; виден, пока в поле что-то есть.
+    // Крестик очистки — значок «x» из набора; виден, пока в поле что-то есть.
     els.searchClear = document.getElementById('reference-search-clear');
-    if (els.searchClear && window.IdylliumIcons) els.searchClear.innerHTML = window.IdylliumIcons.svg('close', { size: 14 });
+    if (els.searchClear && window.IdylliumIcons) els.searchClear.innerHTML = window.IdylliumIcons.svg('x', { size: 14 });
     const syncSearchClear = () => { if (els.searchClear) els.searchClear.hidden = els.search.value === ''; };
     els.search.addEventListener('input', () => {
       state.query = els.search.value.trim().toLocaleLowerCase('ru');

@@ -1,0 +1,26 @@
+use console;
+use file;
+use hash;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string SOURCE_FILE = "заметка.txt";   // текстовый файл для контрольной суммы
+const string TIMEZONE = "Europe/Moscow";    // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- Перетащите текстовый файл в панель «Файлы» слева, впишите его имя выше и нажмите
+//      «Запустить».
+//      Сравните строку с той, что дал отправитель: совпала — файл дошёл целиком, буква в
+//      букву.
+//      Картинки и архивы этой программе не годятся: файл читается как текст.
+
+main() {
+    console.clear();
+    file.istream fin = file.open(SOURCE_FILE, "read");
+    string text = fin.read_all();
+    fin.close();
+
+    console.writeln("Файл «", SOURCE_FILE, "», символов: ", text.length);
+    console.writeln("SHA-256: ", hash.sha256(text));
+    console.writeln("Готово: ", time.now(TIMEZONE).to_string());
+}

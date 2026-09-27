@@ -28,6 +28,27 @@ test('gui-designer: window defaults in the catalogue match the runtime', async (
   }
 });
 
+// Инспектор подгоняет тройку min/max/value друг под друга, как QSpinBox (пункт бэклога 2026-09-26):
+// иначе `value` вне нового диапазона падал бы на сцене словами рантайма.
+test('gui-designer: inspector keeps min, max and value consistent', () => {
+  const spin = widgets.widgetDefinition('SpinBox');
+  const props: any = { value: 20 };
+  widgets.reconcileRange(props, spin, 'value');
+  assert(props.value === 20, 'a value inside the default range stays');
+  props.min = 30; widgets.reconcileRange(props, spin, 'min');
+  assert(props.value === 30, `raising min above value lifts value: ${JSON.stringify(props)}`);
+  props.max = 25; widgets.reconcileRange(props, spin, 'max');
+  assert(props.min === 25 && props.value === 25, `lowering max below min drags min and value down: ${JSON.stringify(props)}`);
+  props.value = 999; widgets.reconcileRange(props, spin, 'value');
+  assert(props.value === 25, `a value above max is clamped to max: ${JSON.stringify(props)}`);
+  const bar: any = {};
+  widgets.reconcileRange(bar, widgets.widgetDefinition('ProgressBar'), 'max');
+  assert(Object.keys(bar).length === 0, 'defaults in range add nothing to the model');
+  const label: any = { text: 'x' };
+  widgets.reconcileRange(label, widgets.widgetDefinition('Label'), 'value');
+  assert(label.value === undefined, 'widgets without a range are untouched');
+});
+
 // Рантайм велит «set min and max first»: у счётчиков, ползунка и индикатора границы
 // пишутся раньше значения, иначе `value = 20; min = 15;` падал бы словами на сцене.
 test('gui-designer: range widgets write min and max before value', async () => {

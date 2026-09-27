@@ -318,7 +318,7 @@
     {
       "id": "audio",
       "title": "Звук и музыка",
-      "icon": "file-audio",
+      "icon": "file-music",
       "groups": [
         {
           "title": "WAV — короткие эффекты",

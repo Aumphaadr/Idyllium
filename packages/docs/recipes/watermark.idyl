@@ -1,0 +1,69 @@
+use colors;
+use console;
+use drawable;
+use file;
+use gui;
+use image;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string SOURCE_FOLDER = "фото";               // откуда брать картинки
+const string TARGET_FOLDER = "фото-с-подписью";    // куда складывать копии с подписью
+const string SIGN = "© Мастерская";                // текст подписи
+const int SIGN_SIZE = 14;                          // кегль подписи в пикселях
+const string SIGN_COLOR = "#ffffff";               // цвет подписи
+const int MARGIN = 8;                              // отступ от правого и нижнего края
+const string TIMEZONE = "Europe/Moscow";           // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- В панели «Файлы» слева создайте папку «фото» и перетащите в неё картинки.
+// <--- Нажмите «Запустить». Копии с подписью в правом нижнем углу появятся в папке
+//      «фото-с-подписью».
+//      Снимок холста делает браузер, поэтому этот рецепт работает в Web IDE.
+
+main() {
+    console.clear();
+    file.create_directory(TARGET_FOLDER);
+    dyn_array<string> names = file.list_directory(SOURCE_FOLDER);
+    console.writeln("Картинок в папке «", SOURCE_FOLDER, "»: ", names.length,
+        ". Подписываю «", SIGN, "»…");
+
+    gui.Window win;
+    win.title = "Водяной знак";
+    win.width = 640;
+    win.height = 480;
+
+    gui.Canvas sheet;
+    win.add_child(sheet);
+    win.show();
+
+    for (int i = 0; i < names.length; i = i + 1) {
+        image.Static picture;
+        picture.load_from_file(SOURCE_FOLDER + "/" + names[i]);
+
+        sheet.width = picture.width;
+        sheet.height = picture.height;
+        sheet.fill(colors.WHITE);
+
+        drawable.Sprite photo;
+        photo.set_image(picture);
+        photo.x = 0;
+        photo.y = 0;
+        sheet.draw(photo);
+
+        drawable.Text label;
+        label.text = SIGN;
+        label.font_size = SIGN_SIZE;
+        label.text_color = colors.HEX(SIGN_COLOR);
+        label.x = picture.width - label.get_width() - MARGIN;
+        label.y = picture.height - SIGN_SIZE - MARGIN;
+        sheet.draw(label);
+
+        image.Static signed = sheet.to_static();
+        signed.export_to_file(TARGET_FOLDER + "/" + names[i]);
+        console.writeln("  ", names[i], ": ", picture.width, "×", picture.height);
+    }
+
+    console.writeln("Готово: файлов в папке «", TARGET_FOLDER, "»: ", names.length, ", ",
+        time.now(TIMEZONE).to_string());
+}

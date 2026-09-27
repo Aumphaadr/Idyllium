@@ -143,6 +143,7 @@ export function initializeFontObject(obj: RuntimeObject, typeName: string, state
       ? existingResourceUri
       : bytesToDataUri(bytes, fontMimeType(format));
     obj.__fontBytes = bytes;
+    state.loadedFonts.set(resolvedPath, { bytes, format });
     obj.format = format;
     obj.is_builtin = false;
     obj.is_loaded = true;

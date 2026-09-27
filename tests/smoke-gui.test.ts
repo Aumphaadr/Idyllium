@@ -2832,6 +2832,56 @@ main() {
   }
 });
 
+test('canvas snapshots carry the fonts the text was drawn with', async () => {
+  // Снимок холста — SVG-картинка без внешних ресурсов: файл-шрифт едет внутри снимка data-URI,
+  // шрифт по умолчанию назван по имени — его встраивает браузерный растеризатор (1.6.4).
+  const lobster = new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'packages/fonts/Lobster-Regular.ttf')));
+  const fsMemory = createMemoryRuntimeFileSystem({ '/workspace/шрифт.ttf': { content: '', bytes: lobster } });
+  const result = await runIdyllium(`
+use drawable;
+use fonts;
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Canvas sheet;
+    sheet.width = 240;
+    sheet.height = 100;
+    win.add_child(sheet);
+    win.show();
+
+    fonts.Font font;
+    font.load_from_file("шрифт.ttf");
+
+    drawable.Text own;
+    own.text = "Своим шрифтом";
+    own.font = font;
+    own.x = 10;
+    own.y = 10;
+    sheet.draw(own);
+
+    drawable.Text plain;
+    plain.text = "Шрифтом по умолчанию";
+    plain.x = 10;
+    plain.y = 50;
+    sheet.draw(plain);
+
+    sheet.save_svg("шрифты.svg");
+}
+`, { platform: 'cli', fileSystem: fsMemory }, { file: '/workspace/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  const written = fsMemory.writtenFilesSnapshot?.() ?? {};
+  const entry = Object.entries(written).find(([file]) => file.endsWith('шрифты.svg'));
+  assert(entry !== undefined, 'save_svg must write the file');
+  const svg = String(entry![1].content);
+  assert(svg.includes("@font-face{font-family:'IdylliumCanvasFont1';src:url(data:font/ttf;base64,"), 'the file font is embedded into the snapshot as a data URI');
+  assert(svg.includes("format('truetype')"), 'the embedded face names its format');
+  assert(svg.includes('font-family="IdylliumCanvasFont1, sans-serif"'), 'text drawn with the file font names that face');
+  assert(svg.includes(`font-family="IdylliumCanvasDefault, 'Source Code Pro', monospace"`), 'text in the default font names the renderer family for the host to attach');
+  assert((svg.match(/@font-face/g) ?? []).length === 1, 'the default font itself is not embedded by the runtime: the host has it');
+  assert(svg.indexOf('<defs>') < svg.indexOf('<text'), 'font faces are declared before the text that uses them');
+});
+
 test('canvas snapshots: save_svg everywhere, to_static needs a renderer host', async () => {
   const fsMemory = createMemoryRuntimeFileSystem();
   const result = await runIdyllium(`

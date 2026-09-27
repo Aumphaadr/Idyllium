@@ -1,0 +1,35 @@
+use console;
+use file;
+use image;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string SOURCE_FOLDER = "фото";              // откуда брать картинки
+const string TARGET_FOLDER = "фото-маленькие";    // куда складывать уменьшенные копии
+const float FACTOR = 0.5;                         // 0.5 — вдвое меньше, 0.25 — вчетверо
+const string TIMEZONE = "Europe/Moscow";          // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- В панели «Файлы» слева создайте папку «фото» и перетащите в неё картинки (PNG,
+//      JPEG, GIF, WebP).
+// <--- Нажмите «Запустить». Уменьшенные копии появятся в папке «фото-маленькие».
+
+main() {
+    console.clear();
+    file.create_directory(TARGET_FOLDER);
+    dyn_array<string> names = file.list_directory(SOURCE_FOLDER);
+    console.writeln("Картинок в папке «", SOURCE_FOLDER, "»: ", names.length,
+        ". Уменьшаю с множителем ", FACTOR, "…");
+
+    for (int i = 0; i < names.length; i = i + 1) {
+        image.Static picture;
+        picture.load_from_file(SOURCE_FOLDER + "/" + names[i]);
+        image.Static small = picture.scale(FACTOR, FACTOR);
+        small.export_to_file(TARGET_FOLDER + "/" + names[i]);
+        console.writeln("  ", names[i], ": ", picture.width, "×", picture.height, " → ",
+            small.width, "×", small.height);
+    }
+
+    console.writeln("Готово: файлов в папке «", TARGET_FOLDER, "»: ", names.length, ", ",
+        time.now(TIMEZONE).to_string());
+}

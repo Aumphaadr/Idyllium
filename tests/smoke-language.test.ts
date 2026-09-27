@@ -6073,3 +6073,18 @@ test('signals of the method team 2026-09-18: module-named variable, keyword afte
       `a keyword in the variable-name slot must be refused once:\n${result.diagnosticsText}`);
   }
 });
+
+// «for (string name in names)» — привычка из Python/JS. Цикла по коллекции в языке нет; раньше это
+// давало каскад «expected ';'» и «text needs quotes» без слова о причине (находка 2026-09-18).
+test('for-in loops are refused in one line that shows the index loop instead', () => {
+  for (const header of ['for (string name in names)', 'for (name in names)', 'for (const name of names)', 'for (int n of names)']) {
+    const source = `use console;\nmain() {\n    dyn_array<string> names;\n    names.add("a");\n    ${header} {\n        console.writeln(name);\n    }\n    console.writeln("after");\n}\n`;
+    const result = compileIdyllium(source, { file: '/main.idyl' });
+    const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    assert(errors.length === 1, `${header}: exactly one error is expected, got:\n${result.diagnosticsText}`);
+    assert(/there is no loop over a collection in Idyllium/u.test(errors[0].message) && errors[0].message.includes('for (int i = 0; i < names.length; i = i + 1)'),
+      `${header}: the message must name the index loop over names:\n${errors[0].message}`);
+  }
+  // Обычные циклы for не задеты, в том числе с именами in/of внутри условия.
+  assertCompiles('use console;\nmain() {\n    dyn_array<int> items;\n    int of = 2;\n    for (int i = 0; i < items.length; i = i + 1) { console.writeln(items[i] + of); }\n}\n');
+});

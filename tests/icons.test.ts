@@ -1,4 +1,4 @@
-// Страж единого набора иконок (1.6.3): источники чистые (сетка 20×20, только currentColor,
+// Страж единого набора иконок (1.6.3; с 1.6.4 — «точные иконки», сетка 24×24): источники чистые (только currentColor,
 // только пути), сгенерированные модули совпадают со свежей генерацией, каждое имя,
 // на которое ссылается код сайта, есть в наборе, а набор нигде не дублируется по-старому.
 import { ICON_NAMES, ICON_MARKUP, iconSvg, isIconName } from '../src/icons';
@@ -36,7 +36,7 @@ test('icons: the generated modules match the sources and the sources are clean',
     assert(!/<(text|image|script|style|use)\b/u.test(markup), `${name}: forbidden element`);
   }
   const svg = iconSvg('play', { size: 18, title: 'Запустить' });
-  assert(svg.startsWith('<svg class="icon icon-play"') && svg.includes('viewBox="0 0 20 20"') && svg.includes('<title>Запустить</title>'), 'iconSvg renders a titled svg');
+  assert(svg.startsWith('<svg class="icon icon-play"') && svg.includes('viewBox="0 0 24 24"') && svg.includes('<title>Запустить</title>'), 'iconSvg renders a titled svg');
   assert(isIconName('play') && !isIconName('nope'), 'isIconName tells names from strangers');
   // Каждый виджет палитры конструктора имеет свой значок.
   const widgets: any = require(path.resolve(process.cwd(), 'packages', 'gui-designer', 'src', 'widgets.js'));
@@ -53,6 +53,9 @@ test('icons: every icon name used by the site exists in the set', () => {
     /iconSvg\('([A-Za-z0-9-]+)'/gu,
     /IdylliumIcons\.(?:svg|element)\('([A-Za-z0-9-]+)'/gu,
     /icon:\s*'([A-Za-z0-9-]+)'/gu,
+    /\bicons(?:Api)?\.(?:svg|element|has)\('([A-Za-z0-9-]+)'/gu,
+    /createIcon\('([A-Za-z0-9-]+)'/gu,
+    /"icon":\s*"([A-Za-z0-9-]+)"/gu,
   ];
   const seen = new Map<string, string>();
   for (const file of files) {

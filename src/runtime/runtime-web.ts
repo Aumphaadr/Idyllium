@@ -314,6 +314,10 @@ function createWebResponseObject(state: RuntimeObjectState): WebResponseInternal
     if (redirectLocation !== null) {
       throw new IdylliumRuntimeError(file, line, 'web.Response.status cannot be changed after redirect() — redirect always answers 303');
     }
+    // Ответ уже ушёл: молчаливое «ничего не изменилось» прятало бы ошибку порядка (сигнал методкоманды 2026-09-17).
+    if (sent) {
+      throw new IdylliumRuntimeError(file, line, 'web.Response.status cannot be changed after the response was sent — set status before send()');
+    }
     if (typeof value !== 'number' || !Number.isInteger(value) || value < 100 || value > 599) {
       throw new IdylliumRuntimeError(file, line, `web.Response.status must be an integer from 100 to 599, got '${String(value)}'`);
     }
@@ -381,11 +385,12 @@ function createWebResponseObject(state: RuntimeObjectState): WebResponseInternal
     if (destination.trim() === '') {
       throw new IdylliumRuntimeError(file, line, 'web.Response.redirect() path must not be empty');
     }
-    sent = true;
     // Жёсткое правило v1: redirect — всегда 303 See Other (канон PRG),
     // выбора кода не даём; статус после redirect закрыт валидатором,
-    // поэтому 303 ставится ДО redirectLocation.
+    // поэтому 303 ставится ДО redirectLocation — и до флага sent, который
+    // тоже запирает статус.
     obj.status = 303;
+    sent = true;
     // Location обязан быть ASCII: кириллица и управляющие символы
     // кодируются процентами (encodeURI не трогает уже закодированные %XX),
     // заодно умирает инъекция заголовков через перевод строки.

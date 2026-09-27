@@ -15,20 +15,20 @@
     </section>
     <div class="toolbar">
       <!-- Значки — единый набор сайта (tools/build-icons.js); сборка подставляет svg на место data-icon. -->
-      <button id="run" class="button button-run" type="button"><i class="icon" data-icon="play" data-size="16"></i><span class="label"></span></button>
-      <button id="stop" class="button button-stop" type="button" hidden><i class="icon" data-icon="stop" data-size="16"></i><span class="label"></span></button>
-      <button id="check" class="button button-check" type="button" hidden><i class="icon" data-icon="check-circle" data-size="16"></i><span class="label"></span></button>
+      <button id="run" class="ui-button ui-button--run" type="button"><i class="icon" data-icon="play-fill" data-size="16"></i><span class="label"></span></button>
+      <button id="stop" class="ui-button ui-button--stop" type="button" hidden><i class="icon" data-icon="stop-fill" data-size="16"></i><span class="label"></span></button>
+      <button id="check" class="ui-button ui-button--tonal" type="button" hidden><i class="icon" data-icon="circle-check" data-size="16"></i><span class="label"></span></button>
       <span class="toolbar-gap"></span>
-      <button id="format" class="button button-quiet" type="button"><i class="icon" data-icon="format" data-size="16"></i><span class="label"></span></button>
-      <button id="open-in-ide" class="button button-quiet" type="button"><i class="icon" data-icon="external" data-size="16"></i><span class="label"></span></button>
-      <button id="reset" class="button button-quiet" type="button"><i class="icon" data-icon="reset" data-size="16"></i><span class="label"></span></button>
+      <button id="format" class="ui-button ui-button--quiet" type="button"><i class="icon" data-icon="align-left" data-size="16"></i><span class="label"></span></button>
+      <button id="open-in-ide" class="ui-button ui-button--quiet" type="button"><i class="icon" data-icon="external-link" data-size="16"></i><span class="label"></span></button>
+      <button id="reset" class="ui-button ui-button--quiet" type="button"><i class="icon" data-icon="rotate-ccw" data-size="16"></i><span class="label"></span></button>
     </div>
     <section id="console" class="console" aria-live="polite">
       <pre id="output" class="output"></pre>
       <!-- Не <form>: песочница без allow-forms молча глушит отправку форм. -->
       <div id="input-row" class="input-row" hidden>
-        <input id="input" class="input" type="text" autocomplete="off" spellcheck="false">
-        <button id="input-send" class="button" type="button"><span class="label"></span></button>
+        <input id="input" class="ui-field ui-field--mono input" type="text" autocomplete="off" spellcheck="false">
+        <button id="input-send" class="ui-button" type="button"><span class="label"></span></button>
       </div>
     </section>
     <section id="verdict" class="verdict" hidden></section>

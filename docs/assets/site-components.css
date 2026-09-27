@@ -10,6 +10,7 @@
    Значки: единый набор (gui-renderer/icons.js), красятся currentColor, размер — data-size. */
 @layer components {
   /* ── кнопка ─────────────────────────────────────────────────────────────── */
+  /* @buttons:start */ /* семейство кнопок — единственное; кадр юнита берёт его сборкой (tools/build-tokens.js) */
   .ui-button {
     display: inline-flex;
     align-items: center;
@@ -160,8 +161,10 @@
   .ui-button.is-failed {
     color: var(--color-danger);
   }
+  /* @buttons:end */
 
   /* ── поле, поиск, флажок, степпер, ползунок ────────────────────────────── */
+  /* @fields:start */ /* поле ввода — его же берёт кадр юнита */
   .ui-field {
     display: block;
     width: 100%;
@@ -242,6 +245,8 @@
     appearance: none;
     display: none;
   }
+
+  /* @fields:end */
 
   .ui-search {
     position: relative;
@@ -885,11 +890,15 @@
     white-space: pre-wrap;
   }
 
+  /* Рамка — в тон подкрашенного фона, а не общая фиолетовая: зелёный фон с фиолетовой рамкой
+     (и красный текст в фиолетовой рамке) выглядели глупо (замечание владельца 2026-09-27). */
   .ui-code--output {
+    border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-success) 45%);
     background: color-mix(in srgb, var(--color-code-bg) 88%, var(--color-success) 12%);
   }
 
   .ui-code--error {
+    border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-danger) 45%);
     color: var(--color-danger);
   }
 

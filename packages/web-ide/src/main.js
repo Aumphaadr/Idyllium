@@ -1454,11 +1454,11 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
           ['Удалить', () => openDeleteConfirm(node.path, 'file', left, top)],
         ];
 
-    // Значки пунктов — из единого набора сайта (1.6.3).
+    // Значки пунктов — из единого набора сайта (имена набора «точных иконок», 1.6.4).
     const CONTEXT_ICONS = {
-      'Новый файл': 'file-new', 'Новая папка': 'folder-new', 'Вставить картинку': 'image-paste', 'Переименовать': 'rename',
-      'Дублировать': 'duplicate', 'Скачать': 'download', 'Копировать имя': 'copy', 'Копировать путь': 'link',
-      'Свойства': 'properties', 'Удалить': 'trash',
+      'Новый файл': 'file-plus', 'Новая папка': 'folder-plus', 'Вставить картинку': 'clipboard-image', 'Переименовать': 'pencil-line',
+      'Дублировать': 'files', 'Скачать': 'download', 'Копировать имя': 'copy', 'Копировать путь': 'link',
+      'Свойства': 'file-info', 'Удалить': 'trash',
     };
     for (const [label, action] of actions) {
       const button = document.createElement('button');

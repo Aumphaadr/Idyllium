@@ -6,6 +6,8 @@ import { buildReferenceSite } from './docs-build-reference';
 import { SITE_SECTIONS, injectSiteTopbar, siteNavAssetsHtml, siteTopbarHtml } from './site-nav';
 import { iconSvg, isIconName } from '../src/icons';
 import { GuiDemoFile, bakeLessonGuiDemos } from './lesson-gui-demos';
+import { compileIdyllium, createMemoryRuntimeFileSystem, runIdyllium } from '../src';
+import { encodeProjectLink } from '../src/share/project-link';
 
 /** Версия сайта — из package.json (единственный источник версии). Уходит в шапку каждой страницы. */
 const SITE_VERSION = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version);
@@ -105,9 +107,9 @@ const MANAGED_PATHS = [
 ];
 
 const SECTION_RENAMES: Record<string, { readonly id: string; readonly title: string; readonly icon: string }> = {
-  console: { id: 'console', title: 'Консоль', icon: 'section-console' },
-  widgets: { id: 'widgets', title: 'Виджеты', icon: 'section-widgets' },
-  oop: { id: 'oop', title: 'ООП', icon: 'section-oop' },
+  console: { id: 'console', title: 'Консоль', icon: 'window-terminal' },
+  widgets: { id: 'widgets', title: 'Виджеты', icon: 'widgets' },
+  oop: { id: 'oop', title: 'ООП', icon: 'sitemap' },
 };
 
 const SLUG_OVERRIDES: Record<string, string> = {
@@ -984,6 +986,7 @@ async function main(): Promise<void> {
   const handoutCount = buildHandoutsPage(path.join(siteRoot, 'handouts'));
 
   buildAboutPage(path.join(siteRoot, 'about'), { manifest, practicumCount, projectCount, handoutCount });
+  await buildRecipesSection(path.join(siteRoot, 'recipes'), SITE_VERSION);
   buildStubPages(siteRoot, SITE_VERSION);
 
   const bookShell = injectSiteTopbar(fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-book', 'index.html'), 'utf8'), 'book', { prefix: '../', version: SITE_VERSION });
@@ -1171,8 +1174,8 @@ function buildHandoutsPage(outputRoot: string): number {
     if (/\.(png|gif|jpe?g|svg)$/iu.test(file)) return `<img class="thumb" src="${href}" alt="" loading="lazy">`;
     if (/\.(mp3|wav|ogg)$/iu.test(file)) {
       return `<button type="button" class="thumb thumb-icon thumb-audio" data-audio="${href}" data-name="${escapeHtml(file)}" title="Прослушать" aria-label="Прослушать ${escapeHtml(file)}">`
-        + iconSvg('play', { size: 22, className: 'icon-play' })
-        + iconSvg('pause', { size: 22, className: 'icon-pause' })
+        + iconSvg('play-fill', { size: 22, className: 'icon-play' })
+        + iconSvg('pause-fill', { size: 22, className: 'icon-pause' })
         + '</button>';
     }
     // Значок по типу файла — из единого набора сайта.
@@ -1264,7 +1267,7 @@ ${panels.join('\n')}
     <input type="range" class="dock-seek" id="dock-seek" min="0" max="100" step="0.1" value="0" aria-label="Перемотка">
     <span class="dock-time" id="dock-duration">0:00</span>
     <input type="range" class="dock-volume" id="dock-volume" min="0" max="1" step="0.01" value="1" aria-label="Громкость">
-    <button type="button" class="ui-button ui-button--sm ui-button--icon ui-button--quiet dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">${iconSvg('close', { size: 16 })}</button>
+    <button type="button" class="ui-button ui-button--sm ui-button--icon ui-button--quiet dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">${iconSvg('x', { size: 16 })}</button>
   </div>
   <script>
     (function () {
@@ -1763,36 +1766,14 @@ function aboutFacts(facts: AboutBuildFacts): ReadonlyMap<string, string> {
 }
 
 /**
- * Заглушки новых страниц (1.6.3): «Рецепты», «Почему Idyllium» («Конструктор GUI»
- * с 2026-09-25 настоящий — его собирает tools/build-gui-designer.js в dist/web).
+ * Заглушка «Почему Idyllium» (с 1.6.3). «Рецепты» с 1.6.4 — настоящая страница
+ * (buildRecipesSection выше); «Конструктор GUI» с 2026-09-25 настоящий — его собирает
+ * tools/build-gui-designer.js в dist/web.
  * Вердикт владельца — создать страницы и ссылки в шапке уже сейчас, содержание
  * добавлять потом. Каждая честно говорит, что она в работе, и описывает, что здесь
  * будет; никакого «скоро» без деталей и никаких выдуманных возможностей.
  */
 const STUB_PAGES: ReadonlyArray<{ readonly id: string; readonly title: string; readonly body: string }> = [
-  {
-    id: 'recipes',
-    title: 'Рецепты',
-    body: `
-      <p class="ui-callout stub-note">Страница в работе: рецептов на ней пока нет. Ниже — что здесь будет.</p>
-      <p>Готовые программы для бытовых и рабочих задач — для тех, кто не собирается учиться программировать,
-      а хочет получить результат: взять рецепт, поменять в нём несколько чисел и имён файлов, нажать «Запустить».
-      Так уже бывало: художнице нужно было собрать GIF-анимацию из серии PNG-кадров — и Idyllium помог.</p>
-      <p>Каждый рецепт будет карточкой: что он делает, какие строки менять под себя — и кнопка,
-      открывающая программу прямо в Web IDE.</p>
-      <h2>Что запланировано</h2>
-      <ul>
-        <li>серия PNG-кадров → GIF-анимация, и обратно — GIF на кадры;</li>
-        <li>QR-код из текста или ссылки — картинкой; и чтение QR-кода с картинки;</li>
-        <li>уменьшить или обрезать серию картинок разом;</li>
-        <li>починить кодировку текстового файла (windows-1251 → UTF-8 и другие);</li>
-        <li>грамоты и таблички по списку имён — из одного шаблона;</li>
-        <li>отчёт по таблице CSV: суммы, средние, наибольшее;</li>
-        <li>контрольная сумма файла — проверить, что скачалось целиком.</li>
-      </ul>
-      <p>А пока всё, из чего эти рецепты собираются, уже есть в языке: библиотеки <code>image</code>, <code>qr</code>,
-      <code>encoding</code>, <code>csv</code> и <code>hash</code> описаны в <a href="../reference/">документации</a>.</p>`,
-  },
   {
     id: 'why',
     title: 'Почему Idyllium',
@@ -1816,6 +1797,187 @@ const STUB_PAGES: ReadonlyArray<{ readonly id: string; readonly title: string; r
       «честный остаток» — чего Idyllium не ловит.</p>`,
   },
 ];
+
+// ─── «Рецепты» ────────────────────────────────────────────────────────────────
+// Готовые программы для бытовых задач (спека навигации §7.2, пункт бэклога «Наполнить
+// «Рецепты»»). Источник — packages/docs/recipes: recipes.json (тексты карточек) и <id>.idyl
+// (программы). Канон «тихое враньё недопустимо»: при сборке каждая программа компилируется,
+// а не помеченная webOnly — выполняется на файлах-образцах из samples/ в общей памяти (рецепты
+// идут по порядку: QR из третьего читает четвёртый); её вывод и обещанные файлы-результаты
+// попадают на страницу как есть. Отказ программы — падение сборки словами. Кнопка «Открыть
+// в Web IDE» — ссылка «Поделиться» (#p1=…) с программой: копипаст не нужен.
+const RECIPES_SOURCE_ROOT = 'packages/docs/recipes';
+const RECIPES_WORKSPACE = '/recipes';
+
+interface RecipeSpec {
+  readonly id: string;
+  readonly title: string;
+  readonly who: string;
+  readonly what: string;
+  readonly knobs: readonly string[];
+  readonly files: readonly string[];
+  readonly webOnly?: boolean;
+  readonly results: ReadonlyArray<{ readonly file: string; readonly caption: string }>;
+  /** Снимки результата рецептов «только Web IDE»: файлы packages/docs/recipes/previews/, сделанные этой же
+   *  программой в браузере на файлах-образцах (как — в кухне, e2e recipes-previews). */
+  readonly previews?: ReadonlyArray<{ readonly file: string; readonly caption: string }>;
+}
+
+interface RecipesManifest {
+  readonly intro: string;
+  readonly recipes: readonly RecipeSpec[];
+}
+
+function readRecipeSamples(): Record<string, { bytes: Uint8Array }> {
+  const samplesRoot = path.resolve(process.cwd(), RECIPES_SOURCE_ROOT, 'samples');
+  const entries: Record<string, { bytes: Uint8Array }> = {};
+  const walk = (dir: string, relative: string): void => {
+    for (const name of fs.readdirSync(dir) as string[]) {
+      const full = path.join(dir, name);
+      const relativeName = relative ? `${relative}/${name}` : name;
+      if (fs.statSync(full).isDirectory()) walk(full, relativeName);
+      else entries[`${RECIPES_WORKSPACE}/${relativeName}`] = { bytes: new Uint8Array(fs.readFileSync(full)) };
+    }
+  };
+  walk(samplesRoot, '');
+  return entries;
+}
+
+function recipePageShell(title: string, description: string, version: string, body: string): string {
+  return `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(description)}">
+  <link rel="icon" type="image/png" href="../book/favicon.png">
+  ${siteNavAssetsHtml('../')}
+  <link rel="stylesheet" href="../assets/recipes.css">
+  <script src="../assets/recipes.js" defer></script>
+</head>
+<body>
+${siteTopbarHtml('recipes', { prefix: '../', version })}
+${body}
+</body>
+</html>
+`;
+}
+
+function recipeFigure(fileName: string, caption: string): string {
+  return `<figure class="recipe-result"><img src="results/${encodeURIComponent(fileName)}" alt="${escapeHtml(caption)}" loading="lazy"><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+}
+
+/**
+ * Раздел «Рецепты» (1.6.4): главная — квадратные карточки с крупными заголовками, у каждого рецепта своя
+ * страница recipes/<id>.html. Программы выполняются здесь же на файлах-образцах (по порядку манифеста в одной
+ * памяти: рецепт может читать то, что сделал предыдущий), обещанные результаты уезжают в recipes/results/,
+ * вывод — в блок «Вывод на образцах» тем же компонентом, что у учебника. Кнопка «Открыть в Web IDE» стоит
+ * прямо над кодом: программа приезжает ссылкой (#p1=…) гостевым проектом. Упавший рецепт валит сборку.
+ */
+async function buildRecipesSection(outputRoot: string, version: string): Promise<void> {
+  const sourceRoot = path.resolve(process.cwd(), RECIPES_SOURCE_ROOT);
+  const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'recipes.json'), 'utf8')) as RecipesManifest;
+  fs.mkdirSync(path.join(outputRoot, 'results'), { recursive: true });
+
+  const fileSystem = createMemoryRuntimeFileSystem(readRecipeSamples(), RECIPES_WORKSPACE);
+  const cards: string[] = [];
+  let executed = 0;
+  let webOnly = 0;
+
+  for (const recipe of manifest.recipes) {
+    const codePath = path.join(sourceRoot, `${recipe.id}.idyl`);
+    if (!fs.existsSync(codePath)) throw new Error(`recipes: у рецепта «${recipe.title}» нет программы ${recipe.id}.idyl`);
+    const code = (fs.readFileSync(codePath, 'utf8') as string).replace(/\r\n/g, '\n').trimEnd();
+    const compiled = compileIdyllium(code, { file: 'main.idyl' });
+    if (!compiled.success) throw new Error(`recipes: программа «${recipe.title}» не компилируется:\n${compiled.diagnosticsText}`);
+
+    let output = '';
+    if (recipe.webOnly) {
+      webOnly += 1;
+    } else {
+      const result = await runIdyllium(code, { fileSystem, urlOpener: { open(): void {} }, platform: 'web' }, { file: 'main.idyl' });
+      if (!result.success) throw new Error(`recipes: программа «${recipe.title}» упала на образцах:\n${result.runtimeError ?? result.compilation.diagnosticsText}`);
+      output = result.output.replace(/\s+$/u, '');
+      executed += 1;
+    }
+
+    const figures = recipe.results.map((item) => {
+      const inWorkspace = `${RECIPES_WORKSPACE}/${item.file}`;
+      if (!fileSystem.exists(inWorkspace)) throw new Error(`recipes: рецепт «${recipe.title}» обещает файл ${item.file}, а программа его не создала`);
+      const targetName = `${recipe.id}-${path.basename(item.file)}`;
+      fs.writeFileSync(path.join(outputRoot, 'results', targetName), Buffer.from(fileSystem.readBytes!(inWorkspace)));
+      return recipeFigure(targetName, item.caption);
+    });
+    const previews = (recipe.previews ?? []).map((item) => {
+      const source = path.join(sourceRoot, 'previews', item.file);
+      if (!fs.existsSync(source)) throw new Error(`recipes: у рецепта «${recipe.title}» нет снимка previews/${item.file}`);
+      const targetName = `${recipe.id}-${path.basename(item.file)}`;
+      fs.copyFileSync(source, path.join(outputRoot, 'results', targetName));
+      return recipeFigure(targetName, item.caption);
+    });
+
+    const shareLink = encodeProjectLink({
+      name: recipe.title,
+      from: 'Рецепты Idyllium',
+      idyllium: version,
+      current: 'main.idyl',
+      files: [{ path: 'main.idyl', text: `${code}\n` }],
+      assets: [],
+    });
+    const badge = recipe.webOnly
+      ? ' <span class="ui-badge ui-badge--accent" title="Снимок холста делает браузер: в консольном запуске эта программа откажет">только Web IDE</span>'
+      : '';
+    const outputBlock = output
+      ? `<div class="ui-code ui-code--output" data-label="Вывод на образцах">${escapeHtml(output)}</div>`
+      : '';
+    const webOnlyNote = recipe.webOnly
+      ? `<p class="recipe-note">Сборка сайта проверяет эту программу на компиляцию; выполняется она в Web IDE — там холст умеет отдавать картинку.${previews.length > 0 ? ' Снимки выше сделаны ею же в Web IDE на файлах-образцах.' : ''}</p>`
+      : '';
+    const knobs = `<ul>${recipe.knobs.map((knob) => `<li>${escapeHtml(knob)}</li>`).join('')}</ul>`;
+    const files = recipe.files.length > 0
+      ? `<ul>${recipe.files.map((file) => `<li>${escapeHtml(file)}</li>`).join('')}</ul>`
+      : '<p>Ничего: программе хватает того, что написано в ней самой.</p>';
+    const results = figures.concat(previews);
+
+    const page = recipePageShell(`${recipe.title} — Рецепты Idyllium`, recipe.what, version, `  <main class="recipe-main prose">
+    <nav class="recipe-crumbs" aria-label="Путь"><a href="./">Рецепты</a><span class="recipe-crumbs-sep" aria-hidden="true">/</span><span>${escapeHtml(recipe.title)}</span></nav>
+    <h1>${escapeHtml(recipe.title)}${badge}</h1>
+    <p class="recipe-who">Кому: ${escapeHtml(recipe.who)}</p>
+    <p class="recipe-what">${escapeHtml(recipe.what)}</p>
+    ${results.length > 0 ? `<div class="recipe-results">${results.join('')}</div>` : ''}
+    <div class="recipe-toolbar">
+      <a class="ui-button ui-button--primary" href="../#${shareLink}" target="_blank" rel="noopener">${iconSvg('window-play', { size: 16 })}Открыть в Web IDE</a>
+      <span class="recipe-hint">Откроется гостем: своя работа в IDE не пострадает. Что положить и куда нажать — написано в начале программы.</span>
+    </div>
+    <div class="ui-code"><pre><code>${highlightIdylliumForBake(code)}</code></pre><button class="ui-button ui-button--sm ui-code-copy" type="button">Копировать</button></div>
+    ${outputBlock}
+    ${webOnlyNote}
+    <details class="recipe-details">
+      <summary>Что менять и что положить рядом</summary>
+      <div class="recipe-columns">
+        <section><h3>Что менять под себя</h3>${knobs}</section>
+        <section><h3>Что положить рядом с программой</h3>${files}</section>
+      </div>
+    </details>
+    <p class="recipe-back"><a href="./">← Все рецепты</a></p>
+  </main>`);
+    fs.writeFileSync(path.join(outputRoot, `${recipe.id}.html`), page, 'utf8');
+
+    const cardBadge = recipe.webOnly ? '<span class="ui-badge ui-badge--accent recipe-card-badge">только Web IDE</span>' : '';
+    cards.push(`      <li><a class="recipe-card" href="${recipe.id}.html"><span class="recipe-card-title">${escapeHtml(recipe.title)}</span><span class="recipe-card-foot"><span class="recipe-card-who">${escapeHtml(recipe.who)}</span>${cardBadge}</span></a></li>`);
+  }
+
+  const index = recipePageShell('Рецепты — Idyllium', 'Готовые программы Idyllium для бытовых задач: анимация из кадров, QR-коды, уменьшение картинок, починка кодировки, отчёт по таблице, грамоты, водяной знак.', version, `  <main class="recipes-main prose">
+    <h1>Рецепты</h1>
+    <p class="recipes-intro">${escapeHtml(manifest.intro)}</p>
+    <ul class="recipe-cards">
+${cards.join('\n')}
+    </ul>
+  </main>`);
+  fs.writeFileSync(path.join(outputRoot, 'index.html'), index, 'utf8');
+  console.log(`recipes generated: ${manifest.recipes.length} страниц (выполнено на образцах ${executed}, только Web IDE ${webOnly})`);
+}
 
 function buildStubPages(siteRoot: string, version: string): void {
   for (const page of STUB_PAGES) {
@@ -1919,7 +2081,7 @@ const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string
   {
     id: 'console',
     title: 'Консоль',
-    icon: 'section-console',
+    icon: 'window-terminal',
     lessons: [
       { id: "reverse-excursion", title: "Экскурсия наоборот", subtitle: "Консольный проект · ★★" },
       { id: "cockroach-crumb-quest", title: "Ночной дожор", subtitle: "Консольный проект · ★★" },
@@ -1965,7 +2127,7 @@ const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string
   {
     id: 'windows',
     title: 'Окна',
-    icon: 'section-widgets',
+    icon: 'widgets',
     lessons: [
       { id: "elevator-sage", title: "Лифт-философ", subtitle: "Оконный проект · ★★" },
       { id: "overlord-reception", title: "Приёмная Тёмного Властелина", subtitle: "Оконный проект · ★★" },
@@ -2386,7 +2548,7 @@ function removeElementByClass(html: string, className: string): string {
 function copyDocsSiteStyles(siteRoot: string): void {
   const docsSiteRoot = path.resolve(process.cwd(), 'packages', 'docs-site');
   fs.mkdirSync(path.join(siteRoot, 'assets'), { recursive: true });
-  for (const file of ['docs-shell.css', 'handouts.css', 'about.css', 'stub.css', 'not-found.css']) {
+  for (const file of ['docs-shell.css', 'handouts.css', 'about.css', 'stub.css', 'not-found.css', 'recipes.css', 'recipes.js']) {
     copyFileIfExists(path.join(docsSiteRoot, file), path.join(siteRoot, 'assets', file));
   }
 }
