@@ -9,7 +9,7 @@
 
       <p>Вот SpinBox для выбора количества игроков — пока в лобби их двое:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=2seEp22RvU7DMBSFX8XylEqV1VSCIRULAxIzAwNByMJubclxosYhiaJIEQtDN1ZGngBBUYX4eQX7jbhpExoQ8RJ_5_j63OsKz6XiKQ4uKpxQI3CAIyo1kaxUeIwNLwygLOVokclZqEPdyt4IVaFG8AEl51KzOEe51LMdhD9iBI84OkIhbkspmUUhHsi5ZEaAPJ1MBlRwuRAGsP8LG2nUrpZ9sJ_2CdYG2Y19do1bbcvuw5wlUh_HBUoULfky7ap0O1Jsr_wDy_9gH3CfpFduqMraNNOfe9uMlLGrayEV8zrfaNBAKuLca0EdalxfjrGmEYe52nvo4sW-2rW7dSvUZ4fuTlRMTbcPkP1yDTjfwdcgH95lvoyj9vyju7NrGMcHqG_otJs0GPqhg8knh-QA198"><script type="text/plain">
 use gui;
 
 main() {
@@ -52,7 +52,7 @@ main() {
 
       <p>Настроим сложность игрового бота: от 0 до 100, крутить по 5 за раз:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=1SQv_2WRz0rDQBDGX2XZUwslJJV6aPHiQfDswYMRWcy2O7DZBLMxLaVQe_GgJ99AfAEFK8Xa-gqTN3LW_jHBPc3-5tvZb2bGvA9aZrx7MeapsIp3eSzAeBCNNG9xK4eWUJ5JNsihF5rQuHSjycahYXSIeudgoqRgBZjeBlLkWSVjyY5YyF0pDXkc8kq6gMgqSh_4foUqCQNlCQedKrZg9aYWPuMS1_iBK1yXd-WsfGT4RuEMX3_L_5k6S8EcJ0OWpXtbLvSGVKftV8noH9mZC-r4Vujc2ejUaAyGWB0J90vg12BmZeoe7126zkQUXV0r0FHDaZqVnjOVFA0HJqHhk8sWNyKWtAp8wgW-0wTm1P0D27WJC3aiE2G39y7D73JKyi_STVmbVtm_SWL3_qW8xzkNbUXZT3a6XQ4JdnsiUeAdeh0--QE"><script type="text/plain">
 use gui;
 
 main() {
@@ -89,7 +89,7 @@ main() {
       <h2>FloatSpinBox — для дробных чисел</h2>
       <p>Количество игроков дробным не бывает. А вот, например, множитель скорости игры — запросто: 0.5 — вдвое медленнее, 1.0 — обычная скорость. Для таких значений и нужен <code>gui.FloatSpinBox</code>: он работает так же, как SpinBox, но хранит дробные числа (<code>float</code>):</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Ik1OfmWRwUoDMRCGXyXk1EIJu9Z6aPHiQfDswYMrEty0GUiyi5t1tyyF4sWDN1_BJxCsFFF8hewbdbK1NcWchu__MzM_09ApKFHQ8XVDc24lHVPNwTBI54oOqBW1RVQWgsxKmCQmMV7u9UmTGIIPKbsCk2YVqcBMthArZqXQgpyShPpWCkqd0ECuILUS5WEUBVQKmEmLOB6F2IJV217nKuP2MgdzltVdv78tQokU-X4ZX7Iafx9FIZn_I7uV4uMD_MBV6YdHbBRiDaaDB17N_aD4EBZW5J013u_rQ_E0vb2ToNKed_WDuIXMqp4Hi8TQxc2AGq4FXsG9uLV7dx9u1T62z2SX1a1JmH1M3E-7ROcX-pZkiFec3mfa_39tn9zKvblvVD_Jxe9d0LA7EZpidsJGdLEB"><script type="text/plain">
 use gui;
 
 main() {
@@ -141,7 +141,7 @@ main() {
       <h2>Событие <code>on_change</code></h2>
       <p>Вернёмся в лобби. Когда пользователь меняет значение (через стрелки, клавиатуру или прямой ввод), срабатывает событие <code>on_change</code>. Пусть подпись рядом всегда показывает, сколько игроков выбрано:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=kt96PI2SzUrDQBDHX2XYU4sltLUVafHiQRC8efBgpKxm2yxsdkuz6QelULx46M2T4NEn8KNSih-vsHkjZ9NEk9KDCQmb338y82dmpqTLBQtJ63JK-lT7pEUCyqXDvYkgFaLZWCOKQga9iLdd6Uorl8owdSXghdS54NJTIxhx2d5APDnaZwGDI3CJTSV4FLgkJ4-4p32U95vVHPUZ7_kaca2ANddik8s8mi_zjPcKzMq8xvN4kaT9M3Pe5_JYjaEv6IQNwjRL-uWMMUu9ugUnu2BmsFbdVoZURNZNfYsHXO6i1NY8LHg8o9dMgLDvNDo5J-5qjWqBJeaaBWSHsunGg20BdmSNz0sL6rleZPWV7Nz4VPas46HiHnQjeaO5ys3wH5ldAnugVSfUAy57pUIryqm52W9tOzPqeViYCy8LLrd3iUndvBT6alSyYOZKMruqEEkDhito7nHgb-bdLOPbeAHZmHERToSiOv1ugflG3yvzgXFzaOAKdwcqsP8_xXdmiZvzieoaTtOlxIBsPzGo5hw4TTL7AQ"><script type="text/plain">
 use gui;
 
 main() {
@@ -189,7 +189,7 @@ main() {
       <h2>Типичная ошибка: дробное число в SpinBox</h2>
       <p>Рано или поздно каждый пробует записать в обычный SpinBox дробное число:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=sjEN6TVPPYvCQBD9K3NT3YGsZxGLBBuLA-srXYsFV13YbMIlEY8QEBsLmzsrsbCxsRVU5DjxL0z-kRPUaebNe2--chwYqxP0uznGKh2hj6EyTpj-t8UapnqSMpUlGoaZCaSTrpJf3yCXDjiYFZ-xce1oAgnn4E5XUIyVzTS04F14AUC9DrShHa3ol9b08yJdIR0WvRo6FWpeQks604FOdCxn5QKeU-kMHzZS6aP2ga7llJ3_7JuCx0cOvqKw6t-WczrSni6s_kGHP7AmC9lgntDHhmgKD4sb"><script type="text/plain">
 use gui;
 
 main() {

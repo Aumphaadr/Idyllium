@@ -2,7 +2,7 @@
   <h2>Проблема: повторяющийся код</h2>
   <p>Рассмотрим классы «Прямоугольник» и «Круг». У обоих есть цвет, который задаётся тремя числами (R, G, B):</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=t5KOM6WTzUrDQBSFX2WYVQshWCEuUly5cuvWiKTpNBmYTCSZUqUUioJuhO7dCq79oVhqbV_hzht500xt0hRcGEhy-e7JPXOYzJD2uGAZdc-H9MpXEXVp7HNp8-6NoBZV7Foh6meMBInMEsHanvRkIPwsI2csUL4MBSNDTxK8eiLxFRnwroraZRIxHkbKIC4VzhJJepnWSFgjHSSjreUJT4Ndv9Tv8n72v-l55kZzM3cbLMXKfJWX9jobOSatgzIt8iE-rGCzjpw7Tr0RYmOPvmNw0TCBA3wZaV7aRWZUOmW6NTyo47CyjlKjami22R6kXDEhGx6FF3iHqb4lsNJjPYEFLPUdfMASvvQjfMMM5vDqEo9aldgWkl0Y7oOdZvtv6zla56bGqBz3d2Y57D64NsLtpqMLi0o_ZvhnwxPmWMAKn58w0_d4T9x1Usy1QO8xaeE56KVJnKuf9QNM4a1ITU7xkAjej1HAN6VLW_aR7dDRDw"><script type="text/plain">
 use console;
 
 class Rectangle {
@@ -50,7 +50,7 @@ main() {
   <h2>Решение: композиция</h2>
   <p><strong>Композиция</strong> — это принцип, при котором один класс содержит внутри себя объекты других классов. Вместо того чтобы хранить три числа цвета, создадим отдельный класс <code>Color</code> и будем использовать его внутри <code>Rectangle</code> и <code>Circle</code>.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=bn172IWTTWvCQBCG_8qyJ4UQVLCHhJ566rXXppQkrsnCuimbFS0iSAvtpeC910LP_UAq1upfmPyjziZRo1ga8jE8vDPvTHZ3RLtcsJQ6lyN64-uYOrTnc2nzzq2gFtVsqBH1U0bCRKaJYK4nPRkKP03JWSISRUaeJHhxqYmySGSRIJcYZlK06ocaZbm4ZlRseI3CMoq2UVDflDKXjnlqK3Kaq90DHhU8OuRBwYOSjz053nV7wULty0iwjU1XJL4mA97RsVslMeNRrEtUzBiat7tX7oyr8LCW8ju8n_6daf5sbTvmriGFUZllQjvvCWdpNqq06Atxaw_nDkiLH9xqty3SwLu-XYWy0xA_ZZ4J7aJZTGxX6X41LFQUrO-tKW4De6C4ZkLWPAqv8AGz7I7AOptkU1jCKruHT1jBd_YEPzCHBbw5xKNWpWEbt4BHD2F0DAZ193_rBVob09JoN0vFqAKjYzA3woWi4yuLSr_HcOfDM86xhDW-v2CePeAzdfJJca4lek9IC89JVyU9o37JHmEG78XU5BwPkeD9Hgr4JnRo0z6x23T8Cw"><script type="text/plain">
 use console;
 
 class Color {
@@ -110,7 +110,7 @@ int red_value = rect.color.r;
   <h2>Ловушка: один цвет на двоих</h2>
   <p>Но у образа матрёшки есть подвох. Вспомните врезку из урока про <code>this</code>: объект — это ссылка. Присваивание <code>rect.color = red</code> не вкладывает в прямоугольник копию цвета — оно даёт фигуре ссылку на тот же самый объект. Проверим честно: раздадим один цвет двум фигурам и поменяем его.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=HGocm31SQUvDMBj9KyGnDkpxyjy0eNrJq1cr0nVZG0hTSVM2GYOBoBdhd6_7A4oMh87tL3z9R35pu3UbamiTx-N9Ly9fMqYDLlhG3esxvQt0TF2aBFw6vH8vqE01G2mk8oyRMJVZKpjnS1-GIsgy0k1FqsjYlwQHl5oom0Q26ZUSw5kSrfJQo6wUW0bFRrcorFG0Q73W1soMHfPMUeSiVHtHfFTx0THfq_hezU98OWnSXrFQBzISbLvNQKSBJkPe17G3z8SMR7GuqeqMoZm9A7suV-Gxlwr6PM_-rjSdtXbHrASK9a3TTscmJ_i1dq1r0ipEtaWBTumIB8XCnboOE-JSSw38VYq47Gv74JbwYp2h4poJafkU5gQ2xbSYwQrWxQO8wxq-imf4hiV8wisx9T619_I4quX95_aJbsanqW0CVrXYIDq5sakMEoYvDl5wzxVscP6AZfGI_8wtU2GGFSyKKTnD9zlQaWLU8-IJFvBWJSSX-HgFzxMU8C10ads5dzp08gM"><script type="text/plain">
 use console;
 
 class Color {
@@ -156,7 +156,7 @@ main() {
   <p>Одна строка <code>red.r = 1</code> перекрасила обе фигуры: <code>red</code>, <code>rect.color</code> и <code>circ.color</code> — три имени одного и того же объекта. С похожим поведением мы уже сталкивались в уроке про массивы объектов, когда <code>add</code> сохранял в массив ссылку на временную переменную.</p>
   <p>Если каждой фигуре нужен независимый цвет, создайте для каждой отдельный объект <code>Color</code> — удобнее всего конструктором-выражением:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=buM1l4VSwUrDQBD9lWVPLYRgxXpI8NSTV69GJEm3ycJmI5strZRAQdCL0LvX_oAixVJr-wuTP3I2SRtbUJdkd3i892Z2diZ0wAXLqHM9oXe-jqlDE59Lm_fvBbWoZmON0DBjJExllgrmetKTofCzjPRSkSoy8STBxaUmyiKRRYKSYjAj0WoYaqSV5JZhsfEtEuso2kdBe2dllo55ZityUbLdIzyq8OgYDyo8qPHck3lT7RULtS8jwXZpBiL1NRnxvo7dn0jMeBTrGqruGJrdPbDrcRUeeym_z4fZ70rT2db-mk1BCqNaZUK7FOFdqp6ddrsWOcGvvW9snTzEo9aZ8H9d4172tnPwUvi49khxzYRseRTmBLbFtJjBGjbFA7zDBj6LZ_iCJazglRi9R60Dy7b7l9sK3YxPo22KrrTYJJrfWFT6CcOpgxfMuYYt7h-wLB7xnzllVVjDGhbFlJzhjA5Umhj2vHiCBbxVFZJLHGDBhwkS-C50aMc-t7s0_wY"><script type="text/plain">
 use console;
 
 class Color {

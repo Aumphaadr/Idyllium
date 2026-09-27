@@ -2,9 +2,9 @@
 
 // Открыть любой main.idyl в идиоме конструктора (третий заход, 1.6.3): разбор НАСТОЯЩИМ
 // парсером ядра (AST программы), а не строкой макета. Понимает то, что пишет сам генератор:
-// use gui / colors / fonts; в main() — gui.Window, виджеты каталога, свойства-константы
+// use gui / colors / fonts / image; в main() — gui.Window, виджеты каталога, свойства-константы
 // (числа, строки, bool, colors.HEX / RGB / RGBA / именованные цвета, шрифт по имени),
-// fonts.Font + load_from_file, add_child / add_tab, данные (add_item, set_columns, add_row,
+// fonts.Font + load_from_file, image.Static + load_from_file + set_image, add_child / add_tab, данные (add_item, set_columns, add_row,
 // add_value, add_slice), заготовки обработчиков (тело теряется), tabs.selected_index —
 // страница для предпросмотра, win.show(). Всё остальное — «чужое»: собирается списком строк
 // и в макет не попадает, решает пользователь. Нет main() или окна — честный отказ.
@@ -14,7 +14,7 @@ const { WIDGETS, TAB_PAGE_TYPE, widgetDefinition, propertyOf, eventsOf, nameProb
 const { MODEL_VERSION, normalizeHex } = require('./codegen');
 const { flattenTree } = require('./model-ops');
 
-const KNOWN_MODULES = new Set(['gui', 'colors', 'fonts']);
+const KNOWN_MODULES = new Set(['gui', 'colors', 'fonts', 'image']);
 
 class ImportRefusal extends Error {
   constructor(message) {
@@ -92,6 +92,7 @@ function importProgram(program, options = {}) {
   const windowModel = { name: 'win', props: {}, handlers: [] };
   const widgets = new Map(); // имя → виджет модели (+ служебное added)
   const fonts = new Map();   // имя → { name, file }
+  const images = new Map();  // имя → { name, file } — переменные image.Static
   const previewTabs = {};
   const childOrder = new Map(); // родитель (id | null) → [виджеты] в порядке add_child / add_tab
   let nextId = 1;
@@ -100,6 +101,7 @@ function importProgram(program, options = {}) {
     if (name === windowName) return { kind: 'window', type: 'Window', target: windowModel };
     if (widgets.has(name)) return { kind: 'widget', type: widgets.get(name).type, target: widgets.get(name) };
     if (fonts.has(name)) return { kind: 'font', target: fonts.get(name) };
+    if (images.has(name)) return { kind: 'image', target: images.get(name) };
     return null;
   };
 
@@ -159,6 +161,10 @@ function importProgram(program, options = {}) {
       fonts.set(statement.name, { name: statement.name, file: null, node: statement });
       return;
     }
+    if (type.moduleName === 'image' && type.name === 'Static') {
+      images.set(statement.name, { name: statement.name, file: null, node: statement });
+      return;
+    }
     reject(statement, `тип ${type.moduleName}.${type.name} конструктор не знает`);
   };
 
@@ -168,6 +174,7 @@ function importProgram(program, options = {}) {
     const owner = ownerOf(target.object);
     if (!owner) { reject(statement, `переменная ${target.object} конструктору неизвестна`); return; }
     if (owner.kind === 'font') { reject(statement, 'у шрифта конструктор свойств не редактирует'); return; }
+    if (owner.kind === 'image') { reject(statement, 'у картинки конструктор свойств не редактирует'); return; }
     const event = eventsOf(owner.type).find((known) => known.name === target.name);
     if (event) {
       if (!statement.value || statement.value.kind !== 'FunctionExpression') { reject(statement, 'обработчик не функцией-заготовкой'); return; }
@@ -200,6 +207,11 @@ function importProgram(program, options = {}) {
       reject(statement, 'у шрифта конструктор знает только load_from_file("файл")');
       return;
     }
+    if (owner.kind === 'image') {
+      if (callee.name === 'load_from_file' && args.length === 1 && stringOf(args[0]) !== null) { owner.target.file = stringOf(args[0]); return; }
+      reject(statement, 'у картинки конструктор знает только load_from_file("файл")');
+      return;
+    }
     if (owner.kind === 'window') {
       if (callee.name === 'show' && args.length === 0) return;
       if (callee.name === 'add_child' && args.length === 1 && isIdentifier(args[0]) && widgets.has(args[0].name)) { addTo(null, widgets.get(args[0].name)); return; }
@@ -217,6 +229,10 @@ function importProgram(program, options = {}) {
       if (page.type !== TAB_PAGE_TYPE) { reject(statement, `страница вкладок ${page.name} — не рамка (Frame)`); return; }
       page.tabTitle = stringOf(args[0]);
       addTo(item.id, page);
+      return;
+    }
+    if (def.image && callee.name === 'set_image' && args.length === 1 && isIdentifier(args[0]) && images.has(args[0].name)) {
+      item.image = args[0].name;
       return;
     }
     if (def.data) {
@@ -256,9 +272,22 @@ function importProgram(program, options = {}) {
   const dropFont = (props) => { if (props.font !== undefined && !readyNames.has(props.font)) delete props.font; };
   dropFont(windowModel.props);
 
+  // Картинки без файла — пропускаем, set_image на них снимаем.
+  const readyImages = [];
+  for (const image of images.values()) {
+    if (image.file === null) {
+      notes.push(`картинка ${image.name} объявлена без load_from_file — пропущена`);
+      reject(image.node, 'картинка без файла');
+      continue;
+    }
+    readyImages.push({ name: image.name, file: image.file });
+  }
+  const readyImageNames = new Set(readyImages.map((image) => image.name));
+
   // Не добавленные в окно виджеты — ставим в окно и говорим об этом.
   for (const item of widgets.values()) {
     dropFont(item.props);
+    if (item.image !== undefined && !readyImageNames.has(item.image)) delete item.image;
     if (!item.__added) {
       notes.push(`${item.name} (gui.${item.type}) не добавлен в окно через add_child — поставлен в окно`);
       addTo(null, item);
@@ -268,6 +297,7 @@ function importProgram(program, options = {}) {
   // Имена: как в файле, если каталог их принимает.
   const model = { version: MODEL_VERSION, window: windowModel, widgets: [...widgets.values()] };
   if (readyFonts.length > 0) model.fonts = readyFonts;
+  if (readyImages.length > 0) model.images = readyImages;
   const taken = [windowModel.name];
   for (const item of model.widgets) {
     if (nameProblem(item.name, taken)) {

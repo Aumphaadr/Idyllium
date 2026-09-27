@@ -14,7 +14,7 @@ class Car {
     }
 
     void function stop() {
-        console.writeln("Двигатель заглушен");
+        console.writeln("Двигатель заглушён");
     }
 }
 
@@ -30,7 +30,7 @@ class Truck {
     }
 
     void function stop() {
-        console.writeln("Двигатель заглушен");
+        console.writeln("Двигатель заглушён");
     }
 }
 </script></idyl-code-block>
@@ -56,7 +56,7 @@ class Car {
     }
 
     void function stop() {
-        console.writeln("Двигатель заглушен");
+        console.writeln("Двигатель заглушён");
     }
 }
 
@@ -72,7 +72,7 @@ class Truck extends Car {
   <h2>Доступ к унаследованным свойствам и методам</h2>
   <p>Свойства и методы, объявленные в родительском классе, доступны потомку так же, как если бы они были объявлены в нём самом:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=puY3OWVSwU7CQBD9lcmeICEFjJgI8eTJuzdrzNoW2dBuSbtVkTQBPHhUTyZGT_4AEohGBH9h9o-cLiWkuuk2k7dv3ryZ3QFrC9-LWfNkwHpcdViTBVxIS7h9n1WY8q4VQUnsgRPKOPS9li1t6fg8juGQRzCwJdCKVSTkBZxHXLqtAhSEruebpAy8DIUL7UQ6SoSSKDxSpfJGJFt5FesqEsrzZUl1RGwZ2QrYjL4KGMjIGgg_cIJT_YgLPdL3Nivn9VNbpluvx1HidIG68aRbcN72Q66Afu6Zw3vcEarfyjOzQWzdrRW6POA3eQUTr83BAVnBZ3zAF9pPNitQjFlDaezu1_4cFkoTaadm1QqEfEotAqpVwG-c6zGucAb6Fpc40SNc4BxnBE1pEkvAlR5nHZouWHpaYZIHHt0ivv5n4yfOm4A_ekhRJj2EOt17OwqDLONN3xH73fC-4IgehS-SgAhiEzZZ3dqzGiz9BQ"><script type="text/plain">
 use console;
 
 class Car {
@@ -106,7 +106,7 @@ main() {
   <h2>Конструкторы и parent()</h2>
   <p>Если у родительского класса есть конструктор, потомок может вызвать его с помощью ключевого слова <code>parent()</code>. Это нужно, чтобы не дублировать инициализацию унаследованных свойств.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=xUdIVoVT3WrbMBR-FaErF4yblbYwm131ave7q0vRbGUVteUgK_0LgbS7KLSDbexiMLarvUBXGlLSpH2FozfakRzXcShUWEY-5zs_33esAe2KjJc03B3QHtMHNKQ5EzIQ6WlGfar5iUZTv-QkKWRZZDyKZSyTjJUl2WGKDGJJcJVaCfmJfFRMplHLlBcpz1yQNdokWvUTXSgb7i1A_GTfhfqkMbjAtbqAXfpAlIHDkXfPIdGK34VV_rq09Q3rDo4KkZJuXyZaFBLLMaW9VpUFz-BYCc0z6TVVfRJTfPylQs4EE7iBW_MdHsy5-RrTtabmsFHrA9I-xLY0l2lLu25WME3wle4nrMcSoU9f1MsleFUxf5EPv1spWxx7THGpvSbJs94RetfXCdK5hgnuW6Q2hhmBKTzCHPldmJH5DFNzAY9mZGms6N8qWs1hldqyNvZna_SvNDpkOTvzYgq_4Bv8xv3Tih7Trc23HXva6ASdWmOHDRZjjBrRlieImX64rifI4Qn3nbnCac1gjhwsoy-hG2uVq9Wtm6_lith5NVlsmw73fCpZzvFqwB-4MefwgCrdIczqNYd7GIcEnswITzMYo1AbeJm6qshtxF9zieh_Djcl7_GmZaKfI0DUx5C-CbaDLTr8Dw"><script type="text/plain">
 use console;
 
 class Car {
@@ -149,7 +149,7 @@ main() {
   <h2>Что будет, если забыть parent()?</h2>
   <p>Проверим честно. Уберём вызов <code>parent()</code> из конструктора грузовика:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=YzqG4oVTwU7bQBD9lemejGSZtAWkOuqpp957wwht7U1ZxV5H600LjSIBlx6oVDghITjxAwEREQVof2H8R51dx3EcVerKttYz8-bNvNkdsZ5MRcHC3REbcHPAQpZxqQKZHKXMZ0YcGjINCwFxroo8Fd1IRSpOeVHAB65hFCmgVRgt1Rf4rLlKui1TlicidSBrtEmMHsYm1xbuLYLE4b6D-tAYHHCjJrDLHMgicHHwfgnprvkdrPLX1NY3riv4mssEekMVG5krouPaeC2WRZ_BNy2NSJXXsPoQMXr8FSJnwkec4H15gU_lSfkrYhsN57hR6xO13aeyjFBJS7temnMD9En2Yz7gsTRH_9TLJfivYv4iH_23UrZ63NwEvKSi78ozfMIZUPVn1MU9TsrT8icMuBbKeA3Hchyv1tRuUVSqrzeyqoQ9Wo3alSJ9nvHvXsTwCs_xmt5LK3HEtrfedezuTSfo1Iq62GAxtG4j0eq8KNM19XGMc5yEsGtTVLDlDPeqEVFFbLznM8UzQWccbwh1QnJM8QF_Wy3wBWc4DQH_ULYZPuO0PIa3dCt6Os8s4rb8QdF3Lm4OH-nKpHKYUYCstyF7HewE22z8Fw"><script type="text/plain">
 use console;
 
 class Car {

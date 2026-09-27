@@ -813,7 +813,7 @@
     "widgets.window.006": {
       "kind": "runtime_error",
       "diagnosticIncludes": [
-        "Window.theme must be 'default', 'idyllium', 'dracula', 'breeze' or 'oxygen', got 'неоновый'"
+        "Window.theme must be 'default', 'idyllium', 'dracula', 'breeze', 'oxygen' or 'nord', got 'неоновый'"
       ],
       "reason": "2026-09-27 (страж lesson-gui-runtime): Урок нарочно называет несуществующую тему (idyl-error-block рядом)."
     }

@@ -327,6 +327,9 @@
   }
 
   .ui-stepper > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: 0 0 auto;
     width: 28px;
     height: auto;
@@ -382,12 +385,30 @@
     opacity: 1;
   }
 
+  .ui-stepper > button svg {
+    display: block;
+    flex: 0 0 auto;
+  }
+
   .ui-stepper > span {
     display: inline-flex;
     align-items: center;
     padding: 0 var(--space-8) 0 var(--space-2);
     color: var(--color-text-muted);
-    font-size: var(--fs-12);
+    /* Кегль подобран под букву: прописная у Geologica — 0.7 кегля, здесь она ровно 8 px
+       и ложится в целые пиксели (при 12 px было 8.4 — и Firefox ставил подпись на пиксель ниже). */
+    font-size: calc(8px / 0.7);
+    line-height: 16px;
+  }
+
+  /* Где браузер умеет обрезать строку по букве, подпись единицы стоит по самой букве (от базовой линии
+     до верха прописной), а не по строке шрифта: округление метрик шрифта перестаёт её двигать. */
+  @supports (text-box: trim-both cap alphabetic) {
+    .ui-stepper > span {
+      display: block;
+      align-content: center;
+      text-box: trim-both cap alphabetic;
+    }
   }
 
   .ui-stepper--sm {
@@ -442,7 +463,9 @@
     border-radius: var(--radius-6);
     background: transparent;
     color: var(--color-text);
-    font: 600 var(--fs-14)/1.3 var(--font-sans);
+    /* Высота строки — целым числом пикселей: с 1.3 (18.2 px) пункты меню копили дробь, и строки
+       ниже рисовались каждая со своим сдвигом. */
+    font: 600 var(--fs-14)/18px var(--font-sans);
     text-align: left;
     text-decoration: none;
     white-space: normal;
@@ -488,7 +511,7 @@
     color: var(--color-text-muted);
     font-size: var(--fs-12);
     font-weight: 500;
-    line-height: 1.3;
+    line-height: 16px;
   }
 
   .ui-menu-item > kbd {
@@ -882,6 +905,19 @@
     min-width: 34px;
   }
 
+  /* Кнопки код-блока в ряд: «В Web IDE» (по настройке) и «Копировать». */
+  .ui-code-tools {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: var(--space-6);
+  }
+
+  .ui-code-tools > .ui-code-copy {
+    position: static;
+  }
+
   .ui-code--output,
   .ui-code--error {
     padding: 18px;
@@ -1064,11 +1100,13 @@
     align-items: center;
     gap: 16px;
     padding: 0 20px;
-    border-bottom: 1px solid var(--color-border);
+    /* Черта под шапкой — тенью внутрь: рамка оставляла нечётную высоту (55), и кнопки со значками
+       вставали на полпикселя — значок «Остановить» был на 11 px от верха и на 10 от низа. */
+    box-shadow: inset 0 -1px 0 var(--color-border);
     background: var(--color-topbar-bg);
     backdrop-filter: blur(18px);
     color: var(--color-text);
-    font: 500 var(--fs-14)/1.3 var(--font-sans);
+    font: 500 var(--fs-14)/18px var(--font-sans);
     letter-spacing: normal;
   }
 
@@ -1169,6 +1207,15 @@
     transition: background var(--duration-base) ease, color var(--duration-base) ease, border-color var(--duration-base) ease;
   }
 
+  /* Подписи кнопок шапки стоят по СТРОЧНОЙ букве: строка обрезается до неё (сверху — по высоте «н»,
+     снизу — по базовой линии), и середина буквы совпадает с серединой кнопки. Без обрезки подпись
+     ставили метрики шрифта, а их округление зависит от масштаба экрана: при масштабе 1 текст стоял
+     на полтора пикселя ниже середины, при 1.0625 — на пиксель выше. */
+  .ui-topbar .ui-button > span,
+  .ui-topbar-button > span {
+    text-box: trim-both ex alphabetic;
+  }
+
   .ui-topbar-button:hover,
   .ui-nav-group.is-open > .ui-topbar-button {
     background: var(--color-panel-soft);
@@ -1187,11 +1234,15 @@
     background: var(--color-panel-active-hover);
   }
 
+  /* Меню шапки не выше окна: с шестью соседними сайтами «Инструменты» выросли до 658 px и на ноутбуке
+     1366×768 теряли последний пункт за нижним краем — а шапка липкая, и прокрутка страницы его не открывала. */
   .ui-nav-menu {
     top: calc(100% + 8px);
     left: 0;
     display: none;
     min-width: 250px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
   }
 
   .ui-nav-group.is-open > .ui-nav-menu {
@@ -1200,11 +1251,6 @@
 
   .ui-nav-collapsed {
     display: none;
-  }
-
-  .ui-nav-collapsed .ui-nav-menu {
-    max-height: calc(100vh - 80px);
-    overflow-y: auto;
   }
 
   .ui-topbar-action-short {

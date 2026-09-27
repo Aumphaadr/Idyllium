@@ -17,7 +17,7 @@
     <!-- @site-brand -->
     <div class="ui-topbar-actions actions">
       <div id="file-app-menu-wrapper" class="app-menu-wrapper">
-        <button id="file-app-menu-button" class="ui-topbar-button" type="button" aria-expanded="false">Файл</button>
+        <button id="file-app-menu-button" class="ui-topbar-button" type="button" aria-expanded="false"><span>Файл</span></button>
         <div id="file-app-menu" class="ui-menu app-menu" role="menu" hidden>
           <div id="file-app-menu-main">
             <div class="app-menu-current-project">
@@ -48,7 +48,7 @@
         </div>
       </div>
       <div id="edit-app-menu-wrapper" class="app-menu-wrapper">
-        <button id="edit-app-menu-button" class="ui-topbar-button" type="button" aria-expanded="false">Правка</button>
+        <button id="edit-app-menu-button" class="ui-topbar-button" type="button" aria-expanded="false"><span>Правка</span></button>
         <div id="edit-app-menu" class="ui-menu app-menu app-menu-edit" role="menu" hidden>
           <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="undo"><i class="icon ui-menu-icon menu-icon" data-icon="undo" data-size="16"></i><span>Отменить</span><kbd>Ctrl+Z</kbd></button>
           <button type="button" class="ui-menu-item" role="menuitem" data-edit-command="redo"><i class="icon ui-menu-icon menu-icon" data-icon="redo" data-size="16"></i><span>Повторить</span><kbd>Ctrl+Y</kbd></button>
@@ -76,25 +76,33 @@
           <div class="font-size-row">
             <span>Шрифт редактора</span>
             <div class="ui-stepper font-size-control">
-              <button id="font-size-decrease" type="button" aria-label="Уменьшить шрифт редактора">−</button>
+              <button id="font-size-decrease" type="button" aria-label="Уменьшить шрифт редактора"><i class="icon" data-icon="minus" data-size="14"></i></button>
               <input id="font-size-input" type="number" min="10" max="32" step="1" value="16" aria-label="Размер шрифта в редакторе">
               <span>px</span>
-              <button id="font-size-increase" type="button" aria-label="Увеличить шрифт редактора">+</button>
+              <button id="font-size-increase" type="button" aria-label="Увеличить шрифт редактора"><i class="icon" data-icon="plus" data-size="14"></i></button>
             </div>
           </div>
           <div class="font-size-row">
             <span>Шрифт консоли</span>
             <div class="ui-stepper font-size-control">
-              <button id="console-font-size-decrease" type="button" aria-label="Уменьшить шрифт консоли">−</button>
+              <button id="console-font-size-decrease" type="button" aria-label="Уменьшить шрифт консоли"><i class="icon" data-icon="minus" data-size="14"></i></button>
               <input id="console-font-size-input" type="number" min="10" max="32" step="1" value="13" aria-label="Размер шрифта в консоли">
               <span>px</span>
-              <button id="console-font-size-increase" type="button" aria-label="Увеличить шрифт консоли">+</button>
+              <button id="console-font-size-increase" type="button" aria-label="Увеличить шрифт консоли"><i class="icon" data-icon="plus" data-size="14"></i></button>
             </div>
           </div>
           <div class="ui-menu-separator theme-menu-separator" aria-hidden="true"></div>
           <label class="ui-check menu-check-row" title="Подсказки после точки и по мере ввода. Ctrl+Пробел работает всегда.">
             <input id="autocomplete-toggle" type="checkbox" checked>
             <span>Автодополнение</span>
+          </label>
+          <label class="ui-check menu-check-row" title="Красные и жёлтые подчёркивания ошибок и предупреждений в редакторе. Без них ошибки видны только при запуске.">
+            <input id="squiggles-toggle" type="checkbox" checked>
+            <span>Подчёркивать ошибки</span>
+          </label>
+          <label class="ui-check menu-check-row" title="Кнопка «В Web IDE» у примеров учебника и задачника: пример открывается здесь одним щелчком. Выключено — примеры переносят руками.">
+            <input id="open-in-ide-toggle" type="checkbox">
+            <span>«В Web IDE» у примеров</span>
           </label>
         </div>
       </div>

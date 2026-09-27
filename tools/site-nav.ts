@@ -82,8 +82,10 @@ export const SITE_SECTIONS: readonly SiteSection[] = [
 export const NEIGHBOUR_SITES: readonly ExternalItem[] = [
   { title: 'Кодировки', hint: 'Charsets: починить битый текст, разобраться в таблицах символов', href: 'https://aumphaadr.github.io/Charsets/', icon: 'link' },
   { title: 'Пантограф', hint: 'растровую картинку — в SVG или шрифт', href: 'https://aumphaadr.github.io/Pantograph/', icon: 'link' },
+  { title: 'Klaarheid Icons', hint: 'открытый набор иконок: SVG и PNG', href: 'https://aumphaadr.github.io/Klaarheid-Icons/', icon: 'link' },
   { title: 'WebGuide', hint: 'интерактивный гайд по CSS', href: 'https://aumphaadr.github.io/WebGuide/', icon: 'link' },
   { title: 'ООМ', hint: 'объектно-ориентированная математика, 3–11 классы', href: 'https://aumphaadr.github.io/OOM/', icon: 'link' },
+  { title: 'Информатика', hint: 'INF: интерактивные материалы к занятиям по информатике', href: 'https://aumphaadr.github.io/INF/', icon: 'link' },
 ];
 
 export const GITHUB_URL = 'https://github.com/Aumphaadr/Idyllium';
@@ -195,7 +197,7 @@ export function siteNavHtml(sectionId: string, options: SiteNavOptions): string 
   const groups = GROUPS.map((group) => {
     const here = current.group === group.id ? ' is-here' : '';
     return `<div class="ui-nav-group${here}" data-group="${group.id}">`
-      + `<button type="button" class="ui-topbar-button" aria-haspopup="menu" aria-expanded="false">${group.title}</button>`
+      + `<button type="button" class="ui-topbar-button" aria-haspopup="menu" aria-expanded="false"><span>${group.title}</span></button>`
       + `<div class="ui-menu ui-nav-menu" role="menu" aria-label="${group.title}">${groupItems(group, sectionId, prefix, host, colorTool)}</div>`
       + '</div>';
   }).join('');
@@ -203,7 +205,7 @@ export function siteNavHtml(sectionId: string, options: SiteNavOptions): string 
   const collapsed = GROUPS.map((group) => `<div class="ui-menu-caption">${group.title}</div>${groupItems(group, sectionId, prefix, host, colorTool).replace(/id="color-picker-button"/g, 'data-role="color-picker-button"').replace(/id="/g, 'data-id="')}`).join(SEPARATOR);
   return `<nav class="ui-nav" data-host="${host}" aria-label="Разделы сайта">${groups}`
     + '<div class="ui-nav-group ui-nav-collapsed" data-group="all">'
-    + '<button type="button" class="ui-topbar-button" aria-haspopup="menu" aria-expanded="false">Разделы</button>'
+    + '<button type="button" class="ui-topbar-button" aria-haspopup="menu" aria-expanded="false"><span>Разделы</span></button>'
     + `<div class="ui-menu ui-nav-menu" role="menu" aria-label="Разделы сайта">${collapsed}</div>`
     + '</div></nav>';
 }

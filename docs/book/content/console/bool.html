@@ -25,7 +25,7 @@
 
       <p>Результат операций сравнения — значение типа <code>bool</code>. Не верите, что сравнение действительно что-то «порождает»? Отдайте его прямо в <code>writeln</code> и посмотрите:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=rmVKZ3WQT6rCQAzGrxKyUpTCqK1Q9e3fGayLoiMOTKdiK-9JKehGD-HSCygilOKfK6Q3MgO606yS7_d9kCTDqdIyQX-Y4TxMZ-hjFCrjqMlKYxNT-Z-ytEwkjGOTxFr2AhMYa6nVIQsMcL2I87dQqdSmJlxogOjWe59xqws_INxvuNOGPojWN-wJGAzAE5bngcF81EQTRpK3pD3d6UxFtaNLtaGSCroASw8e13SstiwUPtCDp4KuVgXBR04XcWTjBxukE92YlvDLH9BqGbFBvVsfheM5LuZP"><script type="text/plain">
 use console;
 
 main() {
@@ -55,7 +55,7 @@ true</idyl-output-block>
 
       <p>Проверим все три прямо в программе:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=_W98kXWPT6rCQAzGrxKyUpCCgi7qCTzDq4tBpzgwTaWd8pRS0I0ewqUXUEQo4p8rpDcyI09w4csq-b5fQr4SY2N1juFPiXPlZhhiogwFZrq02EGnF06kItcwSSlPrR5GFJFHWm0oIwKpPyf4zYzTllouKzQomkKsbK7bw-_Uy4Q0A4__B71OLT6gKiKsxh0klWh5jHd85xPXzZbPzZovXPMZRHrIuOJDsxGhDoEfMtV89Sr0JFecpYlf3_tFPvJN3AuMJLQ1RSKAebchdoNB0MfqCQ"><script type="text/plain">
 use console;
 
 main() {
@@ -71,7 +71,7 @@ false</idyl-output-block>
 
       <p>Все эти операции принимают именно логические значения. Числа и строки не превращаются в <code>bool</code> автоматически:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=NSyAWT2PX0rDQBDGrzKdpxRKsJb6kOIBPIPrQ6gburCZSLJFJQS0D-2D3kDfegFFCkup9gqTGzmb_hkGdua337c7U2NmrK4wua3xIXUzTDBPDcXm_tniAJ1-coLmlYZpQVVh9USRoiCJ-lArAglDTm4NVXANw8uLTtHxDKKOn5Uhju_Ej6Vx2lKkkD_5j3950y7aN5DjVYr3nsL-5OBqFEliczdASnMt8_CHOH7Yt6sg5y173oCgvbQv_NUuBfgEeC-d512gMJJ1srLIg30djPwtn3rewo3sas08F4E5lQkO46t4jM0_"><script type="text/plain">
 use console;
 
 main() {
@@ -92,7 +92,7 @@ main() {
       <h2>Условия с 'and': пускают ли вас на «Кракен»?</h2>
       <p>Вернёмся к горке из начала урока. Каждое из двух требований — обычное сравнение, а <code>and</code> склеивает их в одно условие:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=DPsWin2SzUrDQBSFX-U6qxRKaKG6aKmufQYjJdppOzCdSJuiUgq2om6EbqUuRFy6qdXQ2F_oE9x5I-8k_cOiISSTk3O_M3dmmqwkJK-z7EmTXbh-hWVZ1RXKFsVryZLM51c-SY06h3NP1T3Jc45ylLFYCWg6Cuha_rEva8LnlsPwFUc4w7F-NG_AAfZxAjjGQHeOwGGJXFwnlA9umUN-TShzv0CqtXLskHuEMuxv0LcRWLdB3-BMt3UHLByAbuMk8TukwkW54v-RE9vOPE-CJ4sFrrxGuUJeM7PDPKRTuS2H70q5sSy5xpVJrVGiBNYWyVXF7bL1qu30J5Xp8CVq5456_MJQdzDYg0gLdZe-pqR_xmsa4pCGfSCNHiSSaUT2Test4JI27v-8J8IY2DROS8a8xTv2iGcWO8DpYgw4p-RRHBdEWzvUXXsry1F0s9Zpkim3yunM4HM011A_0L63qTbEAEia0yeR9T0JYZbApjmcGBUydORKNa9qyt9MIX6YieEIjuk8StGokkGshlmWtg_sfdb6AQ"><script type="text/plain">
 use console;
 
 main() {
@@ -150,7 +150,7 @@ if (age >= 10 and height >= 140) {
       <h2>Условия с 'or': отменят ли уроки?</h2>
       <p>Уроки отменяют, если на улице сильный мороз <strong>или</strong> ураганный ветер. Достаточно любой из причин — а если случились обе сразу, тем более сидим дома:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=5af10H1S207CQBD9lXGfSoJVTPChqO9-gzWGyKJN2oVACRpCQiFBH4jEZxMT5Qfw0qRy_YXZP_IsCBqJNm23Oz0z55yZbYii58uqcE4aopwPL4UjgrynbK9w7Yu0COVViFCtKum8pKolX-Zc5SoDsVLUcBXh-vpj1yteKC1X8DPHPOE5x7rFQ93WHbMST_HSHR5zorscO-SKVG5ZwVMhhTIo0-G62IUMzxC2VpANkice8QyFZzoCRY_4FXztBZPFkx0dpX4z1D1V-IPhC1QkayHjgLb3dqlUWaYcUSa7NruhxVdGzcAogaKEIKgN9zFPdV_fQVGk-2nSESf8jmdCWGYADLe-1TVJ-mjx_xSPSIzhcsgfYIhRt5eGa9K3phM81h3sEL0n0wQApzxbNN0Q2j_IXIVbNE_TQuUDifHyA_LfMJYbU9a44Bg-1hPsIpA4xHPsEuNNtyiL01GslAKTPjCJ_AKuhEd0jKPje7UAAG_16YiMvW9nRfMT"><script type="text/plain">
 use console;
 
 main() {
@@ -197,7 +197,7 @@ main() {
       <h2>Условия с 'xor': лампа и два выключателя</h2>
       <p>В длинных коридорах ставят <strong>два</strong> выключателя для одной лампы: один у двери, другой у дивана. Лампа горит, когда включён <strong>ровно один</strong> из них — щёлкните любым, и свет переключится. Это <code>xor</code> в чистом виде:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=uCV_3p1STUrDQBS-ynNWKZRgF3aRUlx7BiNS7EQHkokkKVZKoVbQhSIo7lx6gfhTCNWmV3hzBU_iNzStBRHUkMWbl-8v781ABCqUqfB2B-K4kx0JT0QdpV3VPQ1FXWSyn6HVSyUdxDqNQ9nyta8txKnRwNeEp_riniQqk44v-M5c8ZTfzI255NyMeYL6msw58Ss_88SMuCAUFcTc8mybnAZ9jO4tIq_T5qKeATuukS9qrYWT0hkFKkkzaq9cD2W2j76zxPwpTYEYOXzy_-dJJRy7PwSqYAE5Vew2NagfJysWzqs5fksfapv_AQnfeW4zvnBph2fGG18ZhiRDrOfXGviJNSF3TcjXeMVwry50J5JYO2gloAUGNzFnmE9huSV07A5zc4FG4RHPrRb00aUmbk2QxJGlP1oiP8Gy4Cnt4EqFqhcBoJalJxpu090Sw08"><script type="text/plain">
 use console;
 
 main() {
@@ -252,7 +252,7 @@ A or (B xor (C and D))
 
       <p>Проверим, что обе записи действительно дают одно и то же:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=75Y4jH2QzUrDQBCAX2WYUwIl0IMWUjz05-IzmB5Wu8GFzawkG6yEgF70ITz6AooUQtH2FSZv1FnaeiruYdn55psZdhrMjdUVpjcNPih_jykWylBilk8WB-j1yguqKw13jipn9TijjIISxdBkBHJunbMwgSvwZR3yf2x6hs3OsLmwXNnq0Dzg47DksTReW4om4Eppt5J7BoqWMI_H_5jRQY1ObhzsNiNsFwMkVWj5E7_zlr-569943b_whjteg6CdhM_82b8K6FLgnUQd_wQKI1lJXroilH-EQv7iX8lu4Fr2ZU1diGBOzxSHyWVyge0e"><script type="text/plain">
 use console;
 
 main() {
@@ -276,7 +276,7 @@ true</idyl-output-block>
       <h2>Оператор 'not' — инверсия</h2>
       <p>Операция «НЕ» — это оператор <code>not</code>, который пишется перед выражением:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=VUktxXWPUWrCQBCGrzLMkwEJ9EEpkR7AMzQisV3bhc2sJBtUQsC-tIfw0QsoRQihmitMbuQsWigU52nmm--HmRLn2qgco-cSF4l7xwjTRFOoX9cG--jUygkqcgUvlnJr1CimmLzSC6CMCaRm1hrQ-TQTqukNnsBlxVX061swXGbaKUM9su6PHYzuW__NKiasJn2kJFVyF2_5zN9cd1987D644ZqPIKiVccP77lNAHQG3MtX84yk8ylvzzKY-vvNBPvBJtg2M5Weji1QE_dtG-BAOwwFWFw"><script type="text/plain">
 use console;
 
 main() {

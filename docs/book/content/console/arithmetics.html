@@ -8,7 +8,7 @@
   <h2>Сложение, вычитание и умножение</h2>
   <p>Начнём с подсчёта монет в игровом кошельке:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=nMIAhoWSTU7CQBTHr_IyG0Br-QosSjyAZ7AuGhlik3YwbQkaQgLVRI0sPIC68QJFqWLRcoU3N_JNi5aFxm7mzfv4zfz_nRHr2Q73mXE4YqdWcMIM5lq20O3uucM0FvCzgFIDn8NxX_h9h3dMYQrVUq7AyBRAny0CqtrCh32oN2qwC81WB6pVwLm8xRWmWRY_MMVPjGWoAa2RvKbSEjChJcIFyCmNFUCH9wLi5dw9aNdyYiIvcI3LbFTe4FKGgG8YUX3rgILi8aHldYnTaMEONDOGDOUkP_iZmqcypHFipqqnYKh6hK-4IAnvSrNCbjzQh54d8LLJ8L5of1YTKamKcSVnFMcGmEzLFWhQMk1RqnT-4Dzm91BmUTTL7iOntI2zcCM7-RGNUQ5XLv3HfiDuC0kmk5VS5dYvFuS83K8t4tgUbHykMWG5nB4C3qlBeUk-kWj6D4maxLXKZrkJ1OnZ9Ly-q7qf5BXZMSeLqBMO6E059sClBvs7NFhdb-stNv4C"><script type="text/plain">
 use console;
 
 main() {
@@ -33,7 +33,7 @@ main() {
   <h2>Деление — особый случай</h2>
   <p>В Idyllium оператор <code>/</code> <strong>всегда</strong> возвращает <code>float</code>, даже если делятся два целых числа:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=V1tU5kWPz2rCQBCHX2WYiwoh_qMVIh6ipz6D6yHYDS5sJpKsaAkBKYVe-w59gXoQpLT0FSZv1NmgOKfh-30Mv6kwNVaXGC0r3CZugxFmiaHQPL9YDNDpgxO0KzWscypzq6eKFHml24NKEcgYchDDDMaT6R3MBQwHre1RavPEwUJgDH2YX8XrzXBfGKe7iwA6SlGnJ2mtCOtVgJRkWgrwR3PkS_PGP3xuXvnC3_wVAf952rIjjKRuWuSZtz-bdz7ziX-9CU_yizW7TARzWyMcho_hA9b_"><script type="text/plain">
 use console;
 
 main() {
@@ -49,7 +49,7 @@ main() {
 
   <p>А теперь попробуем сохранить результат деления в переменную типа <code>int</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=ej-yEkXOQQqCUBCA4asMsyoQS6QCpYXSpjNkC6knPdBnpEIhgkTQtjt0gVoIEkVXGG_UKEizGj5-mMkxkKFI0FrluPfTHVoY-VLpcnsKUcNUHFOmLBGwiVUSh8L2lKfaZDCE3FPAI1UKDszBnNl_cBmMcVf3tGByYAQua-EpLNYaKj8SfIBuTUl1c6E3Vc2ZanrRwwL6ttpZCSa_ExziqK3vzZUqetKnLWHJv4YyiziQ_WqhoU_1CRY_"><script type="text/plain">
 use console;
 
 main() {
@@ -71,7 +71,7 @@ main() {
   <h2>Операции между целыми и дробными числами</h2>
   <p>Если в арифметической операции участвует хотя бы одно дробное число, результат всегда будет <code>float</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=raLcJI2RT0rDQBSHr_J4m2lrmlixLhJc9C94BsdF0AkOJBNppqiEQBHRrXgFL6CLQimKV3i5gidxMrVohEJm9eab3_tm8csxkrHI0D_N8SrUl-hjEkrlyovbGB3U4kYbNM8EnKcqS2MRcMVVFWm1IecKzJFKwwCOobcfbEAUp6GGoUEHbt8u_NKRoQPYg2EAngfM7DJzY_aRwdfD83beLP386l7PpBatkQOMc8Xa_6RjK-3WpN2m0vEO6cRKOzVpp6l0skM6tVKvJvWaSqd_pAVXWJw5qMJEmIboqVzQqrynd1qWd7SiNb36QJ8VtWwBh6bPaJYmVfqlfKQlvdFHlYQTU3Ys54kJyO3oY889cvtYfAM"><script type="text/plain">
 use console;
 
 main() {
@@ -105,7 +105,7 @@ main() {
   <h2>Целочисленное деление: функция <code>div</code></h2>
   <p>Если вам нужно именно <strong>целое частное</strong> от деления, используйте функцию <code>div(a, b)</code>. Например, раскладываем конфеты по коробкам — в каждую помещается ровно 10 штук:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=CXhuBHWQwUrDQBCGX2WYSxMIwSIVSfABfAbXQ2y2uJBMSrPVSggUUTx48ezFgy-gh0Kptr7C7Bs5G2vtxYWF5ef7v9ndBkem0DUmZw2OM3uJCZaZodjkNwVGaPXMSjStNQwrqqtCp4oUeSQIoVEEsgxZGGaUG13DCRwep3_xRTXrwtxcBVskgv5B2Fk8tLXG1xNjdaCQn3nDa3fHC3ebgMIIdrWeUtQL0396L9L7kOajuwde8cbNJXiXvfrRdDfZk7SKsD2PkLJSywv5SQpLmfvpJ_NSFG8J8JdPu2wOA_mP0aQqPf3qHngh-rUn4VQ-qzDTUgDze0ywHx_FA2y_AQ"><script type="text/plain">
 use console;
 
 main() {
@@ -122,7 +122,7 @@ main() {
 
   <p>Функция <code>div</code> отбрасывает дробную часть и возвращает <strong>только целую часть частного</strong>: 38 / 10 = 3.8, целая часть — 3. Причём <code>div</code> не округляет «по-школьному», а именно отбрасывает хвост:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=BWZs-Y3QTQqCUBAH8Ks8ZqOCiFJJ6Qk6Q6-F5JMe6DP86AMRJIK23aEL1EKQKLrCeKOeUZsgcFbDf36b_xQQ8JCl4MwKWHnZEhyIPC4M7u9C0CFj20xGecrIIhZpHDKXCio6omqkoILI-VyMTcIzpvp8rQ7GOrFMTScKpULR3L9u0s8NzZ7O-nUlFVDOdRBexGQRPLUVNu0B71i3e2zwhheH4LNL31lFbFk7SOKo0-f2iDVe8dFJMpU_CXkeScC_qwOWYRsjKF8"><script type="text/plain">
 use console;
 
 main() {
@@ -145,7 +145,7 @@ main() {
   <h2>Остаток от деления: функция <code>mod</code></h2>
   <p>Три коробки собраны — а сколько конфет осталось без коробки? На этот вопрос отвечает функция <code>mod(a, b)</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=cEWil0WPzUrDQBCAX2WYS1NYgkX8IcUH6DO4HkKzxYXsRLJbqoRAEcGrZ6--gDkUg9j6CpM3cja0uKfh49tvdxpc2dJ4zG4bfMjDPWbockupLZ5KVBjMYxC09gaWFfmqNHNNmqKSTKHRBHIsBVjmVFjj4QbOr-f_uDY-CHNVkRwNBbOz6RiJzjGabmobTKKR3_nA--GFd8MzcMc7_gL-5sOwFd7J1GegUY1dBROtaRJjrSZs7xRS7ox8l9_E76XyEzvcy73PDPg30pFt4UqWW9WVi_bH8CoPdbyPJixk89KunQj2NGY4Sy_TC2z_AA"><script type="text/plain">
 use console;
 
 main() {
@@ -160,7 +160,7 @@ main() {
 
   <p>Функция <code>mod</code> возвращает то, что «осталось» после целочисленного деления: 38 конфет — это 3 полные коробки и ещё 8 конфет сверху. Посмотрим на остатки у соседних чисел:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=84O_J43QTQqCQBQH8KsMb5OCiNIHpifoDE0LyZEGnDH8oEIEiaBtd-gCtRAkiq7wvFFj1CYIfKvH__02_1dAyCOWgjsvYO1nK3BB-FyaPNhFYEDGtpmK8pSRZSzTOGIelVR2RNNJQSVR87mYm4RnTBNxoA0dg9iWbpABpXKge3_dtJ8bWT2d_etKKqFcGCB9wVQRPLUVNu0B71i3e2zwhheX4LNL31lFHFU7TGLR6XN7xBqv-OgkmamfRDwXCvDv6oJtTswxlC8"><script type="text/plain">
 use console;
 
 main() {
@@ -184,7 +184,7 @@ main() {
   <h2><code>div</code> и <code>mod</code> отлично работают в паре</h2>
   <p>Классическая задача: перевести минуты в часы и минуты. Целая часть от деления на 60 — это часы, а остаток — минуты:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=XDxnxm2RX0rDQBDGrzLMSxMIQR8smOIBPIMrEszWLiQbaTb-oRRiFfokiHgDL6DFQFAbrzB7BU_ibNpKBfdp95vffDN8O8GhSmWB0dEEz2MzwgizWOlQJdcpBmjklWGpLCSc5rrIUzkQWmiHeD5MhAY-60p4OVZGegLpkRZU0xs1dkY10Du19MGPOdX2hqUFtUCf1NDS3tpZBAL9wcpJaQMmN3EKB7-uZ9KcsO753eQNNcrLccFUoi68riOA_s62TaZ0aaRDsjz5i_y39RoQuLUZfFdPYO9545YLwWpmx9h5J6xnbLU5tSeE7rk5U6FxehygjjPJIdKDrTiFOyZr9mw4l5cI6MupnVbBPkc-HOeZo59dXvRKS0fCIf9HqsqMAbW5Rrgb9sM9nP4A"><script type="text/plain">
 use console;
 
 main() {

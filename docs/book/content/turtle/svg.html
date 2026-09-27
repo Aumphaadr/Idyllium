@@ -2,7 +2,7 @@
       <h2>Рисунок, который можно унести</h2>
       <p>Всё, что черепаха нарисовала, живёт в окне — закрыл программу, и картины нет. Команда <code>turtle.save_svg("имя.svg")</code> исправляет эту несправедливость: она сохраняет рисунок в файл. Не скриншот окна, а настоящую <strong>векторную картинку</strong>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=j2iJvGVS3UrDMBR-lUOuOhxh7XAX3bzxZnir4o2VUWzqAm06mmxTRmHMC70TfAVfYArCGP68QvJGnnTd7DQXycl3vu87OUlmJOYJk8S_nJFRqIbEJ2nIBeXRXUKaRLFbhdBYMlDjXCWsGwi7uc6SLJe4CYSlOw2YBQJwbFj0vFxAdSuUyhFjERxBa4eMmBiUNohu7Ohp_9jptJrgtnHyvFZjjzzlkRoi2SvLWpwLBbxmOh1iL-Bw6IHr7Y60ZUoesRq5JigzPWjvSTaF4yyfhnnk4JEa3b_JhMXKcb1_mapSuRyAW8sWv2El3_e13fCapti2Wt2rDCdsICc3TkD0m343c7Mw9-ZRr_WSIhwQa4YiUlw1iQhTho-nn_W7XpuF_jJz_amX5gks32r1CgGM4eyi74P-RsJKf1hfcPH14zxLrcGLeUCLV-Su9BpO8GskfJwigW9Dn7i0Qw9J8QM"><script type="text/plain">
 use turtle;
 use colors;
 
@@ -53,7 +53,7 @@ main() {
       <h2>Черепаха без окна</h2>
       <p>Сюрприз напоследок: раз рисунок — это список команд, а не пиксели окна, то и окно ему не обязательно. Черепашья программа запускается даже в консольном режиме — там, где никаких окон нет вовсе. Поле не откроется, но черепаха честно «прорисует» всё в памяти и сохранит файл:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=qVS2QGVSwU7CQBD9lXFPJZJNi0gU8OKFeFXjxRrSyCKbtFvSLqAhJERNPJro3Ys_gCZEQMVfmP6R09JiiU2amXnz3ptOd4esLV0Rsur5kHUd3WFV5jlScdm6cVmRaXGtCeqFAnQv0K6o2SouLn0V-rnK9YOQClvFYqMAQ1sBPSsNP00C6FqK8rArRAsOwFwjXaGaiQ2hKzt-3Dg0SqZZhD16rYpZSAbEdKk0yJx80KEdwJBQh53KenjGDGVL5Mg5QdKpQ3lDsvqeth8MnKBlWOVk7mbTFW1t7P9rpIOSsA1Wrjv6S1O1taGOl5E5zSjbNP2BodMXzbB_ZdgsusMPXEZjTqXNMpP0PPggkFq4inj4TKxbXOI7LrcAXyhfRGOq5xDd4wTn-Al5L74yo8lsdFFkyvEEHTw-4ZR0tzELv3ESPQIuKIwJmhFAOZycNaqAP0SY4RdOozGU6Oa0A9-LDV6jB7J4I-4MF3BE18qVPY8IMkurzOIVvstGvw"><script type="text/plain">
 use turtle;
 use console;
 use colors;
@@ -89,7 +89,7 @@ main() {
       <h2>SVG можно прочитать обратно: image.Vector</h2>
       <p>Круг замыкается: SVG, который черепаха написала, программа может <strong>прочитать</strong> — и напечатать растровой картинкой любого размера. Для этого в библиотеке <code>image</code> живёт класс <code>Vector</code> (с версии 1.3.3):</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=WIyYaX2RwUoDMRCGXyXMqQtLoGp72D6AeBZ6MbIsbdoN7CZlN7WVUlj04FHw4lXwBSpYrMXWgy8weSMnbdWiYA5DZvLNPz-TCfRUJkuIziYwSGwKEeSJ0lx1LzMIwcqxpdKwlEzlSV-2hPb3jtGlyXwmtMdrAZsIzehsKN6WHWsKRoJWFrq1fdplPDNJN-4VJo_96JoAd40vuHYVLy_6AoIdvpvBR4WyMtPE4QOu8RlXFF-Zq3BGbW84d1XEBITf-iPVtWlIpY_7_XIqVT-1wcbzvh1r4tImVnVqjfpByCgEXI4HprAxPf22ONB7Fv9KNI_-aY5xgUsyv6I4-1GaCg3T8xB0kkvaNd7hHJfuyncQOnO3zPOuotJi28tO28cRw3cCFtsNsEP6LL9TL_DobkjiiViax07oJzM1zAlQX9cI6rzJGzD9BA"><script type="text/plain">
 use image;
 use console;
 
@@ -114,7 +114,7 @@ main() {
       <h2>Финальный проект: открытка</h2>
       <p>Соберите всё, чему научились за раздел, в одну программу-открытку: фон через <code>turtle.bg_color</code>, залитая фигура, узор из повторений, подпись <code>write</code> — и <code>save_svg</code>, чтобы открытку можно было подарить:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=ztM0GIVU0W7aMBT9lTs_BS2NCCTVSreXSVPX163aHpYJBWKCteCgxMAqhESptD30odK0P9gP0ElIqFvZL9h_tOuEQACty0PsHJ9zfK5vkjHpsIimpPFhTPq-6JIG6fmMWyy4jIhJBP0sEBqkFMQgERE99bh-aMdRnKT44PEcty6yAUSGDWMWQGfA24LFHBL_0mBcQER5KLoVGHsc8BJWJ05GfhIY64XTAm_57U8HYEQ7wqhXNTDRe-iYxtYsT5FSMegbznHVhLpT3YjzxVbYzHIbeXrrzdlLo4bMmmOC86xSyaLnm6V9SgN4AdXN9n3KczWiZb3rooGNLifb7TLyiAWii-R6yVbjmG9LDGMRG0e21jt7-iAe8RIT2xT9O0AdDeyyQ4uGjDe1aOOhW5CygJbKGnWx-WBk6HOwa5vj3O2P4xYeB60owLVxNjwFe70yKeJQHmzDPH4aJ7qUx85C18EOi2CHFegXz93JrnVsN-D_euNiniO7tpdorxPvX59fvNoQRgkT1PCI_C5X8k5N8b4Ada1memqCukLgl3xQXxCWP9WVmsk5AqsnHimdz_qN9oe0mQ5DbbdC4r2aqhs9yrmFcK7AMsjko0m436P4ucpvcoHEGQqm8kHO1S1oPipncokAzuHtu7MGyD9IWMrfcqGm4OD33kninjb4ob6ixR1yl_IezvFnELFBDwmsmDaIbR1bLpn8BQ"><script type="text/plain">
 use turtle;
 use colors;
 

@@ -54,7 +54,7 @@ array<int, 5> m = [405, 163, 399, 785, 241];
       <h2>Доступ к символам строки</h2>
       <p>Как и у массива, у строки можно получить любой символ по его индексу. Разберём гуся на буквы — и соберём обратно задом наперёд:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=0fiA1k3QzUrDQBAA4FcZ5pIWQmoUPaT4AD5D08M22dqFZBOSFJUQ6M_BSz31DfQF9CCEaO0rzL6Rk9RKFhaW_WZnZ6bEuYpkjt6kxFQUC_QwFko7KnyK0MZCPhZ8tcwlBInOk0iOfe3rNmQwhNLXwCsvMqXvIYVb8JH2ZmvWZudjF9l6sBAZCNZ0cjEdw2gEFu2tns06c__MbPsWdHZ5tnXfws6uzraz_n881eo8ZKqQkR6ENgQ2zGwQQ66q8jVWUxu1iCU3R69U0_GUkRp6pwbMC33RJ33zPpgNcD8bs6If1toDOvK5btGswOUhzbMkbvO8mWd-8EEH1gbueIKRWsYcoM5HD13nxrnG6hc"><script type="text/plain">
 use console;
 
 main() {
@@ -73,7 +73,7 @@ main() {
 
       <p>В слове «Гусь» четыре символа — значит, допустимые индексы: от <code>0</code> до <code>3</code>. А если запросить символ, которого нет, — например, десятый?</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=nXFkDjWPTWrDQAyFryK0SiCYptAsXHqAniGThXEnycBYNvaEJhiDmyyyaVe5QXKBdFEwbn6uoLlR5ZAKBELf05NU4tRYXWA4LjGL3BxDTCJDgXlbWRyg00snrUWhIU6pSK1-VqSok_T6UCoCicLlhmaQwQso5J3f-A__qfCm7Ph9MnjPjdOWetl4-DDpC64UYTUZIEWJli2854avEM-jHLjlI7fgv_iXf_gkefZrEOO1r_kitAmBr1I3HfQ1PMq10zxNOp-D38rAN5-FtvAqr1izSERg_ssQh8EoeMLqDw"><script type="text/plain">
 use console;
 
 main() {
@@ -92,7 +92,7 @@ main() {
       <h2>Посимвольный перебор</h2>
       <p>Можно вывести каждый символ строки по отдельности:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=fIAkkD1QXUrDQBC-yjBPKZZgERUSPYBn6PYh1I0dSDZhs0UlBGpffPIMgl7AH4RQrb3C7I06W22HWWZmv2--md0Wcyp0g8m4xTpzM0ywzMjEdH1f4BCdvnNyNW80TCvTVIVOlVEmUKIBtMqAWOMsmRuo4RIU8jP3vOZP_ghR4Y4fWHllISLjgIR3nEq4gPN0VxEcweggF-x_WHxryenCRPWYJoP0D--UEcduMkSTlVrW4xeZtYHpLLPAK37jFfgn_uYv_pGz9kvwD37pF_wraJ8AbyTvA-gXcCLPzG1VBp1X_ygN77J_LxpX8gcFzUsh0D5NcBSfxafYbQE"><script type="text/plain">
 use console;
 
 main() {
@@ -117,7 +117,7 @@ main() {
       <h2>Длина строки: свойство <code>length</code></h2>
       <p>Если длина строки заранее неизвестна, прочитайте свойство <code>length</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=4BQOt42RX0rDQBDGrzLMUwshRdAiKR5AKIX21fUh1G27kGwk2aISAm0FffIM4p8D1GohtDa9wuyNnLQWKoi4Lzt8883Hj5kUeyqQCXpnKV76ZoAehr7Srrq4CdBBI68NS8NEQjfSSRTIhtBCl5ZKFVKhgV9iYqX70IYTEEhPdmJHNLW3diywsXUobaDJ7bYbSN03gwbUalDf9r5z3atYGRnoCkc82gnl9o6mHgc60HY2H33QknJa7eRmKYMds_ZJMyq4W9BMYHWDuAfW2YK9smHK1jLinYofcC22dPbhjv8L1_kdrvUHXCY0ZucOaj-UvFx6ZtMaugM_Blow4gLsA_vnPDmnlZ1wzGanBXdzD2jNdRk7tyM45CP14igsc17sPQ-8MUTOGad8wUANQzaoXenhgVt3jzD7Ag"><script type="text/plain">
 use console;
 
 main() {
@@ -139,7 +139,7 @@ main() {
       <h2>Цикл с неизвестной длиной строки</h2>
       <p>Свойство <code>length</code> содержит число — значит, его можно подставить в цикл:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=5PR1Mj2QTU7DMBCFrzKaVSqqiC7KIoEDsM-u7iIqTjOS46DEFaAoUikLNrDlAHABQEKKUkqvML4Rk_IzsuXRvG_Gz24wI6NrjGYNXqYuxwiLlGxIFzcGx-j0tZPSqtawKG1dGh0rq-yABCNolAWJ2lVkl5DAGSjkJ3_n1_zK77z1DwoP_EBlZQUBWQck3HEsxykkodF26fL4UCQ4gsn_1CF-7wyvKnLa2CCZ0XwU_-itsrKwnY_RpoUWl_zMHe9hkacVcC8WevCPvOUP_pS98xvwt34j5r5E7SLgveTdIPo1TOW1WVUWw5wXfy8Nb7wTtYdz-QpDq0IA-ksjnIQn4RTbbw"><script type="text/plain">
 use console;
 
 main() {
@@ -166,7 +166,7 @@ main() {
       <h2>Конкатенация строк и символов</h2>
       <p>Строки и символы можно соединять с помощью оператора <code>+</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=fp2Zz5WRX0rDQBDGrzLOS1osAR_sQ4IH8AzGhyXd2tVkU_IHlRBoK9Qn8Q56gSgIIVpzhdkbdTZB0RfBhV2Gb34z8zFb4lxFMkPvrMSlyBfoYSyUdtXsNsIJ5vImZ6nIJISJzpJI-oEOtEVGYygDDXyyPFX6AnRSaDiBAKmjxmzNluoA_V-ImF0OxCu15s6saUe1efymwoVIIVuKUDLlgPNTjkV6ZdUDp3fQ64Mj9zpVuYz0qDdwaIeM_T-JYcQ_SX6tB1tQBRqr8wlqEUveDj1RQ91gk1qqqQXzQO_0Rh98d2YDZm02ZkWfnG08oI7jxibNCqa85XmaxLbPs7nnghfeSsM9TvkLIlXEDKiv0MMjd-oeY7UH"><script type="text/plain">
 use console;
 
 main() {
@@ -187,7 +187,7 @@ main() {
 
       <p>В отличие от чисел, от перемены мест слагаемых — сумма меняется:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=N_SNdXWQX0rDQBDGrzLMiy0tgRZUSPAAnsH1IbRbu5JsJH9QCYG2Qn0S76AXiIIQojVXmLmRs9UKFdxlYdjv933MTIkzE-kM_bMSr8J8jj7GobGemd5GOMRc3-TyVWQaJonNkkgHyirrkF4fSmVBTpanxl6ATQoLJ6CQOmp4zWuqFQZ7SDi9_CZeqeU7XtKGan7cUntcqrORgNvEARzIHThv8BcaC-Qyd4wz_Gb9NOxdpybXke250H7wrzZ2WqUsVudDtGGsZW56ooY6mMzDFKilmlrgB3qnN_qQt-EV8JJXvKBPURsfqJO6cSIv4Fj2N0uT2OU8870YXmTeRjJOZbmRKWIBzK70ceQdeYdYfQE"><script type="text/plain">
 use console;
 
 main() {
@@ -210,7 +210,7 @@ main() {
       <h2>Экранированные символы</h2>
       <p>Знакомый по прошлым урокам перенос строки <code>\n</code> — тоже символ. А раз символ, его можно положить в <code>char</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=AOxYs32QUWrCQBCGrzLMiwoh0IcWSekBeoZuH4JdcWEzKUlEJQRsXvpUCl5AsBewBSGkVa8wc6NOFKFPXRiY2f-bf2e2xLHzNsfoocTnuJhghEnsKHRPC48BFnZe6NU0tzBKKU-9vTVkqEP6AygNgZ7RJM6A7Mw7snAHPWOod8JO4rktnGWusH2DvOadLPmLt_IO8iK1FgdueWswuJgEoNxKaj6o-A830FcqQ1g9BkhxYnVS3nDDx_NIHc0tyBt_845_NPZS__VqIuCj5k0nyhKGuvE4S5PO50NeteGT96q2cK_f4d00UcBd0givwpvwGqtf"><script type="text/plain">
 use console;
 
 main() {
@@ -242,7 +242,7 @@ main() {
     массива или символ строки? Спросить можно у самого языка: глобальная
     функция <code>type_name()</code> называет тип любого значения строкой.
   </p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=msEBV42QwUrDQBCGX2WYUwMhpBYFE_XuMyRBlnZrF5JN2WytIQRqLp58CX0BPQgh2vYVdt_IWbX3LAwM-3_778zf4FLkvMIoaXDN9AojLJiQgVjUOfqo-aOmq03FYV7Kqsx5nMpUOmTiQZNKoMOUYvWVkNqH2Q08sLyCa0imoQ9nVLMwi_-4Sish72FbqgUBKZrBHGyX4q-lA_6_CLZKaJ7Lia7X_E6ygk-cqefFY7AkzEaQboiR2MmwTSW2mY9OoEzMq-nNEeYrpoA2eTcD2BfzZT7NN9XedmCfbGd35kBqH4E5Ut870e7gkrJdqrJwPm_2mR58mD2pA9xS8LnYFASIUxvhNLgIzrH9AQ"><script type="text/plain">
 use console;
 
 main() {

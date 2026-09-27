@@ -3,7 +3,7 @@
   <p>Ваша программа уже умеет разговаривать с пользователем: выводить текст, принимать данные, считать. Пришло время навести красоту. В этом уроке вы научитесь выводить строки без лишней возни, вставлять в текст кавычки и отступы, красить консоль в разные цвета и очищать экран.</p>
   <p>Начнём с повторения. Вы уже знаете символ <code>'\n'</code> — он заставляет текст «перейти» на следующую строку:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=OLpX9F2PQUrDYBCFrzLMpi2EQBe6iCfwDJ0ugv7FH5I_0qRYCYEakQp6ArdeoBYLNdr2Cm9u5FR042xm-Obx3kzNE5-5kpNRzddpdcUJ56kPsb-8zTjiys0rQ7PS0UURyiJzZxIkHCX9AdUSyOp3E99MfeX6wnjBXlvhiHoioReRsD4YWmLzD6PTe33ESlt9Fh6YdyOBm3HEIc2dBeMVnyZZmmiDHXb6hA_C2toae7yTtsY7vbO-SggHXWCLL8tZ0NDOn0yL_MflmI03c9iio3P7LfOz3AT-b0x4GJ_GJ9x8Aw"><script type="text/plain">
 use console;
 
 main() {
@@ -20,7 +20,7 @@ main() {
   <h2>Упрощённый вывод строк: <code>console.writeln()</code></h2>
   <p>Функция <code>console.writeln()</code> — это удобная обёртка над <code>console.write()</code>, которая <strong>автоматически добавляет символ перевода строки <code>'\n'</code> в конец</strong>. Не нужно каждый раз вручную писать <code>'\n'</code> — writeln сделает это за вас.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=GPRov5WQwUrDQBCGX2WYUwslYEEP6RP4DK6HoFtc2GykSdESAloPFRQEX0DQF4jBQI22vsI_b-RE9KYH57Izu9__s_-UPHXe5hwflHyaFCccc5q4ELnjhecRF_a80Kt5bukoC3nm7cQEE3pkMKTSBNL6fonOZq6wPgwM4wGtXKBBLXckl7LUYYsOteHh5E_RvSyxVfJfokelWmVvfxVVJnB1OOKQpFZz4AlvciUruUaLDTZyg1dCo0ejqhfSD7ToehvUMeFDzdZ477PQWLcxnWXpl4uslHtWhzU62tdVeTdPFXA_bcw70V60y9Un"><script type="text/plain">
 use console;
 
 main() {
@@ -54,7 +54,7 @@ console.write("Третья строка", '\n');
   <h2>Экранирование символов: <code>\"</code></h2>
   <p>Если вы хотите вставить кавычки <em>внутрь</em> строки, их нужно «экранировать» обратным слешем <code>\</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=BGCEsjVPS07DQAy9iuVVK1VRCwKJcAIWnIBhEZWJGGniVMlUgKJILV0UiQuw5wLpT5SWwhXsG-Eg6o3t5_ee7QpT522J8U2FoyTcY4xZ4ihyd08eexjsY1BoXFoY5lTm3l4aMtRSOl2oDIHG_yR6KFywnjoG-Y1XMuEGjDF47cgOiyQNbQO8kFfe60im_M0fvOaGD9ryEk76_QvglcJrmRns6qraENa3PaQks3oHv_NeZjKXF96o6qBWn6rUtGxVIM-K72SquYmBf_SGLX_xRiZwqt-kRZ79uchceQt12PIOrvRV78aZEtyxjHEQnUdnWP8C"><script type="text/plain">
 use console;
 
 main() {
@@ -67,7 +67,7 @@ main() {
   <p>Символ <code>\</code> «обманывает» компилятор: он говорит: «эта кавычка — часть текста, не конец строки».</p>
   <p>А что будет, если слеш забыть? Компилятор решит, что строка закончилась прямо перед словом <code>Minecraft</code>, и дальше уже ничего не поймёт:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=sLIwVzVPS07DQAy9iuVVK1VRQYBEOAELTsCwiMpEjJRMqmQqQFGkli6KxAXYc4H0J0pL4Qr2jXhF4I3t5_ee7ZpTl9mK4-uah0m445jzxPnI3T5m3ONgHwKgUWVpUPiqyOyF8cYfKJ0u1cYT4m8S3Zcu2Mx3DMurLHUsLRm-ct4OyiQNhknm-iI7wDqRL3mXlbSyRysLOu73z0mWgFc6NdzFmsZ4bm567JPc4gZ5k51OdabPsoZqD6sPKJEWBxXpE_CtTpDbmOQb-zfyKWsd0wk-Scsi_3XRGXhzOGxkS5d4M3OjHAT3X8Z8FJ1Fp9z8AA"><script type="text/plain">
 use console;
 
 main() {
@@ -90,7 +90,7 @@ main.idyl:4:64: compile error: expected expression, got ')'</idyl-error-block>
   <h2>Табуляция: <code>'\t'</code></h2>
   <p>Символ <code>'\t'</code> вставляет горизонтальный отступ, как если бы вы нажали клавишу <strong>Tab</strong> на клавиатуре:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=tqbVszVPu07DQBD8ldU2SSTLEkUozBfQ03EUBi7ipPMZxReRyLKURxEkWnoKfgAiLIWEmF-Y_SOW1zazmhnN7NY8ct5WnJ3XfJvHG864yF1I3fXMc8LRTqNSk8rSVRmq0tsTE0z4tvQHVJtAOn9Kejd20frQN4xHdHSWXxpOqGdM7CWk5BM6WWCP9lcaaFRjAjcXCYe8sNqDZ-xlJWu5R4sDDvKAd8JGYYMObyRL5XeyUHzJCJ8yxxYfaGVOQ712NC6LnxRZq-9VE7bY0am-4t2kUIP7XzM-So_TITdf"><script type="text/plain">
 use console;
 
 main() {
@@ -107,7 +107,7 @@ main() {
   <h2>Цветной текст в консоли</h2>
   <p>Idyllium поддерживает ANSI-последовательности для цветного вывода. Чтобы изменить цвет текста, используйте управляющую последовательность вида <code>"\e[31m"</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=TC0sZ5WSwUrDQBCGX2WZUwshWGt7SJ_AZ-h6CLrFhWQjTUorIZDGQwVPXhTEi_gCsbRQm0ZfYeaNHEMjHkohCwvL7v_9_DszMYy0p0JwhjHcuNE1OOC72tj66tYDCyI1i_hqEipxGZgw8NRAGml-Ja22iKURvPYv9nSsI-WZlgQp1bDb8SVYQgK-UIo5zbGkB_wUlOEatzSnTEJ7cNThtHZ4ZqSgx-YO3drhiemCsqb8Wc2_4QZL3o3oXk2_Yo5F5fCFy4MZjvmc_IVgKmeTFZcz5fPhciTSQHJhgXF9xb3Dd_74HS3onmXlnqlSLDnN6h-OuSPwm5u1wR2uKRV9noDROPArF1qw7qMqwlac83h4euKzQNdHBzp23-5B8gM"><script type="text/plain">
 use console;
 
 main() {
@@ -154,7 +154,7 @@ main() {
   <h2>Цвет сохраняется до конца вывода</h2>
   <p>Один раз задав цвет, вы не обязаны его указывать каждый раз — он будет применяться ко всем последующим строкам:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=A08h8pVS3UoCURB-lWGuFJYFiwrWJ-gZPF1IrbSwewxdqRDBH8hCwbzrLqgXWM0lW117hZk3ak6uIGFS5-L8zM8333xnmljxfLeOTqmJV-XwEh0Myp62vYtbHy0M3ZtQTI26C-dVXa_6blFppU1ILg9NpUFW5rGva17o-jqnUCm3dHgQKLRAIb1QTAl3uAtmo4gWQO9iW_CYUh7QUmG--BvUVjZN5RgDxfxgjm2Ij70Qz7SihCLgO5pKtiClFAN9inkpICmPuMtDC-SdAk24R7N12A6We1subFp-BGk0lgoxt3m4fvyUIOE2Rdz5gwRPGbNVlpwadnIf_QdkI8LO3o1VXDNh26M38WWCtpTG1pmFuhy4Mgf0KnL0uM_3JnWtvPmWgei6otlWnxQ5UkTIzU0ZbsOJTFOlVg2-UbgvcRNBmFMCpzJqvtcIJMDbXB0s2Mf2Eba-AA"><script type="text/plain">
 use console;
 
 main() {
@@ -182,7 +182,7 @@ main() {
   <h2>Сброс цвета и эффектов</h2>
   <p>Чтобы вернуть текст к стандартному виду, используйте команду <code>"\e[0m"</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=6XlVon2QwUrDQBCGX2WYUwshKGKR9Al8hq6HoFtcSDbSpKiEQFvBCj35DILnJDYYq0lfYeaNnKR68eBedvh35vv_nRSnJtAxepMUb_zkGj0MfWNdc3UfoIOJvktEmscaLiMbR4EeK6ts1zIYQqosyPl5cW9nJtGBHShUSk9ORqFCBxTSK5VU8Qqopnf6oooafqYGqKEc-FHUXMqWSt7Qh8Lh-D_q0V8oL6ngBbX81IGBttSCwAre8LrHvlF7gGbKYnbhoPVDLX-iF_rkB14fBiWTuEMfopSpLfBK9B0v5c49oL2Y1F16XsCZbGY6i8KeIjYVFUKoaQfnsrbAzENpML-lh8fuyD3F7Bs"><script type="text/plain">
 use console;
 
 main() {
@@ -202,7 +202,7 @@ main() {
   <p>Иногда программа уже вывела что-то полезное, а иногда — просто подготовила сцену и старый текст больше мешает, чем помогает. Для таких случаев есть <code>console.clear()</code>.</p>
   <p>Эта функция очищает консоль. Всё, что было выведено до неё, исчезает из видимой области вывода, а всё, что будет выведено после неё, останется.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=hffSF12QwUrDQBCGX2WcUwplwYOC6RP4DK6HULe4sNlImqISAloPFXwLPXgSNBqIra2vMPtG_kkV1L3szr8z_zczJU-sM1OOj0o-S4pTjjlNrFf25NLxkAtzUUCaTQ2NMz_NnBlpr32XEg2o1J5wvn_UeW4L43ykWZ7CXDYUFtKEK1nLRmppZalI7sNNmJN89OIrcmQlbbhF2HShUkrzYPTXd-xMkkf_1V-0R1hcd8QtZmdrUWnP1fGQfZIazCAPsgJ8AVgD3DrcyTtJjatG4RuhvpFl7_Mck3yi8RZ9YgA6wCYmeZb2Lt1Q8gIHkOgQa3J2liLB_jxj3lX7ao-rLw"><script type="text/plain">
 use console;
 
 main() {

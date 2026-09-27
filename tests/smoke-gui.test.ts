@@ -302,6 +302,17 @@ test('IdySS style parser validates the dictionary and silently drops mistakes', 
     'expected case-insensitive parsing and silent garbage skipping',
   );
   assert(parseIdylliumStyle('').length === 0 && parseIdylliumStyle('   ').length === 0, 'expected empty style to parse to nothing');
+
+  // Единицы (1.6.5): пункты пересчитываются в пиксели (1pt = 4/3 px) и проверяются по тем же границам,
+  // проценты принимают только свойства-доли.
+  const units = (text: string): string => JSON.stringify(parseIdylliumStyle(text).map((item) => `${item.property}=${item.value}`));
+  assert(units('font-size: 12pt; border-width: 1.5pt; padding: 6PT; letter-spacing: -1.5pt')
+    === JSON.stringify(['font-size=16px', 'border-width=2px', 'padding=8px', 'letter-spacing=-2px']), `points become pixels: ${units('font-size: 12pt; border-width: 1.5pt; padding: 6PT; letter-spacing: -1.5pt')}`);
+  assert(units('font-size: 10.5pt; box-shadow: 0 3pt 9pt black') === JSON.stringify(['font-size=14px', 'box-shadow=0px 4px 12px #000000']), `fractional points and shadows: ${units('font-size: 10.5pt; box-shadow: 0 3pt 9pt black')}`);
+  assert(units('font-size: 80pt; border-width: 16pt; padding: 12.5px; font-size: 4pt') === '[]', `the pixel limits hold after conversion, and pixels stay whole: ${units('font-size: 80pt; border-width: 16pt; padding: 12.5px; font-size: 4pt')}`);
+  assert(units('border-radius: 50%; font-size: 150%; line-height: 150%; opacity: 50%; scale: 125%')
+    === JSON.stringify(['border-radius=50%', 'font-size=150%', 'line-height=1.5', 'opacity=0.5', 'scale=1.25']), `percent is accepted where the value is a share: ${units('border-radius: 50%; font-size: 150%; line-height: 150%; opacity: 50%; scale: 125%')}`);
+  assert(units('border-radius: 120%; font-size: 20%; opacity: 150%; padding: 10%; border-width: 5%; letter-spacing: 10%') === '[]', `percent outside its range or on a length-only property is dropped: ${units('border-radius: 120%; font-size: 20%; opacity: 150%; padding: 10%; border-width: 5%; letter-spacing: 10%')}`);
   // Градиенты: строгое подмножество CSS, каждая остановка — через словарь цветов.
   assert(
     JSON.stringify(parseIdylliumStyle('background: linear-gradient(to right, red, blue)'))
@@ -3476,7 +3487,7 @@ test('widget string enums reject typos loudly', async () => {
     ['gui.Slider s;\n    s.orientation = "vertikal";', "Slider.orientation must be 'horizontal' or 'vertical', got 'vertikal'"],
     ['gui.ProgressBar p;\n    p.orientation = "боком";', "ProgressBar.orientation must be 'horizontal' or 'vertical', got 'боком'"],
     ['gui.ImageBox b;\n    b.resize_mode = "strech";', "ImageBox.resize_mode must be 'fit', 'fill', 'stretch' or 'original', got 'strech'"],
-    ['win.theme = "неоновый";', "Window.theme must be 'default', 'idyllium', 'dracula', 'breeze' or 'oxygen', got 'неоновый'"],
+    ['win.theme = "неоновый";', "Window.theme must be 'default', 'idyllium', 'dracula', 'breeze', 'oxygen' or 'nord', got 'неоновый'"],
   ];
   for (const [snippet, expected] of cases) {
     const result = await runIdyllium(`use gui;

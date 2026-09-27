@@ -18,7 +18,7 @@ import { setupShare } from './share.js';
 import { setOutputText, appendOutput, setStatus } from './console-output.js';
 import { MONACO_LANGUAGE_ID, registerMonacoIdyllium, defineMonacoThemes, monacoCompletionRequest, projectCompletions, projectSignatureHelp, projectSemanticTokens, encodeMonacoSemanticTokens, deduplicateCompletions, SEMANTIC_TOKEN_TYPES, SEMANTIC_TOKEN_MODIFIERS } from './monaco-lang.js';
 import { resyncCanvases, runProgram, stopProgram, stopGuiLoop, markGuiFrameReady, enqueueGuiEvent, reportGuiEventFailure, postEmptySnapshot, previewTargetOrigin, updateRunButton, setRunControls, submitConsoleInput, syncRuntimeFilesFromSnapshot, revokeAllBrowserAssetUrls, currentRuntime, formatCurrentFile, textSourceMap, registerRunHost, browserAssetUrls } from './run-preview.js';
-import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, createIcon } from './dom.js';
+import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, squigglesToggle, openInIdeToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, createIcon } from './dom.js';
 
   const DEFAULT_EDITOR_FONT_SIZE = 16;
   const DEFAULT_CONSOLE_FONT_SIZE = 13;
@@ -36,6 +36,11 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   const FONT_SIZE_STORAGE_KEY = 'idyllium-web-editor-font-size';
   const CONSOLE_FONT_SIZE_STORAGE_KEY = 'idyllium-web-console-font-size';
   const AUTOCOMPLETE_STORAGE_KEY = 'idyllium-web-autocomplete';
+  // Подчёркивания ошибок в редакторе (1.6.5): по умолчанию включены; выключить — выбор ученика.
+  const SQUIGGLES_STORAGE_KEY = 'idyllium-web-squiggles';
+  // Кнопка «В Web IDE» у примеров учебника и задачника (1.6.5): по умолчанию выключена — ключ читают
+  // страницы книги (packages/docs-book/app.js), сайт один и хранилище общее.
+  const OPEN_IN_IDE_STORAGE_KEY = 'idyllium-open-in-ide';
   const WEB_IDE_BASE_URL = detectWebIdeBaseUrl();
   const folders = new Set([WORKSPACE_ROOT]);
   const expandedFolders = new Set([WORKSPACE_ROOT]);
@@ -55,6 +60,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   // Автодополнение «само» (после точки и по мере ввода); Ctrl+Пробел — явная
   // просьба, он работает и при выключенной настройке.
   let autocompleteEnabled = window.localStorage.getItem(AUTOCOMPLETE_STORAGE_KEY) !== 'off';
+  let squigglesEnabled = window.localStorage.getItem(SQUIGGLES_STORAGE_KEY) !== 'off';
   let fileEditState = null;
   // Внутренний drag-n-drop дерева файлов: что тащим (пути мира workspace).
   let internalDragPath = null;
@@ -98,6 +104,8 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   applyEditorFontSize(editorFontSize, false);
   applyConsoleFontSize(consoleFontSize, false);
   autocompleteToggle.checked = autocompleteEnabled;
+  squigglesToggle.checked = squigglesEnabled;
+  openInIdeToggle.checked = window.localStorage.getItem(OPEN_IN_IDE_STORAGE_KEY) === 'on';
   applySavedLayout();
 
   runButton.addEventListener('click', runProgram);
@@ -143,6 +151,16 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
       applyEditorFontSize(Number(fontSizeInput.value));
       event.preventDefault();
     }
+  });
+  squigglesToggle.addEventListener('change', () => {
+    squigglesEnabled = squigglesToggle.checked;
+    window.localStorage.setItem(SQUIGGLES_STORAGE_KEY, squigglesEnabled ? 'on' : 'off');
+    updateMonacoDiagnostics();
+    setStatus(squigglesEnabled ? 'Ошибки и предупреждения подчёркиваются' : 'Подчёркивания выключены: ошибки покажет запуск');
+  });
+  openInIdeToggle.addEventListener('change', () => {
+    window.localStorage.setItem(OPEN_IN_IDE_STORAGE_KEY, openInIdeToggle.checked ? 'on' : 'off');
+    setStatus(openInIdeToggle.checked ? 'У примеров учебника появится кнопка «В Web IDE»' : 'Кнопка «В Web IDE» у примеров скрыта');
   });
   autocompleteToggle.addEventListener('change', () => {
     autocompleteEnabled = autocompleteToggle.checked;
@@ -420,7 +438,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     const monaco = window.monaco;
     const model = monacoEditor.getModel();
     if (!model) return;
-    if (!currentFile.endsWith('.idyl')) {
+    if (!currentFile.endsWith('.idyl') || !squigglesEnabled) {
       monaco.editor.setModelMarkers(model, 'idyllium', []);
       return;
     }

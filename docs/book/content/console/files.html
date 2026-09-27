@@ -62,7 +62,7 @@ fout.close();
 
 <div class="docs-section">
   <h2>Запись данных: полный пример</h2>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=mbTv-n2QUUrDQBCGrzLOUwshtA8KpngAz-CKBN3iQrIpzQYrpVCLIIJ4BQU9QC0t1traK8zeyH9r9UHEPCyZf-abf2b63DaZLjk56nMndeeccJ4aG5uzy4wjdrrnIFWlplDXUlbZkK_Vqa8s4QtyXJSuq9Oc2kXl6GCrdbStKYbSqVzsek5xRIovusZpxfXWFkc-3mgnmbEagDz4ocxlIjM_ikiWMvfDnX-BR5nJQj6ATRMKLvuNRiN4EcSbkJLJXw0C-yxjeZN38leoepUpwhUCkjXiJfhbf-fv6RDnyEyV_x7kNCtKXQvSQFkeHEds01zjYhhqLC_gRzIO_fz1lxFebJSg_2bLJbYcUhOXbneLPHBPmHgGcoXs4scXBeb7N-FmvBfv8uAT"><script type="text/plain">
 use file;
 
 main() {
@@ -94,7 +94,7 @@ file.istream fin = file.open("input.txt", "read");
     <li><code>"read"</code> — режим: чтение.</li>
   </ul>
   <p>Есть важное отличие от записи: файл для чтения <strong>должен уже существовать</strong>. Читать из пустоты не умеет даже Idyllium. Попробуем открыть файл, которого нет:</p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=yVLEATWOTQrCQAyFrxKyUigDCrqoeADP4LgodIoDnVHaKVRKQUXwGoIX0IXgv1fI3MgMYhYh-V5ekgYznasS42mDy8TNMUaTaCt0usoxQqdqx6gqFYS5kbTSBr3ThUZa4AhY6NIVKjHcWBj_0GKpbEdi4GVVKOFqJzECiQxSiV1e1UqL7SxCmxjFR-hAJzrT22_pBH4Dfsf9jR6cn3SNgT5-TVeuL34NfX4uKxYm-I5-Txd2vli9w4Q_z3VleED_yxh7YigG2H4B"><script type="text/plain">
 use file;
 
 main() {
@@ -112,7 +112,7 @@ main() {
 Топор
 Меч</div>
   <p>Прочитаем его вручную:</p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=cbChZ3WRwU4CMRCGX6WZ05JsanCjh0W9-wyUmA0UbdKdJbslQggJGhPewXgw-gJ4IEFUeIXpGzll4aT00M78_b9pO51A31hdQdqewCBzd5BCnhmUpje2EIPTI8fSsNKiW2BVWN1SGLJAcagwuKOGmCgUPIIsTeVKneWcoLispWKgMVJgcDB00o2cglgoYFdPQaNVs0wZvBXWoG7uOJTBcBOEqNESJyeM0DOt_IzWtFB8OvwhT4-Tb7ShLW387H8yOU6-0NLPD0jwdG1Rhf3QgKBlZZmNL-pisUiuhONi7d1L4vpa9ZJ09m_dN1Pel8Zpi5ELtaYKYdqJAbNcc9PplRb0wRd-pIXwD8I_cf5JXzx_0yoVtOVGrDhe-plI-LP6ZZEH7t3PacnkD--uxTX_pDXDnA3mEKbQlOfyDKa_"><script type="text/plain">
 use console;
 use file;
 
@@ -138,7 +138,7 @@ main() {
 <div class="docs-section">
   <h2>Очистка строки: метод <code>.trim()</code></h2>
   <p>Метод <code>.trim()</code> удаляет пробелы и управляющие символы (вроде <code>'\n'</code>, <code>'\t'</code>) <strong>только по краям строки</strong> — в начале и в конце. Всё, что внутри, остаётся нетронутым. Проверим:</p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=Id4aNZWQTWoCQRCFr1LUagaGhoBmMZ4gZ7BcDNqShu6eMNOiMgyoBHKNQC5gFoIx0Vyh-kaphrgLBGtRvPr5eFR1ODdWt1iOO3yqwiOW6CrjlZmtLRYY9CpIa9FqmNa-ra0ekSefVrIcOvIg8TtRy8YEbX1GOCYsgBCAT3yJOxCtQmNclqf2hDAf_YMShStM4ngrnlCAuPsL7MljPynQV07LbfzKe35PTryHuIX4LPUHf0r-4mMJ_B03fBR9iBsYyE_mTe0S9xZf-CDkWaYneJCHWbNwsmCussQ7da-G2P8A"><script type="text/plain">
 use console;
 
 main() {
@@ -152,7 +152,7 @@ main() {
 [ко  т]</idyl-output-block>
   <p>Первые два кота избавились от «шубы» из пробелов, табуляций и переводов строк, а третий сохранил пробелы внутри себя — <code>.trim()</code> в середину строки не заглядывает.</p>
   <p>Именно то, что нужно, чтобы очистить прочитанные из файла строки от хвостика <code>'\n'</code>:</p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=6Am9KHVQzUrDQBB-lWFOKYZgKfWQVO8-Q5LDUje6kGxkk1JLCEQR-g7iQfQF4iFQq7avMPtGTkKrJ-ew-83M981fhYlKZYF-WOGtKG_Qx0wo7amrVYoulvKu5NCikDDPdZGnMoh0pHuKM4Iq0sAmjBGrWVEapa9dmFyAEUs4hzBCeqKNbWhLbcQydIFDr7SjPe1s8xd6ps6uI4yDf-rNUyn00LhPJ7kBR-kSFDc5DfibwSQYPAUnMP6dq7dBGqqYkzwVA4_LZs7o0Ko-Fj1s5y2NKmWqnUHXs5iBdeyiFpnkS9ALtfTO4z9QC_Ye7CP7H_TJ7xdtfKA977th3NkGpnzBxORZr3uza-pY-c3ZLVzyeVO1yJigjtDHsXfmTbH-AQ"><script type="text/plain">
 use console;
 
 main() {
@@ -183,7 +183,7 @@ while (fin.has_next_line()) {
 
 <div class="docs-section">
   <h2>Полный пример: чтение и очистка файла</h2>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=FmwnwXVSzUrDQBB-lWFPKZQVFT3Un7vPYKQEs7ULyaQkKbaUQi2KB4VePKvgC1QxWNtaX2H2FXwSZ5OmVsS9ZHbm-2a-_TI90dCBSkTtuCdaXtoUNRF6GqX2u4GoilR1Uk61EwWnESZRoPZctDfL4tBFi3Yq0HMR-PhdrHtx7HX3kzTWeHYIgUaV5Ehb39iATQl0b4Y0NQNzQy80pozmYC45eKcZuEJjq53KtJO6AuiVZmYE5poJGX3QxIyKRna-1DxEeSFfEA6KVNRS6PzqUeWWjPJdUVmXscUyHmhBUxoDvazmUwaUmQszNLeQfwY5ZgJfgzuWwQKGS8UcXhXdzps8GRxWIZteUkf2rG6f7VRWvthTOAIRqryaK0ZppS3Re3-wDd1RfokuiZJr4S907rH0fN_5IZT1_tqbt6319GxG9Ebj3NGZuWVXF2AT__yR0m-Up0GUFDKL3HIj5HmsUxWgk8uwZZ4p-idVgV6oeHvokTs908Jax6b-eD2mOU1qQJ_s8oTjzAxgl7euEUeh5T2x4Rkz-b_TFI54JQPdDhmgy7AmNuWu3BH9bw"><script type="text/plain">
 use console;
 use file;
 
@@ -222,7 +222,7 @@ main() {
   <div class="file">Дневник шахтёра
 День 1. Нашёл уголь.
 День 2. Нашёл алмазы!</div>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=fXjf2DWQX0oDMRDGrzLM0xaWgA9W2OIBPIOREtpUA8mkbFJsWRaqCF5D8AL1oVD_XyG5kZOuzUOY75vvx2TS4cJYHbC57nCp4h026JQhYeYbizVGvY5srYKGmafgrZ5IKqpQXEoq6WoEnSTgU2xhQmy1ciwILgfLLzVVEkP07UbEdZRYg0ROzSWOJgPLlKFbKCOPGInSnyprq1OkmDPrgz46g_f_LnHfmqgtVYUv3V4S9jc1knKaV0gvaZfe0k9-TDvID5CfWL-nT76_0qGB9Ju36cD1Pm_hgldftN4V7jU_pz2T39z9gCv-F2tWjgPmVDZ4JsbiHPs_"><script type="text/plain">
 use console;
 use file;
 
@@ -238,7 +238,7 @@ main() {
 День 1. Нашёл уголь.
 День 2. Нашёл алмазы!</idyl-output-block>
   <p>Метод <code>read_all()</code> читает всё, что осталось в файле от текущего места до конца. Если до него уже вызывали <code>read_line()</code>, то первые прочитанные строки повторно не вернутся:</p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=t21yLm1R20oDMRD9lTBPWygBHxRZ8QP8BiOytqkGsknZTbHLstCK4IvvvongD7RKoRetvzD5I2dai31oIDBzcs6Zk6SGnrG6hPSyhn4W7iCFPDNOmm5loQ1BDwNBg1KLjnelt_pMOe5YRaVyzE5aolZO0GJYmjIUOsupceJ8C_m-domCMviikmEYFLSFAmJ1FbQ2PqwmnXG3Iphg9UbpJFOurXE6Ydoe6cZ3q31OZm3y78Rwx_pS72F_F5D3hQnachx8wQl-4hpXtD9oL1PByTYBJM3Jk9Zu7AH1axzHB3JYxWf8JvVCUDvDJcPp9l6HlJyczxrloLlqg8tyTW-Mb2Q1xTVbijgW8ZH6BUWb4BfOU4E_cYRzqmdxJE7pb3qFz1n3Hp9o6pQizHEpLujjrBnkRDC7MoUjeSKPofkF"><script type="text/plain">
 use console;
 use file;
 
@@ -266,7 +266,7 @@ main() {
   <h2>Прочитать ровно несколько символов: <code>read(n)</code></h2>
   <p>А если нужно точное количество символов, передайте его в метод <code>read()</code>. Вызов <code>read()</code> без аргумента работает как <code>read_all()</code> — забирает всё оставшееся. Для файла <code>word.txt</code> со словом:</p>
   <div class="file">котики</div>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=ixYXdm2RUUrDQBCGr7LMUwphQUTBiAfwDK4PodnqQrIpyZZWQsAWwQfvoIIXiIVArBqvMHsjZ1KLFQwszPz7fzM_mwomJtUlRBcVTGN3DRFksbHSJDcphOD0wpE0K7UY57bMU32qLHdMUaksu4ORqJQV9LEsTekKHWfUWHG2lfKptoGCeV4k0i2cglAoIFOiYDSMYZgwY68IKEo3gFayJThky56h0H_vfyewNE7zUu9pP7nlvDBOp5wCn7D1t7j2D9gKv6KyE36JHX7gGnt8xyYSnHAIstv9z5hHv_QrbOj0uNkiHI2JWlmoL0Owcabp_fAZG3zFnu20Svg76t94E-3sIoFfHIJqyiVO6N0nRZ4x9-LvsSXyk2434px-SmpmGRnMrozgQB7LI6i_AQ"><script type="text/plain">
 use console;
 use file;
 

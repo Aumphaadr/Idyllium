@@ -440,8 +440,139 @@
         },
         {
           "title": "Словарь свойств",
-          "description": "Ровно 44 свойства; всё вне словаря молча игнорируется. Пиксельные значения принимаются с «px» и без, регистр не важен. Детскому учебнику не нужно перечислять словарь целиком — урок берёт столько, сколько ему нужно, а полный список живёт здесь.",
-          "code": "color               цвет текста\nbackground-color    цвет фона\nbackground          только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color        цвет рамки\nborder-width        0–20 (px)\nborder-style        solid | dashed | dotted | none\nborder-radius       0–100 (px)\nborder-top-color    цвет верхней грани; так же -bottom-, -left-, -right-\nborder-top-width    0–20 (px); так же -bottom-, -left-, -right-\nborder-top-style    solid | dashed | dotted | none; так же по сторонам\noutline-color       цвет обводки (не сдвигает содержимое)\noutline-width       0–20 (px)\noutline-style       solid | dashed | dotted | none\nfont-size           6–96 (px)\nfont-weight         normal | bold\nfont-style          normal | italic\nfont-family         sans | serif | mono\ntext-align          left | center | right\ntext-decoration     none | underline | line-through\ntext-transform      none | uppercase | lowercase | capitalize\nletter-spacing      −5…20 (px)\nline-height         0.8–3 (доля, без единиц)\nopacity             0.0–1.0\npadding             0–40 (px)\npadding-top         0–40 (px); так же -bottom, -left, -right\nbox-shadow          сдвиг-вправо сдвиг-вниз размытие цвет — ровно четыре части\ntext-shadow         те же четыре части\ntransition-duration 0–2s (или 0–2000ms)\nrotate              −360…360 (deg)\nscale               0.1–5 (доля)\nuser-select         auto | none | text | all"
+          "description": "Ровно 44 свойства; всё вне словаря молча игнорируется. Длины принимаются в пикселях — «12px» или просто «12» — и в пунктах: «12pt», можно с дробью («10.5pt»). Пункт равен 4/3 пикселя; границы в таблице даны в пикселях и проверяются после пересчёта. Пять свойств принимают ещё и проценты: border-radius, font-size, line-height, opacity и scale. Регистр не важен. Детскому учебнику не нужно перечислять словарь целиком — урок берёт столько, сколько ему нужно, а полный список живёт здесь.",
+          "table": {
+            "head": [
+              "Свойство",
+              "Что принимает"
+            ],
+            "rows": [
+              [
+                "color",
+                "цвет текста"
+              ],
+              [
+                "background-color",
+                "цвет фона"
+              ],
+              [
+                "background",
+                "только градиенты: linear-gradient(...), radial-gradient(...)"
+              ],
+              [
+                "border-color",
+                "цвет рамки"
+              ],
+              [
+                "border-width",
+                "0–20 (px)"
+              ],
+              [
+                "border-style",
+                "solid | dashed | dotted | none"
+              ],
+              [
+                "border-radius",
+                "0–100 (px) или 0–100%: доля от размеров виджета, 50% — круг или овал"
+              ],
+              [
+                "border-top-color",
+                "цвет верхней грани; так же -bottom-, -left-, -right-"
+              ],
+              [
+                "border-top-width",
+                "0–20 (px); так же -bottom-, -left-, -right-"
+              ],
+              [
+                "border-top-style",
+                "solid | dashed | dotted | none; так же по сторонам"
+              ],
+              [
+                "outline-color",
+                "цвет обводки (не сдвигает содержимое)"
+              ],
+              [
+                "outline-width",
+                "0–20 (px)"
+              ],
+              [
+                "outline-style",
+                "solid | dashed | dotted | none"
+              ],
+              [
+                "font-size",
+                "6–96 (px) или 50–400% от размера шрифта окна"
+              ],
+              [
+                "font-weight",
+                "normal | bold"
+              ],
+              [
+                "font-style",
+                "normal | italic"
+              ],
+              [
+                "font-family",
+                "sans | serif | mono"
+              ],
+              [
+                "text-align",
+                "left | center | right"
+              ],
+              [
+                "text-decoration",
+                "none | underline | line-through"
+              ],
+              [
+                "text-transform",
+                "none | uppercase | lowercase | capitalize"
+              ],
+              [
+                "letter-spacing",
+                "−5…20 (px)"
+              ],
+              [
+                "line-height",
+                "0.8–3 (доля, без единиц) или 80–300%"
+              ],
+              [
+                "opacity",
+                "0.0–1.0 или 0–100%"
+              ],
+              [
+                "padding",
+                "0–40 (px)"
+              ],
+              [
+                "padding-top",
+                "0–40 (px); так же -bottom, -left, -right"
+              ],
+              [
+                "box-shadow",
+                "сдвиг-вправо сдвиг-вниз размытие цвет — ровно четыре части"
+              ],
+              [
+                "text-shadow",
+                "те же четыре части"
+              ],
+              [
+                "transition-duration",
+                "0–2s (или 0–2000ms)"
+              ],
+              [
+                "rotate",
+                "−360…360 (deg)"
+              ],
+              [
+                "scale",
+                "0.1–5 (доля) или 10–500%"
+              ],
+              [
+                "user-select",
+                "auto | none | text | all"
+              ]
+            ]
+          }
         },
         {
           "title": "Значения цветов",

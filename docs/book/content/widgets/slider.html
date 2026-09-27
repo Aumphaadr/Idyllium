@@ -9,7 +9,7 @@
 
       <p>Вот ползунок громкости, выставленный ровно на середину:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=AE1RR12QQU7DMBBFr2J5lUpVlBS1i1QcgDULFgShCLu1JdtBjdO0iiKVbtiwgiNwAiSCqgrKFcY3YtK0kOKV_f7X958p6UQqntHouqT3iRU0ojqRxpdsqWifWr6wiPKMk2kux7GJTSN7PVLGhuBB6l9Jw9KCFNKMW4g33wquOTknMW2ilMx1TDtyIZkVKJ8FQYcKLqfCIg5PsJVWtVnw4lawg0_Yws49uLV72qf-dblUkvEZmacq1_wQ0T78BSYMglO23Fc4Zcdqg9E_YZ6ovKkxDH6_bNoljN3eCamY1_p6neaZSAuvAVVsaHXTpybRHBcKz7CBd_iA2q1J2zki8I3DbXC42q1IiNufzFLdmF_dI9TwBl-obsnFYZ9oOK4WTaE_8oe0-gE"><script type="text/plain">
 use gui;
 
 main() {
@@ -58,7 +58,7 @@ main() {
 
       <p>Запомните пару 0 и 100: если <code>min</code> и <code>max</code> не задавать, Slider сам выберет именно их — как в примере выше. А когда диапазон нужен другой, задайте его явно:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=tTRHj12Rz2rCQBDGX2XZk4KEmKIHpQ_Qcw89NKWE7uoObDZiNo0igvXSe-899QVaqCWVtr7C5I06-SMm7mV3f9_wMTPfik9Ay5iPbld8FljFRzwMwDgglpr3uJULSyiJJZsmMPaNbwq502Ur3zA6RJ0bMCJKWQpmXEF6OVbJULJL5vPCSkMS-rwhpyCsIvnCdRtUSZgqS7g_aGILVlde-Irv-VO-zTf4h9-4x4xdaxByXpqfWqogi8urdqo-zoKMPLfNlmUnbXbs0BueCSEYwucwWLSmqfFjoBPZmqcWYitnxEt8GjQQ4v5BgRadqqzbWEKsorRTgLVv-Pqux00QSsoGXzDDT_zCXb6tlzFieKANZfhDcMM8CnIyj8Ki-C1_xh1-4C-pe3ZVR0MFx5SoqO8MnQFf_wM"><script type="text/plain">
 use gui;
 
 main() {
@@ -131,7 +131,7 @@ s2.height = 180;               // ...и высокий
       <h2>Событие <code>on_change</code></h2>
       <p>Ползунок, который молчит о своём значении, — только половина дела. Как и у SpinBox, у Slider есть событие <code>on_change</code>, которое срабатывает при каждом изменении значения. Вернёмся к громкости и подключим подпись, чтобы она обновлялась, пока вы тянете ручку:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=V346m42SzUrDQBDHX2XZU4sl9INWSPEBBG8ePBgpsdkmC5uNNJt-UAq1Hrx40rMnX0DFai1aX2HyRs4mqU1KD-YQdn__Yea_MzOhPS5YSM3zCb2ylUdN6ttcGtwZC1qhio0UoihkxI1425KW1HKpTCaWJPghNc64dIIhGXLZTiGeDOUxn5EjYlGdSvDIt2hOHnJHeSg3mtUc9Rh3PYW4VsCKK5Hmgkd4jq_jeTyDNXzCCpYEPuA1vsHjc1Jga-tUcIf1ySAQkc-ybOnFGGGyerXIxnvYxmW9tSP4XCLehbbOW6vu4IEtIu0-edLW3ol9yQQR-p_FJ-eitxRpa4dFpAeTduQh6cUXNmCddObOxEq5VmQuAtnperZ0tZNBwB3Si2RX8SA3y39mtyg5ICrohKrPpVvKv7KceZz-Vdfjsx0Ha3PhZLHl9j4tqZyXQi8YljSYWpJOLypU2j7DZYR7WMIbvMMinpN0yCaBHzS6RKOLeEYauLm9fuDr4Kf4FhbwAt-orshxtosYsFlLDKoZLaNJp78"><script type="text/plain">
 use gui;
 
 main() {
@@ -187,7 +187,7 @@ main() {
       <h2>Типичная ошибка: строка вместо числа</h2>
       <p>Значение ползунка — всегда число. Записать в <code>value</code> строку, даже такую «числовую», как <code>"50"</code>, не выйдет:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=jX6EbjWOsQrCQAyGXyVmUpCrgjq0-ADOjp5DwVMPrqfYVpRSEBdXdRIHFxdXQUVE8RXSNzJazJLk-3-SP8G-NipEt5Pg2I-G6GLgayt0b26wjJGaRYziUMEg1p600n7lYgkSaYGLqWgb3VMTCH_Ny3m-iKlvYgVNkFivSPQAHAfoQCfa0Yb2tC5Im0qLabeM1g8Uv6It3elCN7pmS8gvu0DvbMH4yXABNc7Vn4yCr_mYrehKZ3qx-oAWhzY6Dtig_6OLVdEQdUw_"><script type="text/plain">
 use gui;
 
 main() {

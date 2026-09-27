@@ -40,7 +40,7 @@
   const fontCache = new Map();
   const imageCache = new Map();
   const modalInputValues = new Map();
-  const KNOWN_WINDOW_THEMES = ['default', 'idyllium', 'dracula', 'breeze', 'oxygen'];
+  const KNOWN_WINDOW_THEMES = ['default', 'idyllium', 'dracula', 'breeze', 'oxygen', 'nord'];
   // Правила :hover/:active из IdySS-стилей — собираются при рендере и
   // выгружаются одним <style> в конце (объявлены здесь из-за TDZ).
   let idyssStateRules = [];
@@ -295,11 +295,20 @@
     titleText.className = 'titlebar-title';
     titleText.textContent = stringValue(win.properties.title, 'Idyllium Window');
     title.appendChild(titleText);
-    if (!demoMode) {
+    // Крестик — значок «x» единого набора (1.6.5): 12 px в круге 18 px, поля в шапке по 5 px со всех сторон.
+    // В демо учебника он тоже нарисован — окно на картинке такое же, как в предпросмотре, — но не нажимается.
+    const close = document.createElement('button');
+    close.className = 'window-close-button';
+    close.type = 'button';
+    const closeIcons = typeof window !== 'undefined' ? window.IdylliumIcons : null;
+    if (closeIcons && closeIcons.has('x')) close.innerHTML = closeIcons.svg('x', { size: 12 });
+    else close.textContent = '×';
+    title.appendChild(close);
+    if (demoMode) {
+      close.tabIndex = -1;
+      close.setAttribute('aria-hidden', 'true');
+    } else {
       installWindowDrag(root, title, win.id);
-      const close = document.createElement('button');
-      close.className = 'window-close-button';
-      close.type = 'button';
       close.title = 'Закрыть';
       close.setAttribute('aria-label', 'закрыть окно');
       close.addEventListener('click', (event) => {
@@ -308,7 +317,6 @@
         event.stopPropagation();
         postGuiEvent(win.id, 'window_close', {});
       });
-      title.appendChild(close);
     }
     root.appendChild(title);
 
@@ -1528,10 +1536,24 @@
     return { left: 'flex-start', center: 'center', right: 'flex-end', start: 'flex-start', end: 'flex-end' }[value] || null;
   }
 
+  // Сплошной цвет наклейки заменяет заливку темы целиком (градиент кнопки у тем «idyllium» и
+  // «oxygen» — картинка фона, цвет под ней не виден). Если в той же наклейке есть свой градиент
+  // (background), картинку не трогаем: порядок слоёв решает автор наклейки, как в CSS.
+  function solidBackgroundReplacesImage(declarations) {
+    let solid = false;
+    for (const item of declarations) {
+      if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
+      if (item.property === 'background') return false;
+      if (item.property === 'background-color') solid = true;
+    }
+    return solid;
+  }
+
   function applyStyleDeclarations(el, props) {
     const declarations = props && props.style_declarations;
     if (Array.isArray(declarations)) {
       applyTransformDeclarations(el, declarations);
+      if (solidBackgroundReplacesImage(declarations)) el.style.setProperty('background-image', 'none');
       for (const item of declarations) {
         if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
         // Поворот и масштаб уже уехали в transform выше.
@@ -1554,6 +1576,7 @@
     if (props && props.enabled === false && Array.isArray(props.style_disabled_declarations)) {
       const disabledTransform = mergedTransformText(props.style_declarations, props.style_disabled_declarations);
       if (disabledTransform !== null) el.style.setProperty('transform', disabledTransform);
+      if (solidBackgroundReplacesImage(props.style_disabled_declarations)) el.style.setProperty('background-image', 'none');
       for (const item of props.style_disabled_declarations) {
         if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
         if (item.property === 'rotate' || item.property === 'scale') continue;
@@ -1582,6 +1605,7 @@
     for (const [pseudo, declarations] of [[':hover', hover], [':active', active]]) {
       if (!Array.isArray(declarations) || declarations.length === 0) continue;
       const parts = [];
+      if (solidBackgroundReplacesImage(declarations)) parts.push('background-image: none !important;');
       for (const item of declarations) {
         if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
         if (item.property === 'rotate' || item.property === 'scale') continue;
@@ -2468,6 +2492,10 @@
       backgroundColor
       && (isExplicitProperty(props, 'background_color') || !isTransparentColor(backgroundColor))
     ) {
+      // Явный цвет заменяет заливку темы целиком: у тем «idyllium» и «oxygen» кнопка залита
+      // градиентом (это картинка фона), и цвет под ней не был виден — красная кнопка оставалась
+      // цвета темы.
+      el.style.backgroundImage = 'none';
       el.style.backgroundColor = backgroundColor;
     }
 

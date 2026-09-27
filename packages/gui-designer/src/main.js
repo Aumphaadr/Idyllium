@@ -6,7 +6,7 @@
 // сплиттерами; в инспекторе всегда видно имя свойства, перевод — при наведении.
 // Модель хранит только явно выставленные свойства; код — идиома учебника (src/codegen.js).
 import { WIDGETS, WINDOW_PROPS, PALETTE_GROUPS, PROPERTY_GROUPS, TAB_PAGE_TYPE, ICON_NAMES, widgetDefinition, propertyOf, eventsOf, nameProblem, freeName, reconcileRange } from './widgets.js';
-import { MODEL_VERSION, generateCode, normalizeHex, stripModel, extractEmbeddedModel, stripEmbeddedModel, codeDifference, childrenOf, fontsOf, withoutMissingFonts } from './codegen.js';
+import { MODEL_VERSION, generateCode, normalizeHex, stripModel, extractEmbeddedModel, stripEmbeddedModel, codeDifference, childrenOf, fontsOf, imagesOf, withoutMissingFonts } from './codegen.js';
 import { ALIGN_MODES, moveSubtree, selectionRoots, alignBoxes } from './model-ops.js';
 import { importProgram } from './import.js';
 import { createColorPicker } from '../../web-ide/src/color-picker.js';
@@ -30,6 +30,7 @@ const els = {
   stagePane: $('stage-pane'), codePane: $('code-pane'), codeCollapse: $('code-collapse'), moreMenu: $('more-menu'),
   dialog: $('dialog'), dialogTitle: $('dialog-title'), dialogBody: $('dialog-body'), dialogOk: $('dialog-ok'), dialogCancel: $('dialog-cancel'),
   fontInput: $('font-file-input'),
+  imageInput: $('image-file-input'),
 };
 
 // ─── состояние ───────────────────────────────────────────────────────────────
@@ -38,8 +39,9 @@ let selectedId = null;          // id «главного» виджета выд
 let selection = new Set();      // все выделенные виджеты (порядок вставки = порядок выделения; первый — опора выравнивания)
 let treeDrag = null;            // перетаскивание строки дерева: { id, startX, startY, moved, target, ghost }
 let marquee = null;             // рамка выделения на сцене (элемент)
-let fontFiles = new Map();      // имя файла шрифта → Uint8Array (IndexedDB + память)
+let fontFiles = new Map();      // имя файла шрифта или картинки → Uint8Array (IndexedDB + память)
 let pendingFontTarget = null;   // куда присвоить добавляемый шрифт: { id: виджет|null, prop }
+let pendingImageTarget = null;  // какому виджету (id) назначить добавляемую картинку; null — просто в макет
 let history = [];
 let future = [];
 let ui = { grid: true, gridSize: 5, embedModel: false, codeCollapsed: false, layout: { palette: 236, side: 340, code: 232, tree: 34 } };
@@ -73,7 +75,7 @@ function nextId() {
 }
 
 function takenNames() {
-  return [model.window.name, ...model.widgets.map((item) => item.name), ...fontsOf(model).map((font) => font.name)];
+  return [model.window.name, ...model.widgets.map((item) => item.name), ...fontsOf(model).map((font) => font.name), ...imagesOf(model).map((image) => image.name)];
 }
 
 /** Выделение после отмены/загрузки: только живые виджеты. */
@@ -182,6 +184,7 @@ function validateModel(raw) {
     if (typeof item.tabTitle === 'string') widget.tabTitle = item.tabTitle;
     const data = cleanData(item.type, item.data);
     if (data) widget.data = data;
+    if (WIDGETS[item.type].image && typeof item.image === 'string') widget.image = item.image;
     result.widgets.push(widget);
   }
   for (const widget of result.widgets) {
@@ -204,6 +207,16 @@ function validateModel(raw) {
   const dropUnknownFont = (props) => { if (props.font !== undefined && !fontNames.has(props.font)) delete props.font; };
   dropUnknownFont(result.window.props);
   for (const widget of result.widgets) dropUnknownFont(widget.props);
+  // Картинки: имя переменной image.Static + имя файла; виджет без такой картинки остаётся пустым.
+  const images = [];
+  for (const image of Array.isArray(raw.images) ? raw.images : []) {
+    if (!image || typeof image.name !== 'string' || typeof image.file !== 'string' || image.file.trim() === '') continue;
+    if (nameProblem(image.name, [result.window.name, ...names, ...fonts.map((known) => known.name), ...images.map((known) => known.name)])) continue;
+    images.push({ name: image.name, file: image.file });
+  }
+  if (images.length > 0) result.images = images;
+  const imageNames = new Set(images.map((image) => image.name));
+  for (const widget of result.widgets) if (widget.image !== undefined && !imageNames.has(widget.image)) delete widget.image;
   return result;
 }
 
@@ -313,14 +326,20 @@ function currentCode(forPreview) {
   return generateCode(withoutMissingFonts(model, (file) => fontFiles.has(file)).model, { previewTabs });
 }
 
-/** Файлы для прогона предпросмотра: программа + байты шрифтов, которые у нас есть. */
+/** Файлы для прогона предпросмотра: программа + байты шрифтов и картинок, которые у нас есть. */
 function previewFiles(code) {
   const files = { 'main.idyl': code };
-  for (const font of fontsOf(model)) {
-    const bytes = fontFiles.get(font.file);
-    if (bytes) files[font.file] = { bytes };
+  for (const asset of [...fontsOf(model), ...imagesOf(model)]) {
+    const bytes = fontFiles.get(asset.file);
+    if (bytes) files[asset.file] = { bytes };
   }
   return files;
+}
+
+/** Приписка к строке состояния про картинки, файлов которых в этом браузере нет. */
+function missingImagesNote(prefix) {
+  const missing = withoutMissingFonts(model, (file) => fontFiles.has(file)).missingImages;
+  return missing.length > 0 ? `${prefix}нет файла картинки: ${missing.map((image) => image.file).join(', ')} — выберите его заново у виджета` : '';
 }
 
 function scheduleRun(delay = 60) {
@@ -358,7 +377,8 @@ async function runPreview() {
   const lineCount = code.split('\n').length - 1;
   const missingFonts = withoutMissingFonts(model, (file) => fontFiles.has(file)).missing;
   const fontsNote = missingFonts.length > 0 ? ` · нет файла шрифта: ${missingFonts.map((font) => font.file).join(', ')} — выберите его заново в свойстве font` : '';
-  setStatus(`Программа макета скомпилирована и запущена: ${lineCount} строк, виджетов: ${model.widgets.length}${fontsNote}`, missingFonts.length > 0);
+  const imagesNote = missingImagesNote(' · ');
+  setStatus(`Программа макета скомпилирована и запущена: ${lineCount} строк, виджетов: ${model.widgets.length}${fontsNote}${imagesNote}`, missingFonts.length > 0 || imagesNote !== '');
   requestAnimationFrame(() => requestAnimationFrame(syncOverlay));
 }
 
@@ -1393,7 +1413,9 @@ function renderInspector() {
   }
 
   if (item && def.data) container.appendChild(dataEditor(item, def));
+  if (item && def.image) container.appendChild(imageEditor(item));
   if (!item) container.appendChild(fontsEditor());
+  if (!item) container.appendChild(imagesEditor());
 
   // Заготовки обработчиков — по галочке на каждое событие типа (замечание владельца 2026-09-25).
   const events = eventsOf(type);
@@ -1413,12 +1435,13 @@ function renderInspector() {
         if (check.checked) list.add(event.name); else list.delete(event.name);
         target.handlers = events.map((known) => known.name).filter((name) => list.has(name));
       }));
+      // В строке — только имя события: параметры обработчика описаны в учебнике, а рассказ о событии
+      // живёт в подсказке (замечание владельца 2026-09-27: длинные подписи сбивали глаз).
       const code = document.createElement('code');
-      code.textContent = event.name + (event.params ? `(${event.params})` : '()');
-      const hint = document.createElement('small');
-      hint.textContent = event.comment;
-      row.title = `В код добавится пустая функция: ${event.comment}`;
-      row.append(check, code, hint);
+      code.textContent = event.name;
+      const about = String(event.comment || '');
+      row.title = `${about.charAt(0).toUpperCase()}${about.slice(1)}. В код добавится пустая функция-обработчик.`;
+      row.append(check, code);
       box.appendChild(row);
     }
     container.appendChild(box);
@@ -1530,7 +1553,132 @@ function removeFont(fontName) {
   });
 }
 
-// ─── файлы шрифтов: байты в памяти и IndexedDB, макет знает только имена ────
+// ─── картинки из файлов (1.6.5): переменные image.Static, виджет ImageBox получает set_image ───
+function assetRow(entry, removeTitle, onRemove) {
+  const row = document.createElement('div');
+  row.className = 'font-row';
+  const name = document.createElement('code');
+  name.textContent = entry.name;
+  const file = document.createElement('span');
+  file.className = 'font-file';
+  file.textContent = entry.file + (fontFiles.has(entry.file) ? '' : ' — файла нет, выберите заново');
+  file.title = entry.file;
+  if (!fontFiles.has(entry.file)) row.classList.add('is-missing');
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset';
+  remove.title = removeTitle;
+  if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('x', { size: 12 })); else remove.textContent = '×';
+  remove.style.visibility = 'visible';
+  remove.addEventListener('click', onRemove);
+  row.append(name, file, remove);
+  return row;
+}
+
+function imagesEditor() {
+  const box = groupBox('Картинки из файлов');
+  const images = imagesOf(model);
+  if (images.length === 0) {
+    const note = document.createElement('p');
+    note.className = 'ui-empty inspector-empty';
+    note.textContent = 'Пока нет. Файл PNG, JPEG, GIF, WebP или BMP станет переменной image.Static, а виджет «Картинка» получит её через set_image.';
+    box.appendChild(note);
+  }
+  for (const image of images) box.appendChild(assetRow(image, 'Убрать картинку из макета (виджеты останутся пустыми)', () => removeImage(image.name)));
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'ui-button ui-button--sm inspector-action';
+  add.id = 'add-image-button';
+  add.textContent = 'Добавить картинку из файла…';
+  add.addEventListener('click', () => { pendingImageTarget = null; els.imageInput.click(); });
+  box.appendChild(add);
+  return box;
+}
+
+/** Картинка виджета ImageBox: одна из картинок макета или новый файл — он станет переменной сам. */
+function imageEditor(item) {
+  const box = groupBox('Картинка');
+  const select = document.createElement('select');
+  select.className = 'ui-field ui-field--sm inspector-action';
+  select.id = 'image-choice';
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = 'нет — задаётся в коде';
+  select.appendChild(none);
+  for (const image of imagesOf(model)) {
+    const option = document.createElement('option');
+    option.value = image.name;
+    option.textContent = `${image.name} — ${image.file}`;
+    select.appendChild(option);
+  }
+  const add = document.createElement('option');
+  add.value = '__add__';
+  add.textContent = 'Добавить картинку из файла…';
+  select.appendChild(add);
+  const current = typeof item.image === 'string' ? item.image : '';
+  select.value = current;
+  select.title = 'В код добавится image.Static, load_from_file и set_image';
+  select.addEventListener('change', () => {
+    if (select.value === '__add__') {
+      pendingImageTarget = item.id;
+      select.value = current;
+      els.imageInput.click();
+      return;
+    }
+    const chosen = select.value;
+    applyChange(() => {
+      const target = widgetById(item.id);
+      if (!target) return;
+      if (chosen === '') delete target.image; else target.image = chosen;
+    });
+  });
+  box.appendChild(select);
+  return box;
+}
+
+function removeImage(imageName) {
+  applyChange(() => {
+    model.images = imagesOf(model).filter((image) => image.name !== imageName);
+    for (const item of model.widgets) if (item.image === imageName) delete item.image;
+  });
+}
+
+/** Формат по содержимому — те, что читает image.Static.load_from_file(): PNG, JPEG, GIF, WebP, BMP. */
+function imageFormatOf(bytes) {
+  if (!bytes || bytes.length < 12) return null;
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png';
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpeg';
+  const tag = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
+  if (tag === 'GIF8') return 'gif';
+  if (tag === 'RIFF' && String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]) === 'WEBP') return 'webp';
+  if (bytes[0] === 0x42 && bytes[1] === 0x4d) return 'bmp';
+  return null;
+}
+
+async function addImageFile(file, targetId) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!imageFormatOf(bytes)) {
+    setStatus(`«${file.name}» — не картинка: нужен PNG, JPEG, GIF, WebP или BMP`, true);
+    return;
+  }
+  const fileName = file.name;
+  fontFiles.set(fileName, bytes);
+  void storeFontFile(fileName, bytes);
+  applyChange(() => {
+    let image = imagesOf(model).find((known) => known.file === fileName);
+    if (!image) {
+      image = { name: freeName('picture', takenNames()), file: fileName };
+      model.images = [...imagesOf(model), image];
+    }
+    if (targetId !== null) {
+      const owner = widgetById(targetId);
+      if (owner) owner.image = image.name;
+    }
+  });
+  setStatus(`Картинка «${fileName}» добавлена в макет как ${imagesOf(model).find((known) => known.file === fileName).name}`);
+}
+
+// ─── файлы шрифтов и картинок: байты в памяти и IndexedDB, макет знает только имена ────
 function openFilesDb() {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) { reject(new Error('IndexedDB недоступен')); return; }
@@ -1745,7 +1893,7 @@ function propertyField(prop, props, onChange, item) {
     wrap.className = 'ui-stepper ui-stepper--sm number-control';
     const minus = document.createElement('button');
     minus.type = 'button';
-    minus.textContent = '−';
+    stepperSign(minus, 'minus', '−');
     minus.title = 'Меньше';
     const input = document.createElement('input');
     input.type = 'number';
@@ -1756,7 +1904,7 @@ function propertyField(prop, props, onChange, item) {
     input.value = explicit ? String(props[prop.name]) : '';
     const plus = document.createElement('button');
     plus.type = 'button';
-    plus.textContent = '+';
+    stepperSign(plus, 'plus', '+');
     plus.title = 'Больше';
     const commit = (raw) => {
       if (String(raw).trim() === '') { onChange(null); return; }
@@ -2014,6 +2162,12 @@ function dataEditor(item, def) {
   return box;
 }
 
+/** Знак кнопки счётчика — значок набора: у буквы «−» и «+» место задаёт шрифт, и знак стоял не по центру. */
+function stepperSign(button, icon, fallback) {
+  if (window.IdylliumIcons && window.IdylliumIcons.has(icon)) button.appendChild(window.IdylliumIcons.element(icon, { size: 12 }));
+  else button.textContent = fallback;
+}
+
 // ─── выбор значка gui.Icon: сетка с поиском ──────────────────────────────────
 let iconPicker = null;
 
@@ -2074,6 +2228,9 @@ function openIconPicker(anchor, current, onPick) {
   search.value = '';
   iconPicker.renderGrid();
   root.hidden = false;
+  // Выбранный значок — сразу на виду: сетка длинная, он может быть далеко внизу.
+  const chosen = iconPicker.grid.querySelector('.is-current');
+  if (chosen && typeof chosen.scrollIntoView === 'function') chosen.scrollIntoView({ block: 'center' });
   const rect = anchor.getBoundingClientRect();
   let left = rect.left;
   let top = rect.bottom + 6;
@@ -2191,16 +2348,26 @@ function downloadText(name, text, type) {
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
+/** Файлы макета, которые есть в этом браузере: шрифты и картинки (каждый файл — один раз). */
+function projectAssets() {
+  const seen = new Set();
+  return [...fontsOf(model), ...imagesOf(model)].filter((asset) => {
+    if (!fontFiles.has(asset.file) || seen.has(asset.file)) return false;
+    seen.add(asset.file);
+    return true;
+  });
+}
+
 function downloadCode() {
   const code = currentCode(false);
-  const fonts = fontsOf(model).filter((font) => fontFiles.has(font.file));
-  if (fonts.length === 0) {
+  const assets = projectAssets();
+  if (assets.length === 0) {
     downloadText('main.idyl', code, 'text/plain;charset=utf-8');
     flash(els.downloadCode, 'Скачано ✓');
     return;
   }
-  // Со шрифтами — ZIP проекта: main.idyl и файлы шрифтов; Web IDE открывает его через «Открыть проект».
-  const entries = [{ name: 'main.idyl', bytes: new TextEncoder().encode(code) }, ...fonts.map((font) => ({ name: font.file, bytes: fontFiles.get(font.file) }))];
+  // С файлами — ZIP проекта: main.idyl, шрифты и картинки; Web IDE открывает его через «Открыть проект».
+  const entries = [{ name: 'main.idyl', bytes: new TextEncoder().encode(code) }, ...assets.map((asset) => ({ name: asset.file, bytes: fontFiles.get(asset.file) }))];
   const blob = new Blob([zipBytes(entries)], { type: 'application/zip' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -2228,13 +2395,12 @@ async function openInIde() {
   }
   const code = currentCode(false);
   const title = String(model.window.props.title || 'Макет окна');
-  // Ссылка несёт только текст; шрифты идут описью «имя, размер, отпечаток» — IDE попросит файл.
+  // Ссылка несёт только текст; шрифты и картинки идут описью «имя, размер, отпечаток» — IDE попросит файл.
   const assets = [];
-  for (const font of fontsOf(model)) {
-    const bytes = fontFiles.get(font.file);
-    if (!bytes) continue;
+  for (const asset of projectAssets()) {
+    const bytes = fontFiles.get(asset.file);
     const sha = await fingerprint(bytes);
-    if (sha) assets.push({ path: font.file, size: bytes.length, sha });
+    if (sha) assets.push({ path: asset.file, size: bytes.length, sha });
   }
   let fragment;
   try {
@@ -2323,7 +2489,7 @@ async function openModelFile(file) {
   });
   const missingFonts = withoutMissingFonts(model, (name) => fontFiles.has(name)).missing;
   const fontsNote = missingFonts.length > 0 ? `; нет файлов шрифтов: ${missingFonts.map((font) => font.file).join(', ')} — выберите их заново` : '';
-  setStatus(`Открыт макет из «${file.name}»: виджетов ${model.widgets.length}${report ? ' (ручные правки кода в макет не вошли)' : ''}${fontsNote}`, Boolean(report) || missingFonts.length > 0);
+  setStatus(`Открыт макет из «${file.name}»: виджетов ${model.widgets.length}${report ? ' (ручные правки кода в макет не вошли)' : ''}${fontsNote}${missingImagesNote('; ')}`, Boolean(report) || missingFonts.length > 0);
 }
 
 /**
@@ -2436,9 +2602,9 @@ function refresh({ silent = false } = {}) {
   els.undo.disabled = history.length === 0;
   els.redo.disabled = future.length === 0;
   pruneSelection();
-  const withFonts = fontsOf(model).some((font) => fontFiles.has(font.file));
-  els.downloadCode.textContent = withFonts ? 'Скачать проект (.zip)' : 'Скачать main.idyl';
-  els.downloadCode.title = withFonts ? 'main.idyl и файлы шрифтов одним архивом — Web IDE откроет его через «Открыть проект»' : '';
+  const withFiles = projectAssets().length > 0;
+  els.downloadCode.textContent = withFiles ? 'Скачать проект (.zip)' : 'Скачать main.idyl';
+  els.downloadCode.title = withFiles ? 'main.idyl, шрифты и картинки одним архивом — Web IDE откроет его через «Открыть проект»' : '';
   renderTree();
   renderInspector();
   renderCode();
@@ -2511,6 +2677,13 @@ function initControls() {
     const target = pendingFontTarget;
     pendingFontTarget = null;
     if (file) void addFontFile(file, target);
+  });
+  els.imageInput.addEventListener('change', () => {
+    const file = els.imageInput.files && els.imageInput.files[0];
+    els.imageInput.value = '';
+    const targetId = pendingImageTarget;
+    pendingImageTarget = null;
+    if (file) void addImageFile(file, targetId);
   });
   els.copyCode.addEventListener('click', () => { void copyCode(); });
   els.downloadCode.addEventListener('click', downloadCode);

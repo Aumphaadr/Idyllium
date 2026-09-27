@@ -19,7 +19,7 @@ int R = random.create_int(1, 20); // число от 1 до 20
 
       <p>Пример использования:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=gqbUiY3QwUoDMRAG4FcZ5rSFENyDQrd4aHvyGYxIaFMMJFnZTVFZFioePPgU4gvUw0K1Fl9h8kbO0qpHDTnMP_kCyTS4sM7UWJw3eK3jFRbotQ3Szu8cCozmNnJrWRuYlaEunRmp0KdKh3npOajQ-2wAjQrAy4YIYzg9ADmrjI7mkrtZfiRgOByMft3kn276h9vLwwPlTWWjcSEbC1DIW8Dkp5r2vFUB2wuBQXvDn6Nn2qaH9EhreqNdeqIOOGzSPW1pXQB9phVt6IO6tIKcZ7KoSt9fe2HV0Svt-PQdznhgzi49A_tdFpjLE3mM7Rc"><script type="text/plain">
 use console;
 use random;
 
@@ -49,7 +49,7 @@ float Q = random.create_float(1, 4); // число от 1.0 до 4.0 включ�
 
       <p>Пример:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=geGKF4XQzUoDMRAH8FcZ5rSFJWBFD1u8dukzGJHQZjGQD9lNUVkWKh48-BTiC9TDQrUWX2HyRiZ1C4KH5pT_5JcMmRYrpWWDxWWLt8LfYIFGKMvU4kFjjl7e-1haNhLmzjZOywm3KdXCLpyJgdvksxG03EJclXbCwxQuBsLmtRReXu_r2TiH09HkryyPyF87NGd3tfJS24xj6sAxh-nhuf-kHEiZSMctdlc5WmFk_BG90jY8hWda0wftwgv1EMMmPNKW1gXQd1jRhr6oDysYx0FUtTPp2ltUPb3TLp5-wixOSauliUAdtgWesHN2ht0P"><script type="text/plain">
 use console;
 use random;
 
@@ -74,7 +74,7 @@ G = 2.10073137</idyl-output-block>
       <h2>Округление случайного числа</h2>
       <p>Если знаков после точки слишком много, можно округлить число с помощью функций из библиотеки <code>math</code> — не забудьте подключить и её:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=PJ7USXVRXUrDQBC-yjBPCYQUCf6Q4AE8gxEJ7QYDyUaSlCqlEOlDH_rgDYTiBWo1NMYarzB7I2fTiH3QfZr55ptvvpmdYhjFIkf3coq3QXGDLiZBJO1odB-jhYW4Kxga5wKGqczTWHi-1FnC3D7MAjlKE058qVsNE6a-BH5hnAYFlydw3pPsYSaCQlx3FePUgjPT23N7dXuSRYWIpeEjrdRSldRSBeqBPtRcLWhN7_S5hxZUa5haF3y09BSzs3AwWOQ8WBu1GUgzgzkWOKYHgwGwSKNKNadXln6kinZAG9auaQv0Ri04QFvO19QwdfOvyadfGRZhb3919xZFri3OfImzKwtlkAg-La0Od1PLw93WLtAX36CmHVWqBId_JMzSRLc9M6uil85yAxf8XXE0TpgQ_YQuHtkn9jHOvgE"><script type="text/plain">
 use console;
 use math;
 use random;
@@ -98,7 +98,7 @@ main() {
       <h2>Случайный символ из строки</h2>
       <p>Функция <code>random.choose_from()</code> выбирает случайный символ из строки:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=jW3FDFWPz0rDQBDGX2WZUwJhQVAPKT6A5x5dkdBu7UKyK0mKSghUevDgwb8vIL5AKgRiq_gK376Rs1gPzmm-mW9-M9PQzOS6ovSkoYusnlNKRWasNNPrnBKq9VXNpUWlxcTZyuV6pGxQZWanrmChbPBHsWiUFRxVXRp7LsbiSCjCAx7xhGe8KBr99ncYeVmaWuc2YtMrtn7lb9HhA1_o_L3A2q-wwTu6lCnJbpuczJ2r9NmsdEU0jmMmtspSe5qQzQrNd_5H-Tv0gsXgb7ANKHz7JQZ8ovdLsc_vBVIYe2NXjzVvH7ARx_x7bhYFG8xfmtKePJQH1P4A"><script type="text/plain">
 use console;
 use random;
 
@@ -120,7 +120,7 @@ main() {
       <p>Компьютер не умеет генерировать по-настоящему случайные числа — только <strong>псевдослучайные</strong>. Это такие числа, которые выглядят случайными, но на самом деле полностью определяются начальным значением, называемым <strong>сидом</strong> (англ. <em>seed</em>).</p>
       <p>Если задать один и тот же сид, последовательность будет повторяться:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=7P7cH-2SQWrDMBBFryJmZYMR6SKFOCfoGaoSRDyhAkkulkITjCGliy56itILpAtD2jT0CqMbddwkR8ius5o__w38xW9hYSwGKG9beNDxHkpw2nhpqrWFAiKuIp-WAcW89qG2OFV-UI32Ve1YKD_wWS5a5QXP0ZAB4ywgVtkonx6N0798bExE67MTOG9QR5wZH7NRISaT_NJ8IRQozg35X_r_zBfkO-WhuyvAa4dcI3qjfXpOL7SlTzqkV-oFi116oj1tS0E_aUM7-qY-bcSY27doaje8vTPV0wcd2P0SN1xNa5aOAXNeS7iS13IM3S8"><script type="text/plain">
 use console;
 use random;
 
@@ -162,7 +162,7 @@ main() {
       <h2>Смена сида — смена последовательности</h2>
       <p>В Idyllium сид генератора псевдослучайных чисел задаётся функцией <code>random.set_seed()</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=fTXi1M2SUUrDQBCGrzLMUwIhjaCFpifwDK6U0ExxIbuRZItKCFR88MFTiBeoYCAai1eYvZGTtr75KjhP8-98A__PbIMrXVCN6UWD15m7whRNpm2s87sCI3R06-RpXRMsS1uXBc2VHVWV2bw0IpQd-SCERlmQOgzimtyiJsqDJJwfBsf9-KbSjgobHMFlRZmjhbYuSCKYzcK_5iNQqMQ3hnv3v3k-TcQ1TCbg7_mTO95xzwP3o-z57X_FGflWWWwvI7SZIbkWP_PgH_wjb_mdd_6JOxDRi_uBtynwl99IDgnmNzCVI6-q0oxrL0J1_LqP-wHn8gMKvTYC6J82xZN4Gp9h-w0"><script type="text/plain">
 use console;
 use random;
 
@@ -196,7 +196,7 @@ main() {
       <p>Напоследок — экспонат из музея программистского быта. В некоторых языках нет удобных функций для генерации случайных чисел, и разработчикам приходится городить математические огороды — писать генератор самостоятельно. Один из самых знаменитых таких огородов — алгоритм <strong>mulberry32</strong>: несколько строк хитрых битовых операций, которые выдают следующее «случайное» число из предыдущего.</p>
       <p>В Idyllium он встроен как <code>random.mulberry32()</code> — без аргументов, возвращает целое от <code>0</code> до <code>4294967295</code> (это максимум 32-битной ячейки — вспомните его, когда дойдёте до урока о библиотеке <code>types</code>):</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=bNLNFrWQUUrDQBCGr7LMUwJlQUUL6Qk8gykSzRQXdidld4MtIVDxwQdPIV6gPgSqtXiF2Rs5ofUIztP883__w_wdLIzFAMVNB8sqPkABrjKkTb22MIGIqyinNqC6byg0FmcljcpXVDdOREkjn-WqK0nJHA0dMN4GxDqb5rOjccrrR28iWspOoGvtHXq_vjjP8v9D-5Kgn0-AKofyD7_xPj2nF97yJx_SKw9KxC498Z63heKftOEdf_OQNmoqNSx848bYu1ADf_BB3C91LR1Z0zoBzN9awJm-0pfQ_wI"><script type="text/plain">
 use console;
 use random;
 

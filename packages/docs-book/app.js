@@ -1009,7 +1009,20 @@
     }).join('');
   }
 
-  function renderCodeBlock(element, code, highlightedCode, language = '') {
+  // Кнопка «В Web IDE» у примеров (1.6.5): выключена, пока её не включат в Web IDE, «Внешний вид» —
+  // по умолчанию примеры переносят руками (вердикт владельца), но выбор за школой и учеником.
+  function openInIdeEnabled() {
+    try { return window.localStorage.getItem('idyllium-open-in-ide') === 'on'; } catch (error) { return false; }
+  }
+
+  /** Адрес Web IDE с программой: корень сайта берём у кнопки «Открыть IDE» в шапке. */
+  function ideAddress(link) {
+    const action = document.querySelector('.ui-topbar-action');
+    const prefix = action ? action.getAttribute('href') || '' : '';
+    return `${prefix}#${link}`;
+  }
+
+  function renderCodeBlock(element, code, highlightedCode, language = '', ideLink = '') {
     const wrapper = document.createElement('div');
     const languageId = language.toLowerCase();
     wrapper.className = languageId
@@ -1045,7 +1058,21 @@
       }
     });
 
-    wrapper.append(pre, button);
+    if (ideLink && openInIdeEnabled()) {
+      const open = document.createElement('a');
+      open.className = 'ui-button ui-button--sm ui-code-open';
+      open.href = ideAddress(ideLink);
+      open.target = '_blank';
+      open.rel = 'noopener';
+      open.textContent = 'В Web IDE';
+      open.title = 'Открыть пример в Web IDE: он откроется гостем, своя работа там не пострадает';
+      const tools = document.createElement('div');
+      tools.className = 'ui-code-tools';
+      tools.append(open, button);
+      wrapper.append(pre, tools);
+    } else {
+      wrapper.append(pre, button);
+    }
     element.innerHTML = '';
     element.appendChild(wrapper);
   }
@@ -1059,7 +1086,7 @@
       const raw = script ? script.textContent : this.textContent;
       const code = (raw ?? '').replace(/^\n/, '').replace(/\n\s*$/, '');
 
-      renderCodeBlock(this, code, highlightIdyllium(code));
+      renderCodeBlock(this, code, highlightIdyllium(code), '', this.dataset.ide || '');
     }
   }
 
@@ -1119,6 +1146,10 @@
   // Кадр реальных размеров окна; шире колонки — уменьшается целиком. Тема
   // кадра следует теме сайта. Демо — картинка, не игра: сцена кадра inert.
   const GUI_DEMO_FRAME = '../gui-demo.html';
+  // Запас кадра справа и снизу. Кадр — <iframe>, и браузер округляет его до целых пикселей экрана
+  // отдельно от окна внутри: при дробном масштабе экрана (1.0625 — Chrome на мониторе 21,5″, 1.25 —
+  // ноутбуки) нижняя или правая рамка окна оставалась за краем кадра. Двух пикселей хватает от масштаба 0.5.
+  const GUI_DEMO_EDGE_SLACK = 2;
 
   function siteTheme() {
     if (window.idylliumTheme && typeof window.idylliumTheme.get === 'function') return window.idylliumTheme.get();
@@ -1160,8 +1191,8 @@
       }
 
       this.snapshot = snapshot;
-      this.frameWidth = width;
-      this.frameHeight = height;
+      this.frameWidth = width + GUI_DEMO_EDGE_SLACK;
+      this.frameHeight = height + GUI_DEMO_EDGE_SLACK;
 
       const figure = document.createElement('figure');
       figure.className = 'ui-gui-demo';
@@ -1175,8 +1206,8 @@
       viewport.className = 'ui-gui-demo-viewport';
       const frame = document.createElement('div');
       frame.className = 'ui-gui-demo-frame';
-      frame.style.width = `${width}px`;
-      frame.style.height = `${height}px`;
+      frame.style.width = `${this.frameWidth}px`;
+      frame.style.height = `${this.frameHeight}px`;
       const iframe = document.createElement('iframe');
       iframe.className = 'ui-gui-demo-canvas';
       iframe.src = GUI_DEMO_FRAME;

@@ -104,7 +104,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <p>Всего тем пять. Вот как выглядит одна и та же пара «надпись + кнопка» в каждой из них:</p>
+      <p>Всего тем шесть: три светлые и три тёмные. Вот как выглядит одна и та же пара «надпись + кнопка» в каждой из них:</p>
 
       <div class="gui-demo-container">
         <div class="gui-demo-gallery">
@@ -117,76 +117,6 @@ main() {
     win.height = 120;
     win.title = "default";
     win.theme = "default";
-
-    gui.Label hello;
-    hello.x = 14;
-    hello.y = 12;
-    hello.text = "Привет!";
-
-    gui.Button btn;
-    btn.x = 14;
-    btn.y = 40;
-    btn.width = 142;
-    btn.height = 30;
-    btn.text = "Кнопка";
-
-    gui.ProgressBar bar;
-    bar.x = 14;
-    bar.y = 84;
-    bar.width = 142;
-    bar.height = 16;
-    bar.value = 65;
-
-    win.add_child(hello);
-    win.add_child(btn);
-    win.add_child(bar);
-    win.show();
-}
-</script></idyl-gui-demo>
-          <idyl-gui-demo caption='"idyllium"' caption-font="mono"><script type="text/plain">
-use gui;
-
-main() {
-    gui.Window win;
-    win.width = 170;
-    win.height = 120;
-    win.title = "idyllium";
-    win.theme = "idyllium";
-
-    gui.Label hello;
-    hello.x = 14;
-    hello.y = 12;
-    hello.text = "Привет!";
-
-    gui.Button btn;
-    btn.x = 14;
-    btn.y = 40;
-    btn.width = 142;
-    btn.height = 30;
-    btn.text = "Кнопка";
-
-    gui.ProgressBar bar;
-    bar.x = 14;
-    bar.y = 84;
-    bar.width = 142;
-    bar.height = 16;
-    bar.value = 65;
-
-    win.add_child(hello);
-    win.add_child(btn);
-    win.add_child(bar);
-    win.show();
-}
-</script></idyl-gui-demo>
-          <idyl-gui-demo caption='"dracula"' caption-font="mono"><script type="text/plain">
-use gui;
-
-main() {
-    gui.Window win;
-    win.width = 170;
-    win.height = 120;
-    win.title = "dracula";
-    win.theme = "dracula";
 
     gui.Label hello;
     hello.x = 14;
@@ -283,6 +213,111 @@ main() {
     win.show();
 }
 </script></idyl-gui-demo>
+          <idyl-gui-demo caption='"idyllium"' caption-font="mono"><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "idyllium";
+    win.theme = "idyllium";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"dracula"' caption-font="mono"><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "dracula";
+    win.theme = "dracula";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"nord"' caption-font="mono"><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "nord";
+    win.theme = "nord";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
         </div>
         <div class="coord-note">
           🎨 Тема задаётся один раз у окна. Все виджеты внутри — кнопки, поля, галочки, полоски — подхватывают её сами.
@@ -303,9 +338,9 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:5: runtime error: Window.theme must be 'default', 'idyllium', 'dracula', 'breeze' or 'oxygen', got 'неоновый'</idyl-error-block>
+      <idyl-error-block>main.idyl:5: runtime error: Window.theme must be 'default', 'idyllium', 'dracula', 'breeze', 'oxygen' or 'nord', got 'неоновый'</idyl-error-block>
 
-      <p>Опечатка в имени темы не останется незамеченной: окно не наденет молча «что-нибудь по умолчанию», а назовёт все пять нарядов по именам. Примеры в этом учебнике нарисованы в тёмных тонах, чтобы не резать глаза на тёмной странице. У вас же программа запустится в теме <code>"default"</code>, пока вы не напишете <code>win.theme</code> сами — так что не пугайтесь, если ваше окно выглядит скромнее картинки.</p>
+      <p>Опечатка в имени темы не останется незамеченной: окно не наденет молча «что-нибудь по умолчанию», а назовёт все шесть нарядов по именам. Примеры в этом учебнике нарисованы в тёмных тонах, чтобы не резать глаза на тёмной странице. У вас же программа запустится в теме <code>"default"</code>, пока вы не напишете <code>win.theme</code> сами — так что не пугайтесь, если ваше окно выглядит скромнее картинки.</p>
     </div>
 
     <div class="docs-section">
@@ -492,7 +527,7 @@ main() {
           <tr><td><code>x</code></td><td><code>int</code></td><td>горизонтальная позиция окна на «рабочем столе» предпросмотра</td></tr>
           <tr><td><code>y</code></td><td><code>int</code></td><td>вертикальная позиция окна там же</td></tr>
           <tr><td><code>title</code></td><td><code>string</code></td><td>текст в заголовке окна</td></tr>
-          <tr><td><code>theme</code></td><td><code>string</code></td><td>оформление всех виджетов окна: <code>"default"</code>, <code>"idyllium"</code>, <code>"dracula"</code>, <code>"breeze"</code>, <code>"oxygen"</code></td></tr>
+          <tr><td><code>theme</code></td><td><code>string</code></td><td>оформление всех виджетов окна: <code>"default"</code>, <code>"idyllium"</code>, <code>"dracula"</code>, <code>"breeze"</code>, <code>"oxygen"</code>, <code>"nord"</code></td></tr>
           <tr><td><code>add_child(виджет)</code></td><td>метод</td><td>добавляет виджет внутрь окна</td></tr>
           <tr><td><code>show()</code></td><td>метод</td><td>показывает окно на экране</td></tr>
           <tr><td><code>close()</code></td><td>метод</td><td>закрывает окно; когда закрыто последнее, программа завершается</td></tr>

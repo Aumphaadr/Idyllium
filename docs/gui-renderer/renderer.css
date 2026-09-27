@@ -28,9 +28,24 @@ body {
 body.demo {
   padding: 0;
   overflow: hidden;
+  background: transparent;
 }
 html:has(body.demo) {
   overflow: hidden;
+  background: transparent;
+}
+/* Кадр на два пикселя больше окна справа и снизу (запас на округление при дробном масштабе
+   экрана — см. GUI_DEMO_EDGE_SLACK в docs-book/app.js), поэтому рядом с окном виден сам документ
+   кадра. Он прозрачный и без тени окна: в запас ничего не должно попасть. Схема цветов — как у
+   сайта: при разных схемах браузер подкладывает под прозрачный кадр непрозрачную подложку. */
+html:has(body.demo.theme-dark) {
+  color-scheme: dark;
+}
+html:has(body.demo.theme-light) {
+  color-scheme: light;
+}
+body.demo .window {
+  box-shadow: none;
 }
 body.demo .titlebar {
   cursor: default;
@@ -121,8 +136,10 @@ body.theme-light {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 0 7px 0 10px;
-  border-bottom: 1px solid var(--w-titlebar-border);
+  padding: 0 5px 0 10px;
+  /* Черта под шапкой — тенью внутрь, а не рамкой: рамка съедала пиксель высоты, и всё в шапке
+     (заголовок, крестик) вставало на полпикселя. */
+  box-shadow: inset 0 -1px 0 var(--w-titlebar-border);
   background: var(--w-titlebar-bg);
   color: var(--w-titlebar-text);
   font-weight: 600;
@@ -138,15 +155,24 @@ body.theme-light {
   cursor: grabbing;
 }
 .window-close-button {
-  position: relative;
-  width: 17px;
-  height: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
   border: 0;
   border-radius: 50%;
   background: #d94f4f;
+  color: #ffffff;
+  font: 700 12px/1 sans-serif;
   cursor: pointer;
   padding: 0;
+}
+.window-close-button svg {
+  display: block;
+  width: 12px;
+  height: 12px;
 }
 .window-close-button:hover {
   background: #ee6767;
@@ -154,22 +180,8 @@ body.theme-light {
 .window-close-button:active {
   transform: translateY(1px);
 }
-.window-close-button::before,
-.window-close-button::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 8px;
-  width: 9px;
-  height: 2px;
-  border-radius: 999px;
-  background: #ffffff;
-}
-.window-close-button::before {
-  transform: rotate(45deg);
-}
-.window-close-button::after {
-  transform: rotate(-45deg);
+body.demo .window-close-button {
+  cursor: default;
 }
 .content {
   position: relative;
@@ -705,6 +717,36 @@ button.widget.button,
   /* Контрастная тёмная палитра переживает чуть большее обесцвечивание. */
   --w-disabled-opacity: 0.45;
   --w-disabled-grayscale: 60%;
+}
+
+/* Nord — третья тёмная (1.6.5): холодная сине-серая «полярная ночь» с ледяной подсветкой.
+   С ней тем шесть, три светлые и три тёмные, — витрина тем в уроке встаёт ровно, три на три. */
+.window.theme-nord,
+.modal-backdrop.theme-nord {
+  --w-window-bg: #2e3440;
+  --w-window-text: #eceff4;
+  --w-titlebar-bg: #3b4252;
+  --w-titlebar-text: #eceff4;
+  --w-titlebar-border: #232831;
+  --w-border: #4c566a;
+  --w-control-bg: #3b4252;
+  --w-control-text: #eceff4;
+  --w-control-hover: #434c5e;
+  --w-button-bg: #434c5e;
+  --w-button-text: #eceff4;
+  --w-frame-bg: rgba(136, 192, 208, 0.1);
+  --w-track: #242933;
+  --w-accent: #88c0d0;
+  --w-accent-soft: rgba(136, 192, 208, 0.34);
+  --w-accent-text: #2e3440;
+  --w-muted: #a5b1c6;
+  --w-link: #8fbcbb;
+  --w-link-hover: #eceff4;
+  --w-label-shadow: rgba(0, 0, 0, 0.55);
+  --w-color-scheme: dark;
+  --w-radius: 5px;
+  --w-disabled-opacity: 0.45;
+  --w-disabled-grayscale: 55%;
 }
 
 /* Breeze — светлая, плоская, с фирменной небесной подсветкой KDE. */

@@ -12,7 +12,7 @@
 
   <p>Вот простейший Frame с рамкой и заголовком:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=EAjLo2WRsWrDMBCGX0VociAIOyUZHLoW-gQd6lJMbUcCWy6xjBOMIcnSvXu79AVSqIsb2vQVTm_Us5MQmWoQ0nen__47lTQScZhR97akj77i1KWJLyQTwTKmQ6rChUKUZyGZ5WLqSU-2YWtASk8SXEjZjZBBWpBCyOkB4okpHiYhuSQebaVikSceNcKFCBTH8IVtG5SHYsYVYmdsYiVUfNCCV9jBD-yJXhO9gi18430PX5322dHV3MfiUbsfZbozW6DIyO6h5X908jaa9PnZnd0PGP5eYKvXeoPe0BV6awxnbSt-ENw_cBEHVvd0YHSZ8bSwWlB5klZ3QyoxAYcPz9DAB3xCrTek68wl8IsVGuy-1ivi4EdF8zRpc9_0E9TwjjNqYEeuj6PHhNMvYJLDJmxMqz8"><script type="text/plain">
 use gui;
 
 main() {
@@ -46,7 +46,7 @@ main() {
   <h2>Frame как контейнер</h2>
   <p>Главная особенность <code>Frame</code> — он может содержать другие виджеты. Добавление происходит через метод <code>add_child()</code>, как и в случае с окном. Обратите внимание на размеры: рамка 350×220 на позиции (20, 20) должна целиком помещаться в окно, поэтому окну нужны как минимум 390×260 — возьмём 420×290 с запасом:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=FCLgIH1UUWsaQRD-K8M-KchFTSyt0scWCn3vQ66ES-7MLZxriCtGREjThz6kEGjzUAiBQv-AlVxirdq_MPuPOrun2VUv8eGc_WZ2vm92Z3bAmjyJOqy-P2AngYxZnbUCLjwe9hNWYjI6kwR1OxEcd3nDF77Q7kIRBr4A-hHqfeAibPegx0UjA8nyZBy1IngNPtOpEt5t-cxx93goY3LvVcsOGkf8OJYEV1-5sOQyyXLhLY7UJ3WhznGBf3CKE8B_ZP5VX_GB_sfkvsCU1leGzop8exqQnqb-LjMb2zvTbOU1qL8NreTu1tZxK3hjgyP5BifqC87VJaaAdzjCebbYEPg-OIwSELT5INHmMp0FjNRKbRvXenfL27i-vEzCD5ypq_omIRfRm5DLbAsXJ13p5jBADmeGa85aDr46qOrLck51R1z216qzwDqTg2umx25wcFvdd1yYfrh7skKzza3QAjm8tsJKniOvxJ0dwGuS8Juud6y7j3pwBmRO6MbvMaWOvaQlkM4RznCqPpcAR0CtkGqYdk7JXrgdFIThwVHMk7Bgr7TYeCbCqHsqwh7csxGPOWxZP1eKdfNuV7ihXY-rzWk4is4kd-J2r6CBoS_Y8GOJaeX0wOA3e1JgRrVOg02nNSHuVJ1DlR6j5mm7pWN_0TilJGRO3im8Wz4vFLB6aSio4r3wamz4Hw"><script type="text/plain">
 use gui;
 
 main() {
@@ -107,7 +107,7 @@ main() {
   <h2>Вложенность контейнеров</h2>
   <p>Frame можно вкладывать друг в друга, создавая иерархию контейнеров:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=JwYKS32TzUrDQBDHX2XZUwslJFtTpMWr4BN4MCLBbM1CspF0Q1pKoXrx4EH0Abz4AlWshGrrK-y-kZOkH5t-mEPY_P-zk9_OzA5xlwW0h9sXQ3zrCh-3cegybjBvEOAGFrQvQEp6FN0krONwh-d2rY6GDkfwgGqcM-5FKUoZ75QirAzh05CiE-TgPFXAktDBmp0yT_hgH5mmpvqU3fgC5GZFFkwEZS75Ir_lQn7JqZzLuXqUU6TGciJ_5ExmxQ82WKexCwRRImi8zFWsjT5kImZFGuxKK8Bmq6qvEYldNTTIV3UHeAv5Ae-JetogTvYiMs5pbC2TlR8FpGVXtUFRmKq2wrTsLWPNaZlbjgb6XFRzhqzDXETfTEquY7Mq7oKRQ2DkIBjZB0Y0sLLMruddXfss8Grlceqdf1xS16Zo4xWxutXzo7SWCyOH49FlA3M4P8w9jFsmP_NxU_eoKEobyV9oZwbtnKoxasId6cZRmMe-qQcYy3foeQbkZ8uph4DVBYAgy2gZNh79AQ"><script type="text/plain">
 use gui;
 
 main() {
@@ -157,7 +157,7 @@ main() {
   <h2>Наряжаем рамку</h2>
   <p>Рамка не обязана быть серой и незаметной. У неё есть свой цвет фона, цвет границы и толщина границы — <code>background_color</code>, <code>border_color</code> и <code>border_width</code>. Цвета задаются так же, как в уроке про цвета: готовыми константами или через <code>colors.HEX()</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=_mWS_21SzUrDQBB-lWW9pFCCbVVKiweVioJHQcEVid1ts5jsSrIhLaUgvXgRBF-giC-gaCXUv1fYvJGTpE3T6h7C5NtvZr75dga4wx3m48bZAF9bysYN7FpcmJz2HVzGivUUQIHPUDfgTSKSqC0d6fnwQ0TCNUpoQASCAxTzhAsqQxRy0cxAiExlM5ehbURwUtfhgUtw4TrkVNlwXauuF1Cb8a6tAK7Ui7Diyslq6cd4pCP9Ed-h-EY_60891VFaeCFn37Ogcyf5zmqksdmDCnm3DOr_hebCqvVlfCFtJaEgbgyKvvQkladf9QQkfsf3-dwZ_9JqX3U9GQh6kboKqZm75kHr1CB4rdKq7tb2CC4tp0mPMm815bi1c_QfLbc3dybx0aLQ0-YONVJyqWCxb8vQSIAhEXh4XsYCCLAG-gHsftPvMMwIpc42kP6BwSLwHgZEG7AyHU-6CfcpvoXpX8CDSE_R4ezdgTBfASBVzC1zEw9_AQ"><script type="text/plain">
 use gui;
 use colors;
 
@@ -195,7 +195,7 @@ main() {
   <h2>Типичная ошибка: координаты «от окна»</h2>
   <p>Самая коварная ловушка этого урока не вызывает никакой ошибки. Допустим, вы хотите поставить лейбл у верхнего края панели. Прикладываете линейку к <strong>окну</strong>: нужная точка — (40, 90). Пишете:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=FzmEL11STWvbQBD9K9M92eBu5HxBHEpvhULvPVSlqJEcLchyiWXsYAzBJbTQlJbkVmhyCDnXaaLgj1j9C7P_qG9X_pCjwzJ6M_P27ZvpibqKgpaoveuJT14SippoeCqWyj-OREUkQTcB1G4FdNhW-27sxiZdKlPPjQkfUPlWxX6zQx0V7-cgIpmEQSOgF-QKQxWpdsMVhXRH-UmI9Na2U0DDQB2GCeBNpwgnKolyLr7ge06JHznjMfGUUx7zLU9fWvKVpFdHHm6vm3POY2PZtdxr0DGg3XVoKc5Zx5fyqk84CgKveMgzyJrqsyea3ngfg4gic86bNzaIbzjTAx7xY-E1pD8T_-VUn-hTS3bHGfFEn_BQ_yD-t7iCR3JFdKkH6EPplIf441_8m3-S_g72IeHI9BeeIHxOpW2nQntOWcp5u9VkvVlOI4eMN3vrkNmI_KV_CLPIcN0DtMyIb_U3PdBnUI7gK6fPlgPPOxeublrzivZ5vv_hIFSRX7KV5cLoVylbWky1wmanZIC-G4v--4qIUYBl5XPYeW9UwRG7CDV4BvNgsvGUdrDY9aNmw9Rew5UUns-QndDr-aqiYLG1KKrKXbkj-v8B"><script type="text/plain">
 use gui;
 
 main() {

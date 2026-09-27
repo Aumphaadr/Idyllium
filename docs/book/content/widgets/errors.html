@@ -13,7 +13,7 @@
       <h2>Забыли <code>win.add_child()</code></h2>
       <p>Самый частый промах — создать виджет, но не добавить его в окно или контейнер. Виджет существует, но его не видно. Это «молчаливая» ошибка: компилятор не жалуется.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=6YZQc02QwUrDQBCGX2WcUwJlawU9JHjx5hN4MCLRbM1CshGzIS0h0JMKXnwGfQBbMRiqsa8weQWfxEm0tgsLwz__t_PvFDhWkUzROS3w2jchOhj7SgsVTCMcoJETw1KWSrjKlOtpT3dty4bC08CHVXGidJDkkCvt_opcCRPKWMIheNg9Faks9tDdMEeZMYmGC7NmuBLdtB6hF6CGKnqlmt74ftKS5v98Z52wb293S5huC8Nhn8EPgvPLUEWBxQ7bhe_bR6B3mtOifaAPqnc2cdMwyS2b8dLTWJ4NUPux5J_TE49fUd3eUcNQBfTV3rO04ES1A7RqZ32-qp3BiBc2vkniDntmoGJXw90lHP-tgA3rbbBpJA7EPpY_"><script type="text/plain">
 use gui;
 
 main() {
@@ -40,7 +40,7 @@ main() {
       <h2>Неправильный порядок добавления — перекрытие</h2>
       <p>Виджеты отрисовываются в порядке вызова <code>add_child()</code>. Первый добавленный — снизу, последний — сверху. Это тоже «молчаливая» ситуация: с точки зрения компилятора всё честно.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=mNd95ZVSzU7CQBB-lcmeICGlQPAA8eLNxLsHa0yxhW7SLkaWACEk_MRo4pWTR30BIDZWFHiF2VfwSZxdQGrixT1sJt_MN983k-mzOg_9Fqtc9NmNKwNWYZHLhcW9XshyTPpdSVC75UOjzauOcIROZ7LQdwTQI9Q658JrdqDDRXULUmTJwI98OAaH6VYhb0cOS6U73JMBpUu2nUIDnzcCSXChbBuxvcSZW_NDCPW_Kzexpf0ZEZziBya4wpV6xHdQY4xxqUZqDPj678yP061IlxSK9i-ot4cOFk_aUjYF1OR-CxQZaslOAb10Lw0cJngiJ2vc4BJnxsBhLa7nXV0HPPQyRj1bBcjnt04A52pCg8Q0jxpRhwTf1OQvKolpoqFSDF_DqWYsiDpUd2oCGdKm2CxhSBtZ4My03Wqm_bSCZieTJYsDR7DBZY4JN_LpTPCZ5DeYqHuz0hhwrR4ImtNMSQVwQ90T_NQqUKTrqt82I017IUJMVdr9Ek5390IF-9OhooJ1ZJXZ4Bs"><script type="text/plain">
 use gui;
 
 main() {
@@ -78,7 +78,7 @@ main() {
       <h2>Неверный тип в <code>sender</code></h2>
       <p>При использовании параметра <code>sender</code> тип должен точно соответствовать типу виджета, который вызывает событие (об этом был урок «Отправители»).</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=k773XE1RwUrDQBD9lWFPKZQUET2kePEmePdgpKTJ1iwmG2k2VimB0otCPehNBD3oxWMLRko16S_M_pGzbY3d0-6bN2_emx2ynoh4ypzTIbv0VMgcFntC2iK4iViTKX6tCMpSDueZaLvSlaZsNWDoSqBDqH0iZJAMYCBkew3SzVYhjzkcgMuMVCSy2GXt_57DTKlEQlfJlaiBWy3AV_zAJ3zEZ3xwIOUy4H3AT6zwG7-wwBJwpid6rO-3RJqAU8ASixV27HV5tBYkcTuRHT8S_gU5uUpEAL1M-kok0qq5mzF1InPWkG3SryLgC07JwFSPsapj5LVzk9cLgo4fiiiwaGxjaxFpmAwsA-SuZPlZk0kv5rRTfMM5LnGub7HUE3KPlb4jaIYLnDuASz2i1w8WegS79BW9fhKbtndqKIhVUnUBR5vlEuFvz0TasfftPZb_Ag"><script type="text/plain">
 use gui;
 
 main() {
@@ -106,7 +106,7 @@ main() {
       <h2>Присваивание числа свойству <code>text</code> у Label или Button</h2>
       <p>Свойство <code>text</code> у лейблов и кнопок — строковое (<code>string</code>). Число нужно преобразовывать через <code>to_string()</code>.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=8m3W9EWPsUoDQRCGX2WcSiFsUBKLO3yAQHoL1-IkG7OwOwnJHVGOg3QKNtoFC4vY2FocHMGYV5h9I2eTSLYYZr_5_51_SxxaZ2aY3JQ4yfIRJugzS8oOHh22MDcPuaBiZuC-sKkmTXF8egalJpAjVF1bGoznMLeU7qF0Kh8Zb-AKNMannC28xvTo6Wd3xoGL9UB3vYoLxdW5SAHabeAP_uIlv_E7v55oqjRhddtCyryRWLzihrfchCfehBeugX_Ds6BvXnOTAG_DQm4_XIcFdOQ3w-nYR9unGGpRbWS6ht4hnwj-o4roXF2qLlZ_"><script type="text/plain">
 use gui;
 
 main() {
@@ -127,7 +127,7 @@ main() {
       <h2>Обращение к виджету до его создания</h2>
       <p>Переменная виджета должна быть объявлена до того, как вы пытаетесь её использовать в обработчике.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=CONQkU1QPU_DMBD9KydPqVSlYihDKhY2fgEDRlVIXGKR2KhxCKiKVLHwNUA3hAQDLIwtUlBVaPsXzv-IcymoN53fvXd-9wasJ1ORs-BgwE5Dk7CAZaFUvowvUtZkRpwbgopcwHEhO1y5LtIq16mgF1eO7DVgwBVQEcfflyrWJZRSdX5B6nyTiEzADnDmFqeyyDhb6R3hyChfq26UyuiEOGdaxtArVGSkXu0GaLUAX_AdH3GET_gQOAlgbW_sCHCONeACJ_bW3uMHfmFN0Ph3tau1Xb_sSyNS5XGGzzjGTxzbS1xw1lj7rP4NuTN2C2O0ch9tnBHGcTdKZBp7hDc2BnmiS88BFVesOmwyFWaCgsNXnOISp_YK5_ZuZdReEzTBGU4DwKUd0uubThlCm_Lu9XXmZG8kqIk1p-kM9taZEeEvPiJt-dt-m1U_"><script type="text/plain">
 use gui;
 use console;
 
@@ -155,7 +155,7 @@ main() {
       <h2>Timer: забыли вызвать <code>start()</code></h2>
       <p>Таймер не запускается автоматически после создания. Нужно явно вызвать <code>start()</code>. Ещё одна «молчаливая» ошибка.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=yqrMKW1RzUrDQBB-lXFPKZRte7CHBh9A8Ch4MFJiszWLyUaSbauUQKWgghdPXgV9gRYMhmrtK0xewSdxNqa2gnuYHb5vvvkds74MRMI6x2N24WqfdVjoSsWldxWwOtPiUhM0SAScDaTtKEcZ2qrB2FFAj1B-JJUXjWAklf0Dkse1L0IBe-AwkyqQg9Bh9kZz4J6KAAJjK7T0uSlYqvARX4sp57yUbYSHMhQxaGMrYelzqbSIh25A4laz2fzDRaqrZe-cqGEkPegPVE_LaGuK_-o_FRP8LO7wHWdQXGOGi2KKS3zF2e8gafU3GlWhRLuxtmo2fN08AL7hDOfFPWXId9YjmNW4ntft-TLwrLJmbWtriR-NLAOkjmLpSZ0pNxR0AHzGHFeYF7e4pIwZlK3lOMcF5h3AFTWb4wdmxQTadLd-HIVG9kKCjKKWxC5gv7oEBayPQkEt3ua7LP0G"><script type="text/plain">
 use gui;
 
 main() {
@@ -188,7 +188,7 @@ main() {
       <h2>Modal: попытка добавить через <code>add_child()</code></h2>
       <p>Модальные окна не являются виджетами в привычном смысле. Их не нужно добавлять в окно через <code>add_child()</code>.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=tsGZzU2PsUrEQBCGX2WcKoFjDwsVEnwAC2sLV47F3TMLuxu5JEQJgesUbLQTCwttbC0Cx-F5rzB5o5t4irfV7jf_N-zf4NQ6U2By3uC1KjNM0CsbhNW3DkdYmpuSUVUYuKpsKoMMwziKoZEB-DAVZzbovIbahnQL-SbKzHgDxyBxWOVs5SWm_85prpUDvyMorSeXmXU68nEKMB4DvdIHPdMTvdDj3jboRZHl9UQ5MyujeMce8A9oZcD2YoRBecM_pzda0JoW_R2t-gfqgL77e0aftKRFArTu5_z6oq6fwxEXns5yP2jvLHScWvF0CSe_FTjw14ZD--JQHGC7AQ"><script type="text/plain">
 use gui;
 
 main() {
@@ -211,7 +211,7 @@ main() {
       <h2>Выход за границы массива виджетов</h2>
       <p>При работе с массивами виджетов легко выйти за пределы, если индекс больше <code>length - 1</code>. Компилятор такое пропустит, а вот при выполнении программа упадёт — это ошибка выполнения (runtime error).</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=PxlGrW1RzU7CQBB-lcmeipICIsZQ9ODNJ_BACam20E3arWm3AUJI-Dmo8Q08eNAXUGMTQgReYfaNnK2AJLqX2ZnvZ3Z2hqzDAy9h9eaQ3TrSZ3UWOlyY3B0ErMik15dUShMPuim3bGELDRsFGNoC6FDVvOLCjXrQ48L6KdLNlL4XenAGNtNWAU9Dm21gJ46dQUMrL1IpI1GE6jlcS5Hk_prRiWIwuJDAyaFsUWhA1cozDodQ2bXXRyubvGX2CT0qW3-BQQ6QjsMBHP_H0GPmb8UnXOIK17jAN0pJI6N2ImMuugYv7Cn1iI7rtm98HrjGxmdLGG3nyOu1ff9ndY9zfNf-9B8ApRJQvsRPzHChJlADSjJQEzVTD5hRnOKHmtFt-vu3iR_1DN2MGrFRq8iEE3q0JnwhrzXO1R0u1SPZ4GrXbl4HXKsxZV9kNoZT2m4njkIteyVBRqwloQu43OyLCNvVEalinpg1NvoG"><script type="text/plain">
 use gui;
 
 main() {
@@ -241,7 +241,7 @@ main() {
       <h2>Свойства, которых нет у виджета</h2>
       <p>У каждого виджета свой набор свойств. Например, <code>placeholder</code> нужен полю ввода, но не кнопке.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=fr_AS02Pv0rEQBDGX2WYSuHYw0LBBBs7n8DCtYhmzyxsJsfdhlNC4NBCwUY7sbDQxlKLQDjM3SvMvpETvUO3mv3-_OCrcGSdmWJ0UuE48RlGmCeWlE2vHA7Qm0svUjk1cFHaWJOm3t7ahkoTyBNVHVtKixnMLMW_olzKZyY3cAAae5SzZa4x_usclt4XBGd-05FLjV1ybrLCpWby0-Rn7njJK17wh7QBhkPgF37nJ34U7yGCcANrkiSbcA3_EJpqTVifDpCS3MgKfuVWYG245S7ccwO8DHcifQq_jYBXYS6_L-HMYV_GjyZF3tfepNBIqhN3AUfrORLYLJPQjtpTu1h_Aw"><script type="text/plain">
 use gui;
 
 main() {
@@ -266,7 +266,7 @@ main() {
       <h2>ComboBox: запись в <code>selected_text</code></h2>
       <p>Классика раздела: захотелось выбрать пункт списка, записав его текст в <code>selected_text</code>. Но это свойство — только для чтения: ComboBox сам берёт его из выбранного пункта.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=QlYFyHVRy0rDQBT9lctdpVBSu9BFihtd-QUuHCmxmZqBZCImpZVSaN1UUKjupAtB3bi0YqCttv2FO3_kndhCQQyEOTlzzn2cdLGpIpmid9LFCz8L0cPYV9pVwVWEZcxkJ2OqlUo4b6ma0ELba6cEXaGBH2bdY6WDpA1tpWu_JCM3C2UsYR8E2lKRasUCC__GdZjEZ8lB0oGGBWtngV0_COoqk7EjkMamT-9mQAtzSzOBpX-FzzSlBb9_RKmMZCOTQd0uU0y0ra0BVCpAT_RGj_RAY7r3gNt90JJmZmCuLQI-lvRl7mjOH_TJcARmyGxuy5jRZi-7uJ2pEaoocIr2pa1M0jBpO5boCY290zJqP5YcL73wLCsuNCzWzIGW5oapCfebekArzmBK35SbPlR3-Lc0L5PY-l7ZkbPM7jKHo3XQLNhkzqKqu-fuYu8H"><script type="text/plain">
 use gui;
 
 main() {
@@ -294,7 +294,7 @@ main() {
       <p>У окна есть событие <code>on_key_pressed</code>: «Escape закрывает программу», «пробел — пауза». Пишем обработчик,
       запускаем, щёлкаем в поле ввода, жмём Escape — ничего не происходит.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=nkbTf1VRwUoDMRD9lSGnLZTFInpo8diD6N2DK2XdTN3gblK6aWsphaoHBQXxCwT9AQWLpdj6C5M_crK1WnOavPcy701mJNoqw0LUj0eiE9tU1EUeKx0qOcxEVVi8sAz1CoSznmpEOtKeDiowijTwYTQ8UlqaAQyUbqxArkKbYo6wB5HwrTLVyyOxQRvdOsdhq9PFokDJur5REto9nVhldLDRtkAtsVstnQ5weGrirmz2UVvAvv3N4Y9qQ8BYyI1hzzs3iyTuYCT-qdYJkswUGFQaf8x4VY7LMdfDHSqNTaks6DjHH7Evw04WJ5iajMOVY9ITLWlOr0Bzd-0m7pKWbgL0Qe80dZfuvgqrOFDKFu4aaEFTYHrJ9BW9ukd3xdXD7z-VNgMlbcoG29tbG98XS9lKUpXJwIsqG0yRmkE5FU8jxidV4QW8QnqmGX3RzN2w9503Xrpbht44zKwO9OUmfPvkrBOo1Xj17a7J_bsXfjFl2YLpOez_LJMF672yqBbuhjti_A0"><script type="text/plain">
 use gui;
 
 main() {

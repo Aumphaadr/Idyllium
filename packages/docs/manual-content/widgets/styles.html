@@ -106,12 +106,12 @@ main() {
       <tr><td><code>border-width</code></td><td><code>0</code>–<code>20</code> (px)</td><td>толщина рамки</td></tr>
       <tr><td><code>border-style</code></td><td><code>solid</code> / <code>dashed</code> / <code>dotted</code> / <code>none</code></td><td>сплошная, штриховая, точечная рамка</td></tr>
       <tr><td><code>user-select</code></td><td><code>auto</code> / <code>none</code> / <code>text</code> / <code>all</code></td><td>можно ли выделять текст виджета мышью</td></tr>
-      <tr><td><code>border-radius</code></td><td><code>0</code>–<code>100</code> (px)</td><td>скругление углов</td></tr>
-      <tr><td><code>font-size</code></td><td><code>6</code>–<code>96</code> (px)</td><td>размер шрифта</td></tr>
+      <tr><td><code>border-radius</code></td><td><code>0</code>–<code>100</code> (px) или <code>0%</code>–<code>100%</code></td><td>скругление углов</td></tr>
+      <tr><td><code>font-size</code></td><td><code>6</code>–<code>96</code> (px) или <code>50%</code>–<code>400%</code></td><td>размер шрифта</td></tr>
       <tr><td><code>font-weight</code></td><td><code>normal</code> / <code>bold</code></td><td>жирность</td></tr>
       <tr><td><code>font-style</code></td><td><code>normal</code> / <code>italic</code></td><td>курсив</td></tr>
       <tr><td><code>text-align</code></td><td><code>left</code> / <code>center</code> / <code>right</code></td><td>выравнивание текста</td></tr>
-      <tr><td><code>opacity</code></td><td><code>0.0</code>–<code>1.0</code></td><td>прозрачность всего виджета</td></tr>
+      <tr><td><code>opacity</code></td><td><code>0.0</code>–<code>1.0</code> или <code>0%</code>–<code>100%</code></td><td>прозрачность всего виджета</td></tr>
       <tr><td><code>padding</code></td><td><code>0</code>–<code>40</code> (px)</td><td>внутренний отступ</td></tr>
     </tbody>
   </table>
@@ -119,6 +119,14 @@ main() {
   <p>
     Пиксельные значения пишутся с <code>px</code> или без: <code>12px</code> и
     <code>12</code> — одно и то же. Регистр не важен.
+  </p>
+  <p>
+    Размер можно задать и в пунктах, как в текстовом редакторе: пункт на треть
+    крупнее пикселя, так что <code>font-size: 12pt</code> — это шрифт в 16 пикселей.
+    А три свойства из таблицы понимают проценты. <code>border-radius: 50%</code>
+    превращает квадратный виджет в круг. <code>font-size: 150%</code> делает шрифт
+    в полтора раза крупнее шрифта окна. <code>opacity: 40%</code> — то же самое,
+    что <code>opacity: 0.4</code>.
   </p>
   <p>
     Цвет задаётся тремя способами: именем из знакомой палитры библиотеки

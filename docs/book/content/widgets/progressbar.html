@@ -3,7 +3,7 @@
       <p>Представьте: ваша игра загружает большой уровень, а на экране — тишина. Игрок не понимает: программа думает или зависла? Спасает заполняющаяся полоска — она честно показывает, сколько уже сделано и сколько осталось. Та же полоска пригодится и для шкалы здоровья героя.</p>
       <p>В Idyllium такая полоска называется <code>gui.ProgressBar</code>. Вот как выглядит простейший прогрессбар, заполненный на 24%:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=WsqjGV1Qy06DQBT9lZtJTGjSUEDtAuLGnTt3LsQYkCkzCQwEBmlDSFo37v0BF36B0ZrG-PiF4Y-8Y0uKzmIe59x77pnTkBlPaEncy4bkgWTEJWnAhcmjRULGRNK5RKgqKcQV93zhC00bI2h8AbgQNS-4iLIaai68LYg3UzKaUjgBn2iphFepTwZ0zSPJkD60rAHKKI-ZRNj-A0suk62WeuyW6ku94L7uVt3qV3Pv5LzI4oKW5WlQQB7uFPLQnGOzY-3fi3_v3o0zHYC3QVLpqc6RBzCZ4HnQz9Kmgii6vmE8iYw8HA3MliyrDQ20viDt1ZiIIKWYoXpQG_Wq3tD4HQyMuqC-8Tsb9YHMEmxMfVZkqe546u7VWj2rT2Tf4WyXIxb0kWKRbU7NY9L-AA"><script type="text/plain">
 use gui;
 
 main() {
@@ -77,7 +77,7 @@ pb2.height = 120;               // ...и высокая
 
       <p>Три прогрессбара с разными значениями:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=2wmhq42TzUrDQBCAX2XZUwuS_kgVWrx48-bNgxEJZtssbFJpNtZSCtUePCgK3kXBF2jVav1rX2H2jZzdpLRLezCQZPgmO_tNMunSOhcsptXDLj31ZECrNPR45HC_I-gGlexcIkpiRhoJr7mRG-l0Lk-6bkTwQOoc8MhvtkmbR7UUYuTIgIWM7BCX6lKCJ6FLl9Jt7ssA05vF4hINGG8EEnHZwpJLkdaCJxjCB_yqaxgTHcBQXcEY7xN1ZzZIVxUKBB7VQF2oS5jCJ4GZ6mPwitcxwgsY4cL-ooX9VrPRYnG867UIC09lJ9vdxM65MbJQZxXNWypv2fzME4m2L1p2D9jIDJW-8XyBCbY0IBnQ3X2udws8Uc-K69A2M0SLbVtk1cvguVbF9npMFWCq3526Ubf_sKonQmSldWhbGaKtSjZa1TJ4rlUqLrz0DHi-f3wScOHnzFvN19aldGPrM7r2ciYOmu2cBj03or2jDRp5IcNJh3v8Fm_wjmNySZZ6rKYjNIEfzPRJGf-NeqsZ6hXPZgJHegbhi-xl044PzAcfHyo5W06F9v4A"><script type="text/plain">
 use gui;
 
 main() {
@@ -130,7 +130,7 @@ main() {
       <p>Проценты — это только случай по умолчанию. На самом деле у прогрессбара есть ещё два свойства: <code>min</code> (начало шкалы, обычно 0) и <code>max</code> (конец шкалы, обычно 100). Значение <code>value</code> всегда живёт между ними.</p>
       <p>Пусть у героя игры 200 очков здоровья. Тогда удобно задать шкалу от 0 до 200 и хранить в <code>value</code> настоящее здоровье, а не проценты:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=bm1-hV2Rz0rDQBDGX2XZUwslJC3tIcWLN2_ePBiRxWyzC8kmJBvTEgLixYsgePEBfAL_RIpofYXJGzlrWru6p53fzH5832xNFzLmBfVPa5oxLahPEyaVI8NVTEdU86VGVBacRKWcBypQpj0YkjpQBA9S50SqMK1IJdW8h3hztOAJJwckoEYqlmUSUKtdyVALbE9c16KCy0hoxN4frKWOey14gFfYdFewgefuFloCL9Casrv7kd-bOs7TKOdFcchyIrKtmMicJeqM3X29-lfvjI1nFkykQmQD1utY6JLFpTHpTd1fI8Y8C8PzCyHjcCCyoRWqEGk1MKAJFG3ORlSxhOOu4R7WGPINc10TK4VP4AuTruHDJCYT_J1FnibmxWN3Ay08wSd238nRdt84sFs9DnnOzJnS5hs"><script type="text/plain">
 use gui;
 
 main() {
@@ -182,7 +182,7 @@ main() {
       <h2>Динамическое изменение значения</h2>
       <p>Как и любые другие свойства, <code>value</code> можно менять во время работы программы. Вот пример, где кнопка устанавливает прогрессбару случайное значение:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=r0Jd6G2SzU7CQBDHX2WzJ0hI06oYQ-OFmzdvHqwh_VjoxnbbtFsKIU1ADx68-QbGF8BoFfx8he0bOUuBFsMe2tnfzM7-d2YmuE89EuPO5QSHJndxB_smZQp1xh5uYU5GHFASEzRIqG4waUUmcwIfNgaTsY0mmhgMwYIQ5YKCM0UpZXoJwVK4S3yCTpGBZV6PJr6Ba-6UOtwF92FbrVGX0IHLAWs7mFPulbnEo_gsbos7MRdL8V3ciyUSv8VU_IgX-ObFrJitrqnEnUfBICJx3DUjFFrrpKGljCDfgVrtx__2W4FaDQ5NL5FC1J0rugnnAUMW37wfLEWWcY9kUJoj8Q7GHFAO_4XIt5WRB3eESSCVndTBRlpZpIoHrGd71L4G1zCgDuonzOY0qHVLLso4iiCkbKliR8TkpAe0obaQpqpNvYqtPTla42x7peyM6Tg926We0witpr6Pg7C6I3aDtCFBZjCcXbUwM30C4yYeoBCv4g16eINqPeuU_V2IL_BM0REMaD8KfHniaVXA51UJP9DZesogYDNwEKQpx0obZ38"><script type="text/plain">
 use gui;
 use random;
 
@@ -230,7 +230,7 @@ main() {
       <h2>Типичная ошибка: дробное значение</h2>
       <p>Полоска заполнена наполовину — как это записать? Рука так и тянется к числу 0.5. Но <code>value</code> имеет тип <code>int</code>, и дробное число компилятор не пропустит:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=vBmEu02PP0sDQRDFv8o4lULYaHEp7rCxS5cuhWuxIZtk4XbuuD9GOQ6Cja1ahRRpbGwFIyJKvsLcN3KOJJiphvd7b3hT4cTFNsfwusLUFDMM0RtHyo3vY-xgYe8KkcrcwrR0kSZNLT49g0oTyIiqho7GyRzmjqKdKJsqZtZbuASN7anYlV5j9J8ZZMk0s3l-ZTJIR3uQjtStics2dq6CCKDbBV7zGy_5mVf8dKKp1oT1TQfJeCvF-IW_-IM_edM8wNHNEHjbLIT9CFlAIK9MssS3idfmkTf8zr9Cv6G_LyeGQ08xXaieCrD-Aw"><script type="text/plain">
 use gui;
 
 main() {

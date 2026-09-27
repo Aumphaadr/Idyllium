@@ -1538,7 +1538,9 @@ Widget inheritance has its own contract:
   side, coloured by `text_color`; the full list of names is in the reference. Since
   1.6.4 the set is the "precise icons" pack — 236 names, given by what they depict:
   `x`, `circle-info`, `file-plus`, `window-terminal`…; the 1.6.3 names are gone, no
-  aliases).
+  aliases. The icons come from the Klaarheid Icons set
+  (https://aumphaadr.github.io/Klaarheid-Icons/), developed by the author of
+  Idyllium and published under the MIT-0 licence; Idyllium carries 236 of its icons).
   `gui.Window`, `gui.Canvas`, `gui.Timer`,
   dialogs and non-gui library types (`json.Value`, `time.stamp`, …) are a
   compile error.
@@ -3184,33 +3186,42 @@ Rules of the sticker:
   the state sticker is layered on top of `style` and lifts by itself when the
   state ends.
 
-Supported properties — 44 of them, everything else is ignored. Pixel values
-accept `12px` or plain `12`.
+Supported properties — 44 of them, everything else is ignored. Lengths are
+pixels (`12px` or plain `12`, whole numbers only) or points (`12pt`, fractions
+allowed: `10.5pt`). A point is 4/3 of a pixel, as in CSS; the limits below are
+in pixels and are checked AFTER the conversion (`font-size: 12pt` is 16 px,
+`font-size: 80pt` is 106.67 px and is dropped as out of range). Percentages are
+accepted by five properties only — `border-radius`, `font-size`,
+`line-height`, `opacity`, `scale`; everywhere else `50%` is a typo and the
+declaration is dropped. Points and percentages exist since 1.6.5.
 
 - **Colors and background:** `color`, `background-color`, `background`
   (gradients only, see below).
 - **Borders:** `border-color`, `border-width` (0-20), `border-style`
-  (`solid`/`dashed`/`dotted`/`none`), `border-radius` (0-100), and the same
+  (`solid`/`dashed`/`dotted`/`none`), `border-radius` (0-100, or `0%`-`100%` of
+  the widget box — `50%` makes a circle or an oval), and the same
   colour/width/style trio per side — `border-top-*`, `border-bottom-*`,
   `border-left-*`, `border-right-*`.
 - **Outline** (a ring that does not move the content): `outline-color`,
   `outline-width` (0-20), `outline-style`.
-- **Text:** `font-size` (6-96), `font-weight` (`normal`/`bold`), `font-style`
+- **Text:** `font-size` (6-96, or `50%`-`400%` of the WINDOW font size — the
+  sticker replaces the widget's own `font_size`, so the percentage is not taken
+  from it), `font-weight` (`normal`/`bold`), `font-style`
   (`normal`/`italic`), `font-family` (`sans`/`serif`/`mono` only — arbitrary
   font names are dropped), `text-align` (`left`/`center`/`right`),
   `text-decoration` (`none`/`underline`/`line-through`), `text-transform`
   (`none`/`uppercase`/`lowercase`/`capitalize`), `letter-spacing` (−5…20),
-  `line-height` (0.8-3, unitless).
+  `line-height` (0.8-3, unitless, or `80%`-`300%`).
 - **Spacing:** `padding` (0-40) and `padding-top`/`-bottom`/`-left`/`-right`.
 - **Shadows:** `box-shadow` and `text-shadow` take EXACTLY four parts in this
   order — `<offset-x> <offset-y> <blur> <color>` (offsets −50…50, blur 0-50).
   `inset`, shadow lists and `spread` are not accepted.
 - **Motion:** `transition-duration` (`0`…`2s`, or `0`…`2000ms`) makes
   `style_hover`/`style_active` fade instead of snapping; `rotate` (−360…360
-  degrees) and `scale` (0.1-5). **`rotate` and `scale` change how the widget
+  degrees) and `scale` (0.1-5, or `10%`-`500%`). **`rotate` and `scale` change how the widget
   LOOKS, not where it is:** the clickable box stays the original rectangle, so
   a rotated button is still clicked by its unrotated outline.
-- **Behaviour:** `opacity` (0.0-1.0), `cursor`
+- **Behaviour:** `opacity` (0.0-1.0, or `0%`-`100%`), `cursor`
   (`default`/`pointer`/`text`/`wait`/`not-allowed`/`help`), `user-select`
   (`auto`/`none`/`text`/`all` — button-like widgets ship with `none` by
   default; set `user-select: text` to restore selection).
@@ -3281,15 +3292,16 @@ in a real OS: after the drag `x`/`y` hold the new position, so the program
 reads where the window actually is. Assigning `x`/`y` from code moves the
 window there.
 
-`theme` is a string: `"default"` (plain light look), `"idyllium"` and
-`"dracula"` (dark), `"breeze"` and `"oxygen"` (light KDE-flavoured). The theme
+`theme` is a string: `"default"` (plain light look), `"breeze"` and `"oxygen"`
+(light KDE-flavoured), `"idyllium"`, `"dracula"` and `"nord"` (dark; `"nord"`
+since 1.6.5 — six themes, three light and three dark). The theme
 covers the whole window — titlebar, frames, buttons, inputs, checkboxes,
 sliders, progress bars, tabs and modal dialogs. It is the lowest styling layer:
 a colour the student assigns (`text_color`, `background_color`,
 `border_color`, `foreground_color`) and IdySS stickers always win over it,
 while untouched colours follow the theme. An unknown theme name is a runtime
-error listing all five (`Window.theme must be 'default', 'idyllium',
-'dracula', 'breeze' or 'oxygen', got '...'`).
+error listing all six (`Window.theme must be 'default', 'idyllium',
+'dracula', 'breeze', 'oxygen' or 'nord', got '...'`).
 
 `gui.Label`:
 

@@ -7,7 +7,7 @@
       <h2>Пауза в программе: <code>time.sleep(s)</code></h2>
       <p>Функция <code>time.sleep(s)</code> приостанавливает выполнение программы на указанное количество секунд. Аргумент может быть целым или дробным — как удобно:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=jaFdfm2QQWrDMBBFr6LOyoEw4EW6cE7QM1RdmFYhAkkOsUJbjMFNFy1klVwgi14ggRpC0rpXGN2oI6fZVRvNfN7_M1IFE21UCdltBbPcTyEDm2uH-uHZwBC8evIsLUol7gtXFkaNpYud1zaW0kU6GYhKOsHnD8LHufbKuEQCbeibDvRFu_5uEVHCYHzGYwqWRqlZkuLoov4Tsg0NdeGdTtQJ-qGOTmHJQhNWIrxQS8fwyvGfYXV1Dq-lg_puCC63ivenNY_es_vApmXkadcPzziNo-N-bWhEyk-ezAsbLR_hjcF9v_VR3PB_GL2wDOhLmUGK1ziC-hc"><script type="text/plain">
 use console;
 use time;
 
@@ -24,7 +24,7 @@ main() {
       <p>Вторая строка появляется не сразу: пока <code>sleep</code> не досчитает свои полторы секунды, программа честно стоит на месте и не переходит к следующей команде.</p>
       <p>А если соединить <code>sleep</code> с уже знакомым циклом, получится настоящий обратный отсчёт:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=D05U53VQPU7DUAy-ivGUSiUiIBgSwc4ZCEMEL-JJyUuVvApQFKkNQwemXgAGLtAMlUqh9Ar2jfArDRN48O9n-7NrTHWmKgyvahwl9g5DzBNtfH37mOEQrXqwkhpXCm4KUxWZimLjIqtz58bGob0B1LEBkT3Ivy-1VZnxYqQX6nhCC25pw8_0DvTFLU95xnNuD2IcRD-daVGCp40FDedwEom5gKNoF2k4hOB3xV9rdD_FiaPmV5lSIy_o882_9F75iae03jMRHDbXQzRJruRumtOKOvoQLaxpSWta7OaHQFu5akWftOQJHMur0rLIXcsbzwTY0Uaqa7iUP2Z6nAtA926IgX_mn2LzDQ"><script type="text/plain">
 use console;
 use time;
 
@@ -51,7 +51,7 @@ main() {
       <h2>Текущая временная метка: <code>time.now()</code></h2>
       <p>Функция <code>time.now()</code> возвращает значение специального типа <code>time.stamp</code> — это полная временная метка. Без дополнительных аргументов она использует часовой пояс <code>UTC</code> — всемирное «нулевое» время:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=uf8aJDVOSwrCQAy9ypBVBRkQ0UXFA7jxAtZF0SkOzKTFjqiUgrhx7Rm8gC4K4vcK6Y3MWM0ivLz3krwCEm1UDuGkgCx2CwjBxhqlnm8NtMGpjWNqlSsxSzFPjRpE6CenrYcRenfQEkWEgsvTMnexzcRYDJsR03XQGjT674hcL7VTBoOxF8oIoZy2AWOr-Bkd6UoXunN_1Xuq6Ebn76VQ0LveMf2gqt6JLudLlqn1K6f6wMYLPVm9iRGHN3pl2aD_MISO7MselB8"><script type="text/plain">
 use console;
 use time;
 
@@ -72,7 +72,7 @@ main() {
       <h2>Извлечение частей даты и времени</h2>
       <p>У объекта типа <code>time.stamp</code> есть неизменяемые свойства для получения отдельных компонентов. Круглые скобки здесь не нужны: мы читаем состояние метки, а не приказываем ей выполнить действие.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=k9VLcIWSwUrDQBCGX2WZUwohIKiHFB_AZzAiwWzJYnZTkg0xhEBrQS-CiB69iAevKTQQqq2vMPtGTmyjt7inmdnvn_13Z0uYiIin4J6VMPV1CC5IXyhHBEUENmh-ramUpZxdxiqNIz72VJdpIbvQUx1tjVjpKUarKzup9uWUaXayS1WcW6Pxbn_fxMkToXmkLA_wCbe4cpkHNtNOwf1kgH3BxszNg7nteRkrHQ4InrHBjbnv8cAvBuB3rM28R8M4G3bSUuOFucH614tQmeYDmlcyszYL3ODqT5VyIoP_r8BI1pCwwQ9se3HO-dXF_lKVp6A6t0H5ktPI8JEcLjsYt-SSTsb6Zx4uwy8zo_InPeaMHdKUJ0ksO8mbuSNwSSe1uGan9AUikUkCRB-6cOAcO0dQfQM"><script type="text/plain">
 use console;
 use time;
 
@@ -125,7 +125,7 @@ main() {
       <h2>UNIX-время: свойство <code>.unix</code></h2>
       <p>Компьютеры любят хранить время одним целым числом. Свойство <code>.unix</code> возвращает количество секунд, прошедших с начала «эпохи UNIX» — момента <code>1970-01-01 00:00:00 UTC</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=4vtK9zVPzUoDMRB-lWFOW1gDHuohxQfoxZsgNB4WTTGQzJYmS1uWheLFo_gMvoAVCqVWfYXZN3LS1jkMM9_P_LQ4dd5G1JMWZ1V6Qo2hcqTc48pjickuk0BNtPBQU6y9HRnKXXIhl4ayuhhAawgkMqxiqsIMElyfWqoXxWB04h0lSDEzqiG3PKPn0Woxd8l6Kgze3ozvLvizX_OWD_2rBoOlGPOYzhB29yVSFaycxm-84w1_Sf7pn0W-54_jXg38K_4dH3jbr2Eo30zndciW9_5FhBv-FnYPY3nVuyaIwP2XGi_VlRpi9wc"><script type="text/plain">
 use console;
 use time;
 
@@ -147,7 +147,7 @@ main() {
       <h2>Метка с нужной датой: <code>time.create()</code></h2>
       <p>А если нужен не текущий момент, а конкретный? Скажем, «24 сентября 2026 года, 18:03» — начало турнира. Функция <code>time.create()</code> собирает метку прямо из составляющих: год, месяц, день, а дальше — по желанию — час, минута и секунда:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=PP6TCX2R30rDMBTGX-VwrlYIxVYd2uED-AxWpG4ZC7bpaDPmGIPizW52I-zWK19gisOyf77C6Sv4JJ5sDmTIAoGTk3zf90syxLaKZY7BzRC7kelggEmktKtagxgFGvlouNXLJTRTnaexbITaroxKbBlqe7rmwDDUwMO23dxESRdM2st0lEht4GrXb2YyMrLmn_h1AZcC_DMB3oWAU6exU_9GuP1MGRnrWoj0QrNqTDNa0iaAEMUf2yOqKc1pXU2A1lx88FxSeSh3-1I-3LWigbO9xwH9vcpMhzf_Zfd8hvaO5D9z5CfQe1VwsbIwVMJ3MQX6og3DrGlTjavJDmkfZf1GocbRrUCLyO_ORiW9WXoWPLHPgmZbnoCd2Ly05lUBdf6qdpYmVvLK7zVnEUfSAq75H2PVS_iA2pcBem7dPcfRDw"><script type="text/plain">
 use console;
 use time;
 
@@ -167,7 +167,7 @@ main() {
 
       <p>Указывать можно только то, что нужно: пропущенные час, минута и секунда считаются нулями. А ещё <code>time.create()</code> строго следит за календарём — несуществующую дату она не пропустит:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=WVb7lTWPUUrDQBCGrzLOUwsxrRErpHgAz-D6sOoWF7PbkmxBCYFSBJ89gxdoK4FQtV7h3xs5UZyn4Z9v_n-m5pktTMX5Vc0LHe45Z6etT-3dU8EJB_MYRFpWhoJ1Zqq88v18MKRaeZLq5bQK2i3oppw_GE8Xf9ptaXQwg2ycTRLKEjodD6c0GhF2FJ_RYhdX2OADLeELbVwLcIx3HI6Ub5Tn5jphr52RdLyiw1bQDoe4ltU9Nr8ZOeFbXDp8isGKzuXgWTl3_cpbfBFwK9Yd9nQp3xR26QSw_23OJ-kkPePmBw"><script type="text/plain">
 use time;
 
 main() {
@@ -182,7 +182,7 @@ main() {
       <h2>Создание метки из UNIX-времени: <code>time.from_unix(n)</code></h2>
       <p>Работает и обратное превращение: если у вас есть UNIX-время, вы можете создать из него полноценную метку:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=H8catnWQ4UrDMBDHX-W4Ty3ULJM5aosP4DMYkaoZCzTpaFPcKIXhFz-LvoEv0IEDmTpf4fpGJquCXwxHuPzzu39y1-BM5bLC5KLBRWbnmKDOlGHqdpVjhFYurZPqSsJNYaoil6kw_mSV9qkwng5CaIQBt7zMKpvpBVyr0s7hbJBmZaGvaqOWwelkOo0nMedhCqMRHHPOj_jYBXCeHGJw-nmO3ZXKytwEAumZuv6eugQERoN9mP4LP9GeXv-gbCWz0vOtMNheRmgyLV1r9EhvtKF3t--d-5Z21B3-nAB99Wsnf9C2X0PspuG78CUv_YMDN_Tpbndw7kaVq1o7QP2mCY7ZlJ1g-w0"><script type="text/plain">
 use console;
 use time;
 
@@ -203,7 +203,7 @@ main() {
       <h2>Один момент в разных часовых поясах</h2>
       <p>Весь урок мы жили по UTC. Но когда в Лондоне полночь, в Екатеринбурге уже пять утра. UNIX-время обозначает один и тот же момент для всей планеты — часовой пояс влияет только на то, какую дату и какое время увидит человек. Idyllium принимает стандартные имена зон из международного справочника IANA: например, <code>Asia/Yekaterinburg</code>, <code>Europe/Moscow</code> или <code>America/New_York</code>.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=RJrYfX1RwUrDQBD9lWVODYRVDwqm5CCevOtBXCmxbnUx2ZRkg9VQkHrw7EG8ePMHGqSl1Db-wuSPnE2tFALNYTM7vDfz3r4ceiqUKXgXOfQDcwseRIHSXF0_hOCCkQNDrSyVrBvrNA5lW2h7MyqypdAW3XJYLjSjz7Z5aoKozzLTZf6q0UviqJNpNWjtOu0GUN4FRiZKX2XJDTGIx5XuWMBjrGVLwFGqgp3zTZgAp15uJ_3p4veJMjLUhD87PfaYANeOWu9rovAN5ziuRjipnnCGSyyqZ6q-VtTNbVtmvGNJzHGTw9f6t5A_iLzACS6rESMdJf1wipN_7cz3GzqGQsPw0gUdRJKCwVeSXuA3naW1Yi3Vb-sx_Kl9Law_dkhZ2hQs5bN6IWBBumc4ZycUdKiyiABqXXqwxw_4Pgx_AQ"><script type="text/plain">
 use console;
 use time;
 
@@ -226,7 +226,7 @@ main() {
       <p>Метод <code>in_timezone()</code> не двигает время вперёд или назад. Он создаёт новую метку того же момента, но показывает её для другого места. Желаемую зону также можно сразу передать в <code>time.now("Asia/Yekaterinburg")</code> или <code>time.from_unix(n, "Asia/Yekaterinburg")</code>.</p>
       <p>Обратите внимание на последнюю строку: две метки сравниваются знаком <code>==</code> напрямую — и они равны, хотя показывают разные цифры. Метки времени сравниваются <strong>по моменту</strong>: часовой пояс — только способ записи, на равенство он не влияет. Работают и остальные знаки — раньше значит меньше:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=7cYIbo2RTWrDMBCFr6LOyoEg4kK7cOruc4a6FJMoRCCNgy2TFGMI3XTdM_QCzSJQ0r8rjG_UUezQQGjTWYjR6Hujx0wFU21UAdFNBfPUzSACm2qUenJvoA9OLR2XykKJcYZFZtQwQX9z2vo0QU8HPVElKDh8WRYutXNhShzPRNyWpnlm70rUyyAc7KI3PBJMNKLKjxXnP4pW0zmRi1w7ZTBof7rqGuw7_0LFJ7DOxXXr_xQV_411M4j_Ze3sEKsThPq2D5haxQugJ3qlNb3x-dk80Ia29LKbUyToq1lx-Z02zUqEA16aH53XPDePTK7pg5-3YsQbNbq0DOh9GkEoL-UF1N8"><script type="text/plain">
 use console;
 use time;
 
@@ -251,7 +251,7 @@ false
 true</idyl-output-block>
       <p>Имя зоны должно быть настоящим. Попробуем переехать в несуществующий часовой пояс:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=1V1q5WVPwWoCQQz9lSGnFWToHtrDih_Qb-gUmdaRDsxkxZ2l6rIgvfTce2_9gQoVxFr7C9k_alL1ZA4heXkveWlg4oOroLhrYGrTExQQrUftx4sAfUhunhiqK6ceS6zK4AYGpUs-SmlQ2FlPNQYVh8C6SjZOVVLDYzuZlXFUo59nV73BBe3BjoWoPY4EXZboMgP0ToduRV-SDZxlJwv6eeaTC5ixVkatQWjv-4A2OjZLb7SlNX1zPnQvtKEdff5fLBT98tIt7WnTrVSe84NiTjQf3Ssz1_TD45265e-DryMT_LksINc3-hraPw"><script type="text/plain">
 use console;
 use time;
 

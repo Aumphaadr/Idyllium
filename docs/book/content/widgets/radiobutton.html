@@ -11,7 +11,7 @@
 
   <p>Вот пример трёх радио-кнопок:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=VM2Ean2SQUvDMBTHv0rIaYNR1pSKtHjx5tWLBytSTbYE2lTWlG6UwvDi3a_gF5jgZIjDr5B-I1-6OWOx6yn8_sn7vVdehSciYTkOriv8ECuOA5zGQjqCLhI8worNFaAiZ2haiDCSkTTxYIiqSCL4gDpXQtKsRKWQ4Q7CyVGcpQydoQibUoko0ghbcSmo4hATf2xRzsSUK8DuH6yESna1LmMqsvNCqUy25X6bsBI0u3P3r-HkzI1mbIFFF5gp2_L6Wa-apd7old42j8g96iCHCqTrIK3Dt0Gfgxx1eIcKXtfhtY5TG_Q5PMth_mdM6e09FwkdwPTD8P-A9AWeHeQ8KwcG1JHE9c0IyzhlsDHQwUa_6Xe9Br81U4D0V9vZJyRL5MKOTWZZal68NE96rV_1FtIPdLHfGrjws0BwyXVOHB_X3w"><script type="text/plain">
 use gui;
 
 main() {
@@ -59,7 +59,7 @@ main() {
     <li><code>is_selected</code> — выбран ли переключатель (<code>bool</code>)</li>
   </ul>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=IBvwqKVUvW7bMBB-FYKTAwSCncJFYKNLtgKZunSoCkMR6YiIRBUWVccwDCReOrRLs3Yoir5Ak9qFm6TJK5Bv1DtKsilbmcJBoL473vfdDzmlQxHzjPbeTemHQEW0R5NASE-wSUz3qeLnCqA84-Q0F31f-hLNrT0y9SWBBaj3VkiWjslYyH4Bws5TEU84eUV8iqFikSc-dcxjwVQE5hfttoNGXJxGCuDOoQsroeIilr4yn_W1fjAXxFzqO_2g_-h_8Htp5nplCTay3gRMpEe5UqkkPMgmZUDceucQ7aDtIpMdBHMvSL-Zr_q3vtUr_XedhHUR2SDjMQ8VZ-CpRjl_UkHCGdSgPFz81FWUGOrobmEbJT_MhV7qBeRcaWlmi4IRK2Pgts5kEeQ5rCEOS1VZKPY2S0lwoqpmw845-h0OLqAZN3oJUhd6Zebmy7po6FuTggAq6dSQajg6thAb7uPghMckxm_pbff1kAVkg3a7NWyt0kkJ6VI5CGMRnoHtYyoYGeYyVCJ1phyXGJLWdtNrDg1ExbhCIX7hlPZI4yThmtV5yr4_h2l3Up7gsr1_FtPOtGwxzdbVxsscMDYIIxEzW829fpOlyL_ZhnqbLdDLZoPNwDVlUTpuIQAK6ez9PpVBwuGd01dQrQXksjRz4twnyPIRMl7pexxrcgAv43CUJnjip_kEdb62db4lr8u3DhyqZw-cOt5Lr0tn_wE"><script type="text/plain">
 use gui;
 
 main() {
@@ -129,7 +129,7 @@ main() {
   <h2>Группировка: свойство <code>group</code></h2>
   <p>По умолчанию все RadioButton в одном окне (или одном контейнере) считаются одной группой. Но с помощью свойства <code>group</code> можно создавать независимые группы переключателей:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=fIIyG5WTT07CQBTGrzKZFSTY0E5xAXEBO7duXFhDKh3oJO2U0GkKISREF-71CF4AjRhCVK4wvZGvBctQqIntZvL73p-vr_OmuM88GuLmzRQPbeHiJvZtxjXmTDxcw4KOBaAopGgQsZbFLZ7KlSqaWhzBA1S7ZtwJYhQz3tpCOGnCpT5FF8jCaSmPRb6FFTlmjnBBJvW6Ql3KBq4AbBxgwYS3rSWfk3nyIDfwrpK5_JZvci0XWeW9nyvbYUEnEiLgaHSn7wrBSRtnpRUwKYL0g4udFqiNzpCe-0_jBqMgGmaB7QPOwm5IPdoT1AFVjCL6hzUjTzSK1ozMWkMF5dYMxYJxZK2sO8lzSLE7ybrrdZWcbt8pTIYo7TsH_F-TMfNEs-jN3HojKin3po7GPPK2v2K243R7LvOcCvzFauu0YJQJpEwwVSF0g7iSgpnF8ey2hrntU9gu-SRX8l1-yGVyj5Q5NJHcwCVfyU9Q5ojAPvZHgZ9mvCSPcilf5Reoa3S52zAI-F02CNK1c62BZz8"><script type="text/plain">
 use gui;
 
 main() {
@@ -185,7 +185,7 @@ main() {
   <h2>Событие <code>on_change</code></h2>
   <p>Событие <code>on_change</code> срабатывает каждый раз, когда состояние переключателя меняется. Тут есть тонкость: когда выбор переходит с одной кнопки на другую, состояние меняется сразу у <strong>двух</strong> кнопок — одна включилась, а другая выключилась. Поэтому внутри обработчика мы первым делом проверяем <code>is_selected</code> и меняем надпись только от имени той кнопки, которая действительно выбрана:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=k6k5ZqWUTWvbMBjHv4rQKYViErveIKGX3Qo99bLDPIobK7HAlootLy0hkO2wHQaD9TLYTmNfoB3r6F7afQXpG_WRnNiy62x0NRjk__P2kx_pmeMJTUiOh8_m-DgUMR7iNKTModFpgrexICcCpCInaFrQUcACps29LTQPGIIHVOcpZRGfoRllo1KElSNikhK0iwKsUyW0SANsmWc0EjGYvX7fUmNCp7EA2W3IgoqkzCXP1Ft5IW_UEqnX8qu8VK_kuUlc4-yHRyRBJmaVw6wdvZcyySf1DpJcyd-Q7EeVaFgBlv4nhqMhnYI08BvVDsKI8ieFEJyh7GiwcodVM14LOnrHt4Sa6KNaynP1Ul5roopD-0wzXhwbpzFPeJY3jDQ_zElCxoJE4CKygvyFza0C3Taba9ge-5ZQs32Ql_KXen-Hze1m21TeqwK9dnmv_LF931Lq-p-hU9fw2rW9f9UuD0FG8iIR6yjz0apdamVfW2JNYA6d7hBw3AxRR7fqlnB2OI5DNtXn9QWnEZoUbCwot-6MfugE9VodbNj_k2MduiiXC6tZ9wJzHwbWfWQ6wbz7gXkPA7t7llpQ9dAJowi4aBL1zN3fGnWZoIWbDO4mg7fBYNhtWx7zWU8LwIcXz7cxC1MC01iewQ6-ye96aCHrksH-_sBeYa6BZYl2YH5PMp7qiC_qDbTkwuz9J9pbTWRwWA9ncBo4jxwfL24B"><script type="text/plain">
 use gui;
 
 main() {
@@ -279,7 +279,7 @@ main() {
   <h2>Типичная ошибка</h2>
   <p>Как и <code>is_checked</code> у флажка, свойство <code>is_selected</code> — это <code>bool</code>. Записать в него строку не получится:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=nStJO01QPU_DMBT8K9abWqmyxFCGVCxsrCwMGFVJ7RJLjoMSRwFFkSIWBia6MvIHQLQIKj7-wvM_4pkUiCfr7t69e9fAUhtVQnTawEXsUoggi7XlWl4ZmIBTl46gqlTsvNIzYYUN9GjMGmEZPUL5ibYyr1mt7awH6cddqjLFDpiAYGV0lQkY0tqZnsaVv8Un_PTdj-Df9jiWOj-snMstK5LdbJHwkKmfvPd3-IxbfMW3P3MS6HJeKqMWTslet8bHgXdYH0s5X6TayFGRjAexyjSvRwFohYX2bAI2zhQVgCtassYX3PhrNggWMfzyHXHvxHRsSpUtizwLEw_-Bjd02AexW3a0K4EEv32QaI_v8ym03w"><script type="text/plain">
 use gui;
 
 main() {

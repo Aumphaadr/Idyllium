@@ -6,7 +6,7 @@
       <h2>Проблема: одинаковые обработчики</h2>
       <p>Представьте, что у нас есть 5 кнопок, и мы хотим, чтобы каждая из них прятала <strong>все</strong> кнопки. Это легко сделать с помощью массива и одного обработчика:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=gMYoZW1SzW6bQBB-ldGeSGshuxE9mKSH3voEPQTLIgbMOLBbwRLHspDcXHpon6CHSlVfIIlkyXJ_8gqzb9RZCC5RPRd2vu-bYb7dWYsEs7gU44u1-BDqVIxFHqJ0MVplYiB0fKMZqsoY5hX6gQykpZ0TWAcSOBh136OM1BKWKP0W5JOr0ziP4RwCYVtlWOWB6NFLjHTK9Olw2EPTGOepZviV14c16qztRd9pbzbms7k1X4AezEfaNm1bbVgU4erMjvS20lrJAXhv4FLL8qBIVAEOSg3I7YY-f87A85sM4SWMDr5s2MoLnLg3dqBunj6xagiuQ3gBp94RRWdzdLTe3m5r6yv9pj_0SHu645Q7ajUtdYFy7uDJkUolp7MMZ1dcfa0wgqSSM42q9zBdHBwvWseL1rHNFv85fvabxcS9xhIvm6tPwqyM_efK-l9a9yj7YmEUTWcpZpHzNHFnou5ewqrKVC0dyzAq6slAyDCPed3om7mlR7OhO3qgHZ-39JN2Y2iwHf2irdnAiNczKVRu9T_MJ9bc8yXuaA_vnhaOBd3usWjkvnY9Uf8F"><script type="text/plain">
 use gui;
 
 main() {
@@ -49,7 +49,7 @@ main() {
       <p>А что, если мы хотим, чтобы кнопка прятала <strong>только себя</strong>? Или чтобы обработчик знал, какая именно кнопка была нажата?</p>
       <p>Для этого в обработчик можно передать параметр <code>sender</code> — ссылку на виджет, который вызвал событие:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=PByyQH1Ty27aQBT9latZmRY5QOoucNpK3VXqvos4Qg4e8FXMuLLHJQgh0WTRXT4gUrPpD5BKVBYQ8gvjP8r12AbTolqyPHPuw-ecmTtlAwx4zLrnU_bVlT7rspGLwkRvErAmk_xaEpTEHIYJ2o5wRB42GjB1BNBDqPkFhReOYYzCLkBamdLnIw7vwGF5qwCTkcNq4TF60qfwqdWqoT7HoS8J7hzAEmVQ9FL32Y3agnpSC_WH3vUH3bVIdaPInZzljD4mUoaiCdZ7uJQitvdcP7uXPICIx0kgS7jYmNf5b1uH2ERjf4G5JwWZn5rFRqWaEKh1dqces9vsDtSKkK16Vqvsdqe7rK-kd960dtQHYQQGCglIgZZNnzOwbL1DeA3tnd_5k0s6x4tDxvVAQZvqEF7B6bGMikPbOhbdK7yvZJA8h1FHGfZiGaEYGtioVe5XJyegHsiFOXnzqLbZTfZDpWoF2XegPguNb9SS8Dl13kDMhcejfzmEotcPsH9FPL6F6MEgEX2JoTD251vWHnjzn3Na0NVZ1E6mklR00ek1RbOj6vLb6Hper-9j4Bkl18qIWXWah1kFnUbtPsd-ODZygCrY7KLJhDviNGbqgSg-a4t-q5TWS7VWaRc0lmrb5tChsRxE4SjP_0XmLsnmJ23xp3LQKKGaOUpqm29Ni81eAA"><script type="text/plain">
 use gui;
 
 main() {
@@ -102,7 +102,7 @@ main() {
 
       <p>Пример: три поля ввода <code>LineEdit</code> с одинаковым обработчиком. При изменении текста в любом поле — лейбл показывает, какое именно поле было изменено:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=BVFUe4VTzW7aQBB-ldGeTIscfkoOkPTWQ6XceughRJGLFzySWSN7XYIQUsKl6qVVbz2lqvoCISoKDQl5hfUbZXYXXLtC6lqWd7-Z-Tzz7cyU9THkCWufTtnIkwFrs6GHwkV_ErIqk_xCEpQmHAYpdrqiK7TZqcC0K4AWoe57FH40hjGKjgVp58qADzkcQ5dpqhDTYZcVzGP0ZUDmZqtWQAOOg0AS3GgUYYkytFzvuPB5DOoWTlDwNz5Kw2pdvTj2Jkc6o52xCs3XgGKUyqTzN98T7wMPIeZJGsotbA_uhf51rYxNCKsf_gNqXUxC6ru6Uw9qqR7VCrI5be6zq2yuM1Tr7ItaqI16APVEn7Va5hJsaXYqNAy_NR0cgPpJ7nfqt7rJvlF0Ns8uid2SZF-Jm56NNtuIfhSDg0ICElWtQ58jaHbMCeEl1PPL0suqcYpn5WLLpokxUSzCC3i13yfPvbXfPgq9Hg-iUN-XUeqH1YC2RCyj80TGKAYOVvLSd-Vfq0X2Wa3UH6CQBRV_o3UkGT4ReA_ZFSSmD_b9NhLnvcATA90vHyP0oZ-KnsRIOMXG2BKUlPnP9ep3k99k25ZhaYq1FrSYlQrTjez5PmWHoe_kCVe2AbOdb9nPJlQpDEMSRGNHAxTBZmdVJrwhpxlV19R-T0asW7UyrbhWqzYYbKWLyC6hSTPdj6Oh9v9Fci5J2Ecj6tvtlJLDbmDJqe4eui02ewY"><script type="text/plain">
 use gui;
 
 main() {
@@ -195,7 +195,7 @@ main() {
       <h2>Типичная ошибка: не тот тип у <code>sender</code></h2>
       <p>Компилятор строго следит за тем, чтобы тип <code>sender</code> совпадал с типом виджета. Если написать обработчик кнопки, а в скобках указать <code>gui.Label</code>, программа не скомпилируется:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=1SOoq2VRTUvDQBD9K8OeUigRQT2kePEmePdgpKTJ1iwmG2kSq5RA7UWwB_Umgr148ZgWoqHa9i_M_iNn0w8LLiwZXt6bnfemx9oi4DGzznrsykl8ZrHQEdIU3m3A6izhNwlBaczhIhUNW9pS_zZq0LMl0CHUPBXSi7rQFbKxBKkyE5-HHA7BZrpVINLQZpV-rTpKkySS0ErWKqpM_V4lwjfM8RN_sNyS7ewAjvADX_AZX_HJAnWHcxyroRpgiQXgRA3xi-6ExIUaAE5xRowFffM6YA4xlx7vQKV6UI9E_MYCZ5qY47Sa68Rp8eBvokg23UC4lzTVdSQ8aKfSTUQkjQ131XQTiT5L6J-dnAadV4Y0KdsY04E5ntd0fRF4Bj1b20oy9qOuoYHMliw7rzPphJyWgiPqtlB96jzBkuqCzJQWVFhJ0RWqD3u0xHYnCjX_Xd0TZ0yRlOT1eLUWIqw3RKRd88DcZ9kv"><script type="text/plain">
 use gui;
 
 main() {

@@ -1584,7 +1584,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...fontSized,
       propertySpec('title', STRING),
       propertySpec('theme', STRING, false,
-        'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
+        'Тема оформления окна и всех его виджетов: "default", "breeze", "oxygen" (светлые), "idyllium", "dracula", "nord" (тёмные; "nord" — с 1.6.5); другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
       ...styleable,
       ...pointerEventsFor(guiWindow),
       ...focusEventsFor(guiWindow),
@@ -1739,7 +1739,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...clickableFor(guiIcon),
       ...doubleClickableFor(guiIcon),
       ...pointerEventsFor(guiIcon),
-      propertySpec('icon', STRING, false, `Имя значка из единого набора Idyllium (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`),
+      propertySpec('icon', STRING, false, `Имя значка из набора Klaarheid Icons (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`),
     ], [], guiWidget),
     typeSpec('LineEdit', [
       ...positioned,

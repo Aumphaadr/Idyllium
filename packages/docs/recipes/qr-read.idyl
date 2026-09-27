@@ -1,27 +1,35 @@
 use console;
+use file;
 use image;
 use qr;
 use time;
 
 // ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
 const string PICTURE_FILE = "qr.png";        // картинка с QR-кодом: снимок экрана или фото
+const string RESULT_FILE = "текст-из-qr.txt";  // куда записать прочитанный текст
 const string TIMEZONE = "Europe/Moscow";     // часовой пояс отметки времени в конце
 // ───────────────────────────────────────────────────────────────────────────────
 
 // <--- Положите картинку с QR-кодом в панель «Файлы» слева и впишите её имя выше.
-// <--- Нажмите «Запустить». Текст из кода появится здесь, в консоли.
+// <--- Нажмите «Запустить». Текст из кода появится здесь, в консоли, и в файле
+//      «текст-из-qr.txt» в «Файлах»: оттуда его удобно скопировать целиком.
 
 main() {
     console.clear();
     image.Static picture;
     picture.load_from_file(PICTURE_FILE);
-    console.writeln("Картинка «", PICTURE_FILE, "» ", picture.width, "×", picture.height,
-        ", ищу код…");
+    console.writeln("Картинка «", PICTURE_FILE, "» ", picture.width, "×", picture.height, ", ищу код…");
 
     if (not qr.has_code(picture)) {
         console.writeln("Кода на картинке не видно: попробуйте снимок крупнее и ровнее.");
     } else {
-        console.writeln("В коде записано: ", qr.decode(picture));
+        string text = qr.decode(picture);
+        console.writeln("В коде записано: ", text);
+
+        file.ostream fout = file.open(RESULT_FILE, "write");
+        fout.write(text);
+        fout.close();
+        console.writeln("Текст записан в файл «", RESULT_FILE, "», символов: ", text.length);
     }
 
     console.writeln("Готово: ", time.now(TIMEZONE).to_string());

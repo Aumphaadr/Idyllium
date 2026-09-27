@@ -2,7 +2,7 @@
       <h2>Создание кнопки (повторение)</h2>
       <p>Как мы уже знаем из прошлого урока, кнопка создаётся через объявление переменной типа <code>gui.Button</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Ab9kglWQsU7DMBCGX8Xy1ErFSkFlSMXCxhMwYIQCcWtLiYOIo7SKIrVlAImhOxITL9AOoKhq6Suc34gzITRkiOzvfp8_X0FHKhIp9a8Keh8YSX0aB0ozFU4j2qNGTAyiLBVknKkh11y7cqdLCq4JfkjZpdJhkpNc6WENccWMFLEgZ4RT1ypSWcxpq5yr0Egsn3hei0qhxtIgPv6HjTJR3QteYQdfsIcNrI5gbx_t3C7si3124OeCg9Z5Zkyiya1ptHDF3IPqTm-wgk_YQkXw9wE7u_wTdMEJpgZeC0wbcPAKwvDmTqoo7GCg2xJOZZJ3HCi5puV1j-ogFjjHlj5eWxE7x90a_RdQ2aVP8EUzqJyPnZE-zn_0kMTu3Lt9Qsc1nq5gQy5-J4qBZrgY6rNTNqDlNw"><script type="text/plain">
 use gui;
 
 main() {
@@ -36,7 +36,7 @@ main() {
       <h2>Обработка нажатия: свойство <code>on_click</code></h2>
       <p>Чтобы кнопка реагировала на нажатие, нужно присвоить её свойству <code>on_click</code> <strong>функцию</strong>. Эта функция будет вызываться каждый раз, когда пользователь нажимает на кнопку.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=lh0YS2VSy07CQBT9leusIMGCGFxA3LjzC1xYQyotdGI7NTK1ENIE0ejCRPYmRhN_oJhgGsLjF-78kXeoQI1dTG_OvXPmnDMzYG3uOV1WPx-wa0u6rM58iwuD232PlZh0epKgsOtAJ-QNU5hCtwtFGJgC6CPUOOPCDiKIuGhkIFWGdB3fgWMwmabyeOibLNeOuC1dah9WKjnUdXjHlQRX_8CSSy_jwg9McIJL9YSJGgPOcIFLXNE_WdPvRJ2EUgYCLuVGFFWGtpPxvBHPN84xBVqmuFDjrTw92KOpWiUH9DdABpXLgO9qiKm6wy-iStfrFOegHtQ9iZqpR2q-7JO6Cc1lokckO8XZjjUQzZbHW1dEfhtwG9qhaEke5PL9r_x1Zxmo1DYSNcJkb2sg3srU4Vm23Wy53LMLxFPMpdp1g6iggdgULL4oMWH5Dl127gRKJwWyqE080yGpGtcBV9q4jk0NoUqPpH0T-HrfJ9mbktGFNgmnv9dOA5sXQEMHxpFRY_EP"><script type="text/plain">
 use gui;
 
 main() {
@@ -85,7 +85,7 @@ main() {
       <p>Самое интересное — обработчик может менять <strong>любые</strong> виджеты, не только ту кнопку, на которую нажали.</p>
       <p>Вот пример с двумя кнопками и текстовой меткой. Каждая кнопка меняет текст метки «на себя»:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=FoLBWp2Uz27TQBDGX2XZUyJFrpO2HBKhSL0hceeAUWVip16xXqNmTVJFkVI4gMSh4gpFSPACDVKEmwJ5hdk3Ysbx3xJKRBRZu9_Ojn_zjXenfCikP-LdJ1P-wtUB7_LQFcoS3pnkLa79iUYpHvnsJBY9RzmKlhtNNnUUwx-q1mOhvGjMxkL1NiKOLB34oc8eMIdTKini0OGV5bHwdIDLB7ZdUQNfnAQa5U5N1kLLTS54D4l5Bd_gisF3etzAEq5hATdp9s2WvT0GX1BfmXOM_UXR5oLBD1jidIW7GrBGmUawNq_TKIxolhU9cp_5kkl6Zhjp2JogRPvQrmlnqO3XJXItxe33-7e4PiJXxrOCn0ixJo7yzUex1pFi0h_qI537mc3KvHCJO68r1d8rzM1jJzWsTCTWtn1bzXvRPrBrrJ_NHK52oT2lrpW4-bTC-4m8b1EPkLuELSKJtlMYW8h13kIugDv2DuZik_GjeUsEDNXqRwPL7l_crDsUqeOBFIPn-M6XkfDYMFYDLaLKOdjS_DuaNNvJ53-D12zdVkBh2f9VcEf-Pyqhg-p63vEgENJrpJmava1LG1O3L-bA1dVREI0bJMwcxWdPW1y5oY-3EnwovEoY_s05zhbmHR7nxFx06XDPIUnP_Zzt4202PI1C2vfVvMFKFrg7gRV7mN1PGJBfVRjUtu5bh3z2Gw"><script type="text/plain">
 use gui;
 
 main() {
@@ -151,7 +151,7 @@ main() {
       <h2>Типичная ошибка: виджет объявлен после обработчика</h2>
       <p>Правило «<code>label</code> объявлена <strong>до</strong> обработчиков» — не пустая формальность. Поменяем порядок и посмотрим, что скажет компилятор:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=TWV_5G1Sy0rDQBT9leusWihpfS5apOBOcO_CSEmTtBmcTMROjFICfSy0uBC3LhTxB2yhEoq1vzDzR95JWpuKs5qcc-6Zc-9Nl7QoczuketYll5bwSJX4FuUGdW4ZKRHh3giEwo4L7ZDWTG5yTReK0DU54EHUOKXcCSKIKK9lIN4M4bm-C4dgEm3FaOibJEdH1BEe0ruVSg71XNr2BMI7G7CggmVe8kXdy0SO5Ux-pH7rFEehEAGHplilwJuh82eFb7pEfsoE5EL10GMip2rwm0mLA96wGbUvsOA6oA60Qm4LGuS61YdZTZfljF_XbltoB1AuZxpAaKSeQM7lFFRfDdUIkb4ayIkaZvLUNN5o4yQtTQ2W0f48WK_Xc53r8ViO07A9ypwCdlGs_UekHnmq4wVRQQOxyUl8XiLc8l3ctHzGuN9ygdPCSSWYG7_G6gFTJ-qxuhreF-bvwR7-Ia2rwNd17-pOTnExc2RncLzcOQpW60fRtnFg7JP4Bw"><script type="text/plain">
 use gui;
 
 main() {
@@ -188,7 +188,7 @@ main() {
         У <code>gui.Window</code> для этого есть метод <code>close()</code>:
       </p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=IrJNqG2SzUrDQBDHX2XYUwsl9MseWrx4E7x7MCIx2ZrFZKN2Y1tKoCoioiB4FMSDL6BgNRStrzD7Rk7SpE2LIYfhN1__nZkR6wqP91h7b8ROLOWyNvMtIQ3hDD1WYYoPFKGwx-EoFB1TmjJxl8owMiXQR9TYFdIJ-tAXsjOHZBnK5T6HTTBZUsoToW-ygrsvHOWSu1GtFqjLxZGrCNeaRayE8ua18EWPcaZv8Q1_MMZJWnOpZMc65B4cDnmWTJYxoMR6tQCG6yDXUm8VafL0ec9n6vaJ3xjrS5wATqn1DH9xqq8qoG8IzvBd3wF-UdxUj_WdvtT3QDSNXJO4FSoVSDgNhcqaJeaqypQkMlsrJNdZWw1cDK3RLOKl_kdSdE1yPhYbSAMCeWB7wj6moPNAONANpa1EUFhuPn_bC3q8VM6So8V7Ep_lOAe2KzynREMrd_5zJN2Knp4b9NNqkSlZtF9h0vI5XRk-5ZPFGOjXF_PJ0oRj_dAG_KXlx7SIiR7DBl1n9yzwk7xXfYMTfE9PYgrb2b1RQH56FFQzWsYGi_4A"><script type="text/plain">
 use gui;
 
 main() {

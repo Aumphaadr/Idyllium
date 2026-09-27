@@ -137,7 +137,9 @@ function extractTitle(html: string): string {
 
 function extractCodeBlocks(html: string): Array<{ code: string; sourceLine: number }> {
   const blocks: Array<{ code: string; sourceLine: number }> = [];
-  const regex = /<idyl-code-block>\s*<script\s+type="text\/plain">([\s\S]*?)<\/script>\s*<\/idyl-code-block>/giu;
+  // Тег бывает с атрибутами: сборка сайта дописывает программам data-ide (ссылка «В Web IDE», 1.6.5).
+  // Точное совпадение «<idyl-code-block>» молча теряло такие блоки — корпус худел с тысячи примеров до полутора сотен.
+  const regex = /<idyl-code-block(?:\s[^>]*)?>\s*<script\s+type="text\/plain">([\s\S]*?)<\/script>\s*<\/idyl-code-block>/giu;
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(html)) !== null) {
@@ -147,6 +149,12 @@ function extractCodeBlocks(html: string): Array<{ code: string; sourceLine: numb
       code,
       sourceLine: countNewlines(html.slice(0, match.index)) + 1,
     });
+  }
+
+  // Страж от тихой потери: сколько в уроке открывающих тегов, столько и блоков обязано найтись.
+  const opened = (html.match(/<idyl-code-block[\s>]/giu) ?? []).length;
+  if (opened !== blocks.length) {
+    throw new Error(`lesson code blocks: ${opened} <idyl-code-block> tag(s) found, but only ${blocks.length} extracted — the block markup changed and the extractor does not understand it`);
   }
 
   return blocks;

@@ -2,7 +2,7 @@
   <h2>Антипример: незащищённое здоровье</h2>
   <p>Представьте, что мы создаём класс <code>Hero</code> (герой) со свойством <code>hp</code> (здоровье). По задумке, здоровье должно быть в диапазоне от 0 до 100.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=-jyn-52RzUrDQBSFX-UyqxZj2kCrkOJen8G4CDU1A8mkJCkqpVArqAuhoBv3voCKhdD05xXuvJFnYlsRdwYS7px7zp2P3KHoySjIhHs6FH0_D4UrYl8qW55fR8ISeXCVQxpkAXUTlSVR0PGUp7qRn2V0HKQJDT1FeLI8leqClB8bh1Gkyins4zAyCTO0Vt-6q2SIj7MxV7Vt0nREnuAnXnHBS0_86od9dFvNCsGoGyT7MpV5EKnazxQLQ1y81i5Z36UaDeJn_uTZvp7wiviDeI7rIKAw0reuxzzTD6AoiddVv4Rwz4We6Ed9o6d_yHblHh22O9VFrWZ1QNNx2v_Fxg8UozNLGAeWwS-8BPEbr0Fxy6We6jtQTV1wArrgBTjH5GB9vTSJTeIV3DN-R67gOZ1gt5EcxDDIbekKxz6w22L0BQ"><script type="text/plain">
 use console;
 
 class Hero {
@@ -103,7 +103,7 @@ class Hero {
   <h2>Пример с защищённым здоровьем</h2>
   <p>Теперь здоровье героя защищено. Изменять его можно только через методы <code>heal()</code> и <code>hit()</code>, которые следят за границами диапазона:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=Enamzq1U227TQBD9lWGfHJG6CSVEcijP8A0YIZNu6pWcdWSvS1EUibZSeUGKVB7KOz8AaYNCevuF8S_wJcys7SYBKa1EHSnanTmec4732EPRU5FMhfd6KAaBCYUn-oHSrtr5EIm6MHLfUClLJXRjncaR7Pja190oSFN4KZMYhr4GugaJ2guM9Iqd0gbCgYXaZvYuUt2yl5pE6V3QQV_eAni2SbKuiRM71SlBcv8t4-p2IG3CQa0i5MuEKnUZANsVtPNXNxwUPauGq6OKcy9WO9DLdNeoWEMog8hhlqAfZ9r8S2MHVavHJWyJTfXAqdovoNlorIxYHUPdzmqvfLju-0QZGWnHF3iK53idf8RrnOSfcQo4oe0B_Q7xO15xGS9wyitgJOAl1ef5Ac7wMj_i3SNf1JZ4RusfgDL397-x3v9zWOf-Ht6_4NQ6_wV4Y53y9ie7vcMTO7i1tCsNnbuzIiWRJkt0pWaRCTuBk7-A23iH9NdkSSekY4ZXvqjD00ZtJbnL4i3eLULrCw8YX9QqNYt7i7pNXrtV61Blc5OGU7raLU5JswW_j0-AiM_IPh_6LP9EIia0nuaHFIUxR-nBhFACthpWBwuhyXTOWw1S0n5QDn43SrNtpmCibdggpjvd_pcOOmIxelMXjKNvGn4lijkNv6HRR3iRj_Njohx7lDkSQG8Rpw6e0Fewl8R9vuMbCZriD5aGc3hFn8hIZX0CqGrpiab7zG2J0R8"><script type="text/plain">
 use console;
 
 class Hero {
@@ -169,7 +169,7 @@ main() {
   <h2>Попытка доступа к приватному свойству</h2>
   <p>Если попробовать обратиться к приватному свойству напрямую из <code>main()</code>, компилятор выдаст ошибку. Возьмём сокращённого героя, чтобы увидеть её целиком:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=tKhJTTVPwUrDQBD9lXFOCiVtED1s8K7f0HhYdEsWkm1IVqmEQKVQj9WbePDixaMeCqEq_YW3f-Q0pXMY3ryZ92am4YnNTc1q3HCpfcaKC21dZG8fch6wNzMv1E2u65ouTTWlJnUkUVb2Xnuj9pV1nrIySV2butTtDI5PDpO9KpMUJ3uix1FW0gXFo1EizHBIeMcnXvGCNzwf9T7cXg_Y6cLIfun8YYMvbMNjWOAnrMISXVgpEmaODr9YhzmdysWTalrsFB_hCWt8i67Dhq7kndzeFTJgD1BxHJ1HZ9z-Aw"><script type="text/plain">
 class Hero {
     private:
     int hp;

@@ -2,7 +2,7 @@
       <h2>Пользователь вводит что попало</h2>
       <p>Вы давно умеете спрашивать числа через <code>console.get_int()</code>. Но давайте честно: пользователь может ввести что угодно. Попросишь возраст — а в ответ прилетит <code>двенадцать</code>, <code>12 лет</code> или вообще <code>ЪУЪ</code>. Что тогда?</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=ytA-WVVPzUrDQBB-lWFOKYRAD_WwxQfwGbpSQt3Whc1Emi1tCYHaiwc9efYivoCKBUlr-wqzb-Ss2oJzmZ_vZ2ZqHFtnKlSDGm9yf40Ki9xSZq-WDlP0ZuFlNKsMjEqqSmf6mjRFStKBWhNI_CHZfGq9STTyM7e85214iBn4nV95B7zlTVgr0Njp_-osecgnBs5PDhPjhzJNjox_zo6i9-OPmcY0SiOv0YTNZYqUF0ZO5ae4RtZ_hHsIt2EdVtK0Cvgg1SfvBF5BV34bT8siCl7CHW_4jb8EbeFCHnd2VgjBHkuF3ews62HzDQ"><script type="text/plain">
 use console;
 
 main() {
@@ -18,7 +18,7 @@ main() {
 
       <p>Программа рухнула, даже не извинившись. Надёжная программа берёт ввод <strong>как строку</strong>, а потом сама проверяет: точно ли там число? Для таких проверок — и не только — у типа <code>string</code> есть целый набор методов:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=f2sX4H2Rz0rDQBDGX2XcU4IhUEEPKT6Az2CkBN3WhXQjyZYqIdBWxIN68yiCiHjw0mqjpX8i9AlmX8EncTax9SAYAtnNzHzfb2ZS1hQhT5i3n7KTQB0zj7UDIV1xdBYyhyl-quhXJ-FwGMkkCnndl740KZYNqS-Bnp-I242F4pbP8AGnWOBMX5sv4CsOcQ44w1wPPPCZXa_qEhUL2YJAJl0ew-5ap8VVo4pZdmlnkkUTrCrTFUlDSGXZa4AyLhUELU4yKirDVfLK6w9nKA3pvR4Q10Rf4gKLDcBnYuxhjh-Ab9TCeA0_0uc4Ng0Qv1MabUJtJZ4BD2lC6b9WTzh3YPlSlpdoDkktZ_DVuwV9Qxw0qQXmgJ9Y6AsyfzeXBQ6B6Ca6T5yF-zu8zJf0suzAYTJoc1oS3hk-Q62vQPf1gDopcOqRIp0mODe9wRZttRlHbVPwSMo5jshkglPYo5WHotOmBLE6eqzm7rjbLPsG"><script type="text/plain">
 use console;
 
 main() {
@@ -54,7 +54,7 @@ main() {
       <h3><code>.contains(c)</code></h3>
       <p>Проверяет, есть ли в строке указанный символ или подстрока:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=3LN4AoWPwUoDQQyGXyXNpbuwDIjoYYt3fQIPTg9rO7UDsxnZmaJlWai99NBX6M0nECxI0foKmTcyW_RsTn_-fAn5W5xZZwKWdy0-VnGOJdaVJWWnS4cFRvMcxVoEAxNPwTsz0qSpR7IcWk0gFWJj6QECXIHGa-OcL-DWN2460HjCe-h3XT01NhpHWVDiRLkTsqEf5vnoX0xjdT_ReEI7TdiNC6SqNvIf73if1nzk97SF9JLWaSXNoQT-FvXBnzJewbkEmjW-7hde04b3_MZfMj3AjaR1dlELYP9kiWfqUl1g9wM"><script type="text/plain">
 use console;
 
 main() {
@@ -75,7 +75,7 @@ false</idyl-output-block>
       <h3><code>.is_int()</code> и <code>.is_float()</code></h3>
       <p>Проверяют, можно ли строку безопасно преобразовать в число. Именно эти методы спасли программу из начала урока:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=mwjs8n2QX0oDMRCHrzLM0y6UQNX6sIsH8AxGJLtmNZCdLZsUlWWh9sWHXqFvnkCwIMU_V0hu5GytD5XiPP0m35cJmQ4rY7XD7KLDqfK3mGGtDAlz_WBxhF7fez6aOQ1lQ66xOpckaVCSFDpJwOV8a-gGFJyBxPHRscR8DxQ7ICZ_Sbklqii34Aft3hF3rfHaUqKEcVeGfJKm-WGjGIzKNuofp9yb0kvC_nKEpGrN3wursI6L8Ble4xLiY1zEOTebDMIXp7fwzngOJ7yPqm3q4cJzfArr8BI-mG7gnJdlzaxmwfzGDMfiVEyw_wY"><script type="text/plain">
 use console;
 
 main() {
@@ -105,7 +105,7 @@ false</idyl-output-block>
       <h3><code>.find(c)</code></h3>
       <p>Возвращает индекс первого вхождения символа или подстроки — или <code>-1</code>, если ничего не нашлось:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=8Bxm9I2QQUrDUBCGrzLMpgmUBy7aRYoH8Aw-F8G-6IOXiSSvqIRAzKaL3qB05wUqWChB4xXm3ciJtAs34qxm5v_mZ2ZqzKwzFSbXNT6k_h4TzFNLyi6fHU7RmycvrVVl4LagqnBmoUnTiEQx1JpAovKlpTvwcAkaectD6ICPEF544Dfec897jT9zI33yUY-l9cZR5FVmaRlNeJjE8eJPRuNvz3_wbdiM_IltNGFzM0VKcyNn8Y4PoRPH97CRdUMXWin6BPhLsiN_iNzCTP6QlUU-DryGNR_E8FPUHq7kSc6ucgHsOU3wQs3VDJtv"><script type="text/plain">
 use console;
 
 main() {
@@ -128,7 +128,7 @@ main() {
       <h3><code>.count(c)</code></h3>
       <p>Считает, сколько раз встречается символ или подстрока:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=MFuCoH2PwWoCQQyGXyXk4i7IgAc9rPQBfIZOD4sd24HZrOzOUGVZsF566Cv01hdQUJDF2lfIvFGzUumtgYQ_yZeQNLiwztSY3Te4zP0zZljklpR9XDscojcrL6VQG5iXVJfOTDVp6pEkhUYTiNW-svQEAe5AI-94HzcSO_HDLdN4nevp3z3qpbLeOEqCmpeBfDLg3SBNp_9Df_s1XuFWE7YPQ6S8MHIof_AxbvnCh_gO8TVuBb1wlwF_izrxWdobmMhni6os-oHP-MZH3vOXdDuYydvOhkIAe5MZjtREjbH9AQ"><script type="text/plain">
 use console;
 
 main() {
@@ -154,7 +154,7 @@ main() {
       <h3><code>.to_upper()</code> и <code>.to_lower()</code></h3>
       <p>Преобразуют все буквы строки в верхний или нижний регистр:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=2Nehxn2PQUoDQRBFr1LUagZCgwsjTPAAnsGW0MSONvRUDzM9xDAMxGxc5AoBF55AMSBB4xWqb2RNSLbWqqj_Pv9Xh3PnbYPFbYeViY9YYGkcKXe_9DjCaJ-inNrGwixQE7ydaNI0IFkOnSaQaWLt6AEMXINGfk0r_uIP3qW1xiM9MCe3WtQuWk-ZUTFM26qydZbnk38YHxZnpteE_d0IyZRWSvF2yOADf6YNpOe0luAD7wvg32OFb5FXcCVfzOtQDoa39MI7fucfUfdwIy9615YCuPNa4IUaq0vs_wA"><script type="text/plain">
 use console;
 
 main() {
@@ -175,7 +175,7 @@ main() {
       <h3><code>.substring(start, count)</code></h3>
       <p>Возвращает часть строки, начиная с индекса <code>start</code> и длиной <code>count</code> символов:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=yRQUSY2QTUrEQBCFr1LUKoGmYRwiksGNiKhXsF20Y8_Y2KlIuoNKCIyzceEV3HkCwQEZ_LlC942sjLrWWr2q973Fqw5n1hmP5UmHVzpcYImVtiTt-a1DgcHcBD613sC0Jl87M1GkaECyHDpFwONDY2kOGnZBod6b7puD-aE9vlS4gQfkJyyvGxuMo0xL355957KRgHGeT_4GxwK2_gUWAooN2CvC_lQg6cpwjfgYV2kZP-JLeoB0l5Zpwcu6hPjJ6jW-sb2AHe49a-pqCDyl-7iKz_Gd3TUc8VOcbSsG7K8scSS3ZYH9Fw"><script type="text/plain">
 use console;
 
 main() {
@@ -198,7 +198,7 @@ FgHiJ</idyl-output-block>
       <h3><code>.replace(old, new)</code></h3>
       <p>Заменяет все вхождения подстроки <code>old</code> на <code>new</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=EVirum1QzUrDQBB-lWFOCYQFDwom-AA-g-sh1K0ubDYl2WJCCKS5iHjqVbz5BIKFErS-wuwbOVuiIDinmfl-5qfDpTaqxvSqw1Xu7jDFItdW6JvWYIJONY5b61rBorR1aVQmrbSBEsXQSQsctau0vYUGLkAiPdPBj0B7oOk32_lHv50bErM_spZljajUyuQLFbHBzEqC2Zff-o3E-Dg1iOYtxH2lnTI2auLsf6ANQC8t9tcJ2rxQfAa98CYjHejdP4Hf-NEPXEwp8JyB9vTB8ADnfPeyKosgePUPtKM3-mR0gkt-itHrggn6J03xRJyJU-y_AQ"><script type="text/plain">
 use console;
 
 main() {
@@ -220,7 +220,7 @@ main() {
       <h3><code>.trim()</code></h3>
       <p>Возвращает строку без пробельных символов по краям — само слово <em>trim</em> означает «подстричь». Внутри строки пробелы не трогаются:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=LhSWaoWQwUoDMRCGX2Wc0y6EYA962OID-AxND4umGkiyspvSlmVh7aWHvkKhB59AsVBKra8weSMnpYI3cwr_fP_MP9PixFjdYDFq8aUMz1igK42X5nFhUWDQ88DStNHwUPmmsnqovPIJyXJolQd-TaiNf4K6nMEdKGSFtrGnPX3QLi4F0JH2sb9iXeHZnkyXdnJWm6CtzxSOFIrURDA2VpgP_wMlz3VZ_ofvlMduLNCXTnNs2qQAdKLPuIb4Gpec6kSHAuj7nO_I5R4G17zopK5ccrzFFe3onb64fIB7voI1U8eA-f0WOJC38ga7Hw"><script type="text/plain">
 use console;
 
 main() {
@@ -245,7 +245,7 @@ main() {
       <h3><code>.split(c)</code></h3>
       <p>Разбивает строку по разделителю и возвращает динамический массив строк:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=p7bRyjWQQWrDMBBFryJm5YAxeNEunLb7nqEqRdRyK5CVIMm0xhiSbLpooRforhdooAGTNMkVRjfKCKcCiY9m_ufNdFApLR0Udx3MhX-GAmqhTKbKVkMKXr56-mqcZI8z42ZaTrnhJrYkE9Zxw-g4b5V5YqXwgl0zDuET17jDA27xkJL8wX28KT1H3OAufIQlDrjnMB0DytY8CGtFezVG3bDKNso7SouhmZtr5RMOKYfJ2XKmyV6s8lKbZDTEas8N9PcpGFFLQscv3IQVwfyGdxaWYRUWkaxgeCQ14B-VFyzPadjKzuro-A5vhLkm6gG37JY2oVVTU4P6lwXk2WV2Af0J"><script type="text/plain">
 use console;
 
 main() {

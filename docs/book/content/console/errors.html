@@ -56,7 +56,7 @@
       <h2>Ошибки компиляции: типы данных</h2>
 
       <h3>Несовместимый тип при объявлении переменной</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=qErGmjWOQQrCMBBFrzLMSqEUutBFxAN4BuOiYEoDSSoaoaUUulPwFnoCF4VSrL3C5EaOoLP68-c__tSYaaNOKLY1HlKfo0CbahfrfWUwQq9K_7Nmc6ilAx7tPJSwBom5MqaQuJKukQ6bXYQutYoBulNPE_XhQmO4UQf0Dle2njRQL4Cm0PL2oi60kHBPdizsF3sw0HFq5OsAG37C6LPlgP5LgUm8jBfYfAA"><script type="text/plain">
 main() {
     int x = "hello";
 }
@@ -65,7 +65,7 @@ main() {
       <p>Переменной типа <code>int</code> нельзя присвоить строку. Используйте <code>to_int()</code> для преобразования.</p>
 
       <h3>Несовместимый тип при присваивании</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=EtlwzatWSsvMSS1WsoquVipILMlQslLKTczM08tMqcxR0lEqSa0ogQppaCpUx-QpAEFmXolChYKtgqGBNUQAxDHWMzQBcmtj8pRqY3WU8hJzU4EaLyy6sOPC_gs7LrZf2Hux-8JWhQv7LnYAhTZe2HVhh5XChf0XG4C8PRe2XmxQMALal1aUnwvSthioYStQ1V6g7C4FT6BjcjJLc4EKMmFMKyVDPTM9U6VaAA"><script type="text/plain">
 main() {
     int x = 10;
     x = 3.14;
@@ -75,7 +75,7 @@ main() {
       <p>Переменная уже объявлена как <code>int</code> — в неё нельзя записать дробное число. Округлите его или объявите переменную как <code>float</code>.</p>
 
       <h3>Переменная типа void</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=FHn0uKtWSsvMSS1WsoquVipILMlQslLKTczM08tMqcxR0lEqSa0ogQppaCpUx-QpAEFZfmaKQoV1TF5tTJ5SbayOUl5ibipQ1YVFF3Zc2H9hx8X2C3svdl_YqnBh38UOoNDGC7su7LBSuLD_YgOQt-fC1osNCsZAw9OK8nNB2hYDNWwFqtoLlN2l4Am0OSezNBeoIBPGtFIy1DPTM1WqBQA"><script type="text/plain">
 main() {
     void x;
 }
@@ -84,7 +84,7 @@ main() {
       <p>Тип <code>void</code> означает «ничего» и используется только как тип возврата функций.</p>
 
       <h3>Деление всегда возвращает float</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=gaLc602OTQrCQAyFrxKyUijV4s9ixAN4Butiqi0OdEbREZRS6E7BW-gJXBRKsXqFzI2MoGhWeV_eCy_DRKXxFsU0w7W0SxSopTK-WhxS9NDGe_tBrTZkoQEeZSxIGEPQHf1AxKD3p-esJXQgYpaHBvOZh0bqmL_RhSp6UuWO1LgzlUAPd2J0o5oqAfR0Bas7la6APpdINiv9jl05ULKr4WsNE26Yqp1mg_quAgN_6A8wfwE"><script type="text/plain">
 main() {
     int a = 10;
     int b = 3;
@@ -99,7 +99,7 @@ main() {
       <h2>Ошибки компиляции: необъявленные имена</h2>
 
       <h3>Использование необъявленной переменной</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=mFnd4DWOQQrCMBBFrxJmZaEUXNRFPIFnMC6KphhIUmlTrJRCdwreQk_golCKtVeY3Mgp6Kxm_n-fPzWkSssC-LaGU-KOwMEkykbqcNEQgpOVI6ksJNtntsi0XAsr7IwsAlYLy2h-TnTOlZOLKiCkERaaXQg2MZLy-MAeJ-z9FUd_x47hx99IeuGAPWc4-ZauN3a-ZTHVpnlm5tiTAh1RI7kD29BPWpWGAPVfOSyjVRRD8wU"><script type="text/plain">
 use console;
 
 main() {
@@ -110,7 +110,7 @@ main() {
       <p>Переменная <code>x</code> не была создана. Объявите её перед использованием — и проверьте, нет ли опечатки в имени.</p>
 
       <h3>Использование библиотеки без импорта</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Kb2nfDWOQQrCQAxFrxKyslAHXLSLEQ_gGayLEVsc6IxiR6iUQncK3kJP4KJQirVXyNzICJpV8vMeSYWZztMC5arCg3I7lGiUtkJvzzmG6NLS_aJJAFVigUtbByUswDAv1KaYTKNgntg6sVivQ7TKpOzQnToaqfMXGvyNWqC3v3L0pJ46CTT6hqcXtb6BmE9lx735ag8WWqYG3vaw5D9yfTIM6H8rcSZiEWH9AQ"><script type="text/plain">
 main() {
     int x = math.abs(-5);
 }
@@ -123,7 +123,7 @@ main() {
       <h2>Ошибки компиляции: условия и циклы</h2>
 
       <h3>Условие должно быть типа bool</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=dkXGRqtWSsvMSS1WsoquVipILMlQslLKTczM08tMqcxR0lEqSa0ogQppaCpUx-QpAEFmmoKGKZwHFskrUahQsFUwtIaI1cbkAZFSbayOUl5ibirQhAuLLuy4sP_CjovtF_Ze7L6wVeHCvosdQKGNF3Zd2GGlcGH_xQYgb8-FrRcbFMyBFqcV5eeCtC0GatgKVLUXKLtLwRPoqpzM0lyggkwY00rJUM9Mz1SpFgA"><script type="text/plain">
 main() {
     if (5) {
         int x = 1;
@@ -134,7 +134,7 @@ main() {
       <p>Условие в <code>if</code>, <code>while</code>, <code>for</code> должно быть логическим выражением. Используйте операторы сравнения: <code>5 > 0</code>, <code>x == 10</code> и т.д. У циклов сообщение то же, только вместо <code>if</code> в нём будет <code>while</code> или <code>for</code>.</p>
 
       <h3>break и continue вне цикла</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=gH5Ar6tWSsvMSS1WsoquVipILMlQslLKTczM08tMqcxR0lEqSa0ogQppaCpUx-QpAEFSUWpitnVMXm1MnlJtrI5SXmJuKlDRhUUXdlzYf2HHxfYLey92X9iqcGHfxQ6g0MYLuy7ssFK4sP9iA5C358LWiw0KFkCz04ryc0HaFgM1bAWq2guU3aXgCbQ4J7M0F6ggE8a0UjLUM9MzVaoFAA"><script type="text/plain">
 main() {
     break;
 }
@@ -147,7 +147,7 @@ main() {
       <h2>Ошибки компиляции: функции</h2>
 
       <h3>Функция не возвращает значение</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=AaZlbzVOywnCQBBtZZiTigQUFIxYgDUYDyFucGF3FN2gEgK5KdiFVuAhEILRFmY7cnJwTvO-vBxTbdQRw1WO-9htMUQbawr05mJwiE6dnVCaHKQZJU7vCNxJJ6rXUdSHPCKQ69BBHTPjYAEEAxjPIyoiiqhr64kPBGGxHiLFVkklP7jmL9f-yq2_cwX88TehXtxwHQJ_fSnozZUvYSZL0sPOdrGnBCpxtaI2sJSZRmdWDPr_hjgKpsEEix8"><script type="text/plain">
 int function twice(int n) {
     int result = n * 2;
 }
@@ -158,7 +158,7 @@ main() { }
       <p>Функция объявлена как <code>int</code>, но не содержит <code>return</code>. Это ошибка компиляции — программа не запустится, пока вы не добавите <code>return result;</code> в конец функции. Заметьте: компилятор указывает на строку 1 — на объявление самой функции.</p>
 
       <h3>void-функция возвращает значение</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=-n4CczVOOwrCQBC9yjCVQgim0CJeQM_gWgTd6MJmInEjSgjYKXgLPYFFIAQ_V5i9kZPCqeZ9eRWmxuo9xosKd4nbYoxZYig065PFAJ0-OqEOuVlDWtLKmZxgU2jtBkOoFIFcoV1ZECicaWtzhVNFtSJFfU_vAkFYLwOkJNNSxndu-cutv_Db37gB_virUE_uuI2Bv_4s6MWNP0M0khFpkWd97iGJRmxvkTuYy0JrykwM5v_GGIWTcIz1Dw"><script type="text/plain">
 void function greet() {
     return "Hello";
 }
@@ -169,7 +169,7 @@ main() { }
       <p>Функция объявлена как <code>void</code> — она не может возвращать значение. Уберите <code>return</code> или смените тип на <code>string</code>.</p>
 
       <h3>Неправильное количество аргументов</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=t1DZVT2PS2rDQAyGryK0cshgcEO7cOgBeoY6i0ls0wFbLu4YEowhuwZyi-QEXRhMiOsraG5UTUKqjaRfn14t5qbIvjB-b_FT2w-MsdSGQpPuClRos60VyZCFvKGNNRWBTtPAC1qBd-sZtAmBWJ3ZppY6zGG9TKhLKCE_LPgnPL-F19uISMGTgsXsTmK3Uki6zGQbn3jgiQf3zaM7cg_86w4i_fCFhxh4cnvJrty7PUSRXJnXVen7ztLRCzZK-QJv8kJhmlIA8whjjMKX8Bm7Pw"><script type="text/plain">
 int function add(int a, int b) {
     return a + b;
 }
@@ -186,7 +186,7 @@ main() {
       <h2>Ошибки компиляции: массивы</h2>
 
       <h3>Неправильный размер массива</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=nchOzTWOzQqCUBCFX2WYVcFF0LCF_ex7BnVxIaUL3luYQSKCu4Leop6ghSCS-Qpz36gJalZnzpyPMxWmKkuOGIQVHmSxwwC1VMZR2zJDgUVyLn7WZApVZIBH5rksl8oUAvw1mJM-wgpCV4AnYBYvIlNHButYoJE6YZru1NFInb3QYG_UAr3tla0n9dQFQKNteHtRaxtwPW5N873-cg8mWo4NfO5hwy9l6qQ5oP4yQNeZOz7WHw"><script type="text/plain">
 main() {
     array<int, 5> nums = [1, 2, 3];
 }
@@ -196,7 +196,7 @@ main.idyl:2:26: compile error: cannot assign 'array&lt;int, 3&gt;' value to 'arr
       <p>Количество элементов в инициализаторе должно совпадать с размером массива. Обратите внимание: одна опечатка породила сразу два сообщения. Помните совет из начала урока? Исправьте первое — второе исчезнет вместе с ним.</p>
 
       <h3>Метод динамического массива на статическом</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=SHBetj2OzQqCUBCFX2WYVYIIZrWwn33PoC4uqHRBb2EGiQjuCnqLeoIWgkjmK8x9o0aoZjXfmXOGU2Isk-iIrlfiQeQ7dDEVUlkyLBI0MY_O-VeaGFD6CnhEloliJVVugrMZCdbg2SZMmYPl32OJMJzMDBYqX2EVmKhEGvE3ulNLA7X6Qr2-UQP01leWntRR6wINumZ6UaNrsB1uEWf7dMw9ONGwredzB1uumMhTygb5W120rYU1x-oD"><script type="text/plain">
 main() {
     array<int, 3> arr = [1, 2, 3];
     arr.add(4);
@@ -206,7 +206,7 @@ main() {
       <p>Статический массив имеет фиксированный размер — добавить в него элемент нельзя. Используйте <code>dyn_array&lt;int&gt;</code>, если размер должен меняться.</p>
 
       <h3>Сравнение массива с числом</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=4OHCrjVOTQqCUBC-yjArAxGsbGHlvjOoiwcpPdBXmEEigruCblEnaCGIZF5h3o0aqYZZzPc3fCXGMomO6PolHkS-QxdTIZUlt0WCJubROf9RxgTKQAGPyDJRrKTKTZh5I4I1-LYJU8bh8uuRMRij4oHDOagCxYtVaKISacQv6U4tDdTqC_X6Rg3QW1-ZelJHrQs06JrRixpdgz3nKnG2T8fcgxMN23qWO9hwz0SeUjbI_-mibS0sB6sP"><script type="text/plain">
 main() {
     array<int, 3> arr = [1, 2, 3];
     if (arr > 5) { }
@@ -220,7 +220,7 @@ main() {
       <h2>Ошибки компиляции: строки</h2>
 
       <h3>Замена символа в строке</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=55o17TWOQQqCYBCFrzLMxgKRXNjC6ACdQV0Iav2gv6FGhQjSpqBb1AlaCCKaV5j_Ro1Us5r53rzHKzEScZij7ZS494sd2pj4QhoiOMeoYxGeih-azaF0JfDkRSbkFo5pFsAaXKSO3uri4uorT9xZeCxp1GsMK1di5eko_STkMHpQSyO16kqDulMD7L4xenFOawONquarp0bVYFpcIsrSZPI92dHw28ByBxtuGItDwg_iv9poGkvDwuoD"><script type="text/plain">
 main() {
     string word = "кот";
     word[0] = 'м';
@@ -235,7 +235,7 @@ main() {
       <p>Все ошибки ниже компилятор пропускает: с точки зрения типов программы безупречны. Проблема выясняется уже на ходу — поэтому и сообщение начинается с <code>runtime error</code>, а программа останавливается на указанной строке.</p>
 
       <h3>Деление на ноль</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=VKrxpjWOUQqCQBCGrzLMk4KIPuTDRgfoDG0PgkoL7ha1hSGCbwXdok7QgyCSeYXZGzVBzdM___wf_9RYqDI_oFjVuEvtBgXqVJlQZecSA7R5ZX-W50MtDfAoY6GCBWTq5MVRAJE_l6aRBpt1gCbVORN0p54m6t2FRnejDujtrmw9aaBeAE2u5e1FnWshTrip2G_1l3sw0XFs5PMAS36jVEfNAfWXAuMwCWfYfAA"><script type="text/plain">
 main() {
     int x = div(10, 0);
 }
@@ -244,7 +244,7 @@ main() {
       <p>Деление на ноль невозможно. Проверяйте делитель перед операцией.</p>
 
       <h3>Выход за границы массива</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Hjf39DWOTQrCQAyFrxKyUijFWqow_uw9Q9vFgBUHOqPUCkopdKfgLfQELgql-HOFzI1MUQOB5L3vhRS4UmmyQxEWuJX5GgVqqYyrlscUHcyTQ_6Ten0oIgNcMsvkcapM7oA_7zaYQegNHBhy-4N48sUYgANbDIRBJ5aRwTJ20Eid8FG6UkNvauyJnvZCNdDLnlm6U0uNAHrbircH1bYCb8zPrLKN7nI3TtSMPdluYcGfpmqvGVD_UaDnjtwAyw8"><script type="text/plain">
 main() {
     array<int, 3> arr = [10, 20, 30];
     int x = arr[5];
@@ -254,7 +254,7 @@ main() {
       <p>Индекс 5 выходит за пределы массива из 3 элементов. Допустимые индексы: 0, 1, 2 — сообщение услужливо их перечисляет.</p>
 
       <h3>Выход за границы строки</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=VWPkXjWOQQqCUBCGrzLMqkAkF0UYLapVZ1AXYpoP9BU-g0IEdwXdok7QQhDJvMK8GzVRzWrm-_9_ZgqMRBIqtJ0C934eo42pL6QpNqcEDczDY_5DgyEUrgQulWdCbkHBHFxcLFcuzr5CEPsZBIyVY408hqUrsfQMlH4a8hq6UUM9NfpMnb5SDfTSF0YPaqmxgXpd8fSkWldgTfl8lO3ST-7OiZptHcstrPm3RBxSNoh_a6NlTswxlm8"><script type="text/plain">
 main() {
     string s = "ABC";
     char c = s[10];
@@ -264,7 +264,7 @@ main() {
       <p>Со строками правило то же, что с массивами: индекс 10 выходит за пределы строки длиной 3.</p>
 
       <h3>Некорректное преобразование</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=l7T3ZjWOUQqCQBCGrzLMk4IIPhS00QE6QxuxldKCrlEbGCL4VtAt6gQ9CCKZV5i9URPUPP3zz__xT4mJTuMjikWJe2V3KDBT2oR6e04xQBsX9md5PpTSAI82FgqYgc1XLD2Jar2R6E-lqaTBahmgUVnMGN2ppYFad6He3agBersrW0_qqBVAg6t5e1HjaogmXJcc8uzLPZhoONbzuYM5_5LqU8YB_ZcCo3AcjrD6AA"><script type="text/plain">
 main() {
     int x = to_int("abc");
 }
@@ -273,7 +273,7 @@ main() {
       <p>Строка «abc» не содержит число. Перед преобразованием проверяйте строку методом <code>.is_int()</code> — особенно если её ввёл пользователь.</p>
 
       <h3>Корень из отрицательного числа</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=gumWyzWOQQqCUBCGrzLMSsGkoloYHaAzZAshpQe-Z-kTDBHcFXSLOkELQSTzCvNu1Bg0q5n___6ZKTEScZihtyvxFOgjeigDoVxxuMTooA4LzVKehSDZXfvKV6Nv2VD6CriiOAk0FLD5AW52TrU1WdhMVr7Cau-gCmTIO-hBLQ3Umiv15k4N0MfcWHpRR60HNJiapzc1pob5lG9HaSLH3JMTDWM92x1s-bFY5JIB8W89nLkrd4nVFw"><script type="text/plain">
 use math;
 
 main() {
@@ -284,7 +284,7 @@ main() {
       <p>Квадратный корень из отрицательного числа не определён в вещественных числах.</p>
 
       <h3>Файл не найден</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=CNdd-zWOQQrCMBBFrzLMSqEEFHRR8QCewbgINMVAE8WmUCmF7hS8hZ7ARaGItVeY3Mgp4qxm3v9_-BWmJtM5xtsKj8rvMUarjBMmOWcYodelZ1TkGkbfSjrpRn0yhUo64BmxMLk_aWUhhfUPHI7aTSQmyivhSy8xAolsSSRO-UktHda7CJ2ymt_TnToaqAsX6sONWqBPuDJ60ou6GGgIDV9vakMD8xnXSk8HO-YenGjZ1rP8gg13zkxh2WD-a4wzsRQLrL8"><script type="text/plain">
 use file;
 
 main() {
@@ -295,7 +295,7 @@ main() {
       <p>Путь в сообщении — тот же, что вы написали в программе: он всегда считается от папки проекта. Смысл один: файла <code>data.txt</code> рядом с программой нет. Создайте его перед чтением.</p>
 
       <h3>Pop из пустого массива</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=F5tynjVOTQqCUBC-yjArBRESamE_-86QEQ9UeqBPMQNFBHcF3aJO0EIQybzCvBs1Us3q-x2-CkMZBSd0dxWmIj-ii7GQypZ-GaGFeVDkP8kwofIU8PmlOogsE-VKqnwDDJdfgykUsJ4UO01Sw2S99hTWewuViAP-RHfqaKROX2jQN2qB3vrK0pN66lygUTfMXtTqBhyHF4RZEk-9Bzdajg1s97DleZE8xxyQf-jizF7Yc6w_"><script type="text/plain">
 main() {
     dyn_array<int> arr;
     int x = arr.pop();
@@ -305,7 +305,7 @@ main() {
       <p>Массив пуст — нечего извлекать. Проверяйте <code>arr.length > 0</code> перед вызовом <code>pop()</code>.</p>
 
       <h3>Неизвестная кодировка</h3>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=uxlIsj1OW2rDQAy8itBXAsaQmjTgpoV-9gzdEDbxplmwlWBvoMYY_JdCb9GcIB8GE_K4gvZGlQOtvkajmdFUuLKpKTB-r3Cr3RpjzLSl0CZligE68-mE2hUGDC03iaWPJ0WKes1gCJUikElKmus81-XUknuBRelMAc__jvAOzEDhq8IAFC63oyiaKBxKVq0I61mApDMjn_iHO75x5_d88d_cAl_9l1BHPnEXA998I9uZW9_AQyQNV_km630HcbQiu8j5BG9SP7W7TAT2D8Y4Ch_DMda_"><script type="text/plain">
 use encoding;
 
 main() {

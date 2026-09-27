@@ -14,7 +14,7 @@ use math;
       <h2>Модуль числа: <code>math.abs(n)</code></h2>
       <p>Функция <code>math.abs(n)</code> возвращает абсолютное значение (модуль) числа — то есть его расстояние от нуля, без знака:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=0FtJu4XQXUrEMBAH8KsM89TCmqXrVqF7As9gfOhqFgNJKtsuKqWwH6IPPnkGL7AKxVJWvcLkRk6gPm9e8p_klyFMjQttVInZZY13eXWLGdpcO6FvHg2OsFIPFR-tSgXXhSsLo2bShcqy5Shd0FEMtXTAa0DifqkrZVwUmMjnZXSSpHE8g_EYkvQInU6CDHQ6Odb1VJwPbTlJ10iHzdUIXW4Vf5veaE9f9EOf_pVaoAPt_ZbaYe_8C7V-Qz11fOmf_I6-qffPXHYZ0K9fczowWUPCo1gsCxt6vodn9MG2ox4ueE5GrywD_R8zTMSZSLH5Aw"><script type="text/plain">
 use console;
 use math;
 
@@ -31,7 +31,7 @@ main() {
 
       <p>Зачем это нужно? Представьте игру «Угадай число»: программа загадала 37, а игрок назвал 50. Насколько он промахнулся? Обычное вычитание даст <code>-13</code>, но «промахнуться на минус тринадцать» звучит странно. Промах — это расстояние, а расстояние не бывает отрицательным:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=-74R6W1RbUrDQBC9yri_EoihVVRI8QCewYjEutVAspUmRaUUav36UX-oV-gF6kdorCZeYfZGvk1bCtLAktmZN-_NvO2JVhjJRHiHPXERpOfCE3EQKjc8vY6EI1J5lSLVTSQ12yppR7LhK3OLgUXoK4O2bOr5ivCFKqVENjsypX3a3qsQJr9odi87YSotX_CYP3jCnzhfesgZ6UfO9Q1_c0lc6iHVCcWS6rWaR76wGyv6s65MErAvKc9keoy8Za8Xi5SRe9Uj4l894JJ_eKLvudC3EIOkfiIueAIRp1rKDU4Sa7HC5lzMdlDdWE2xhv-Z-I0znq4obGT0aL4QAq8S-McLvr6vRP_IESqIJYzmFzgyxZTv6M2oGhb2LP45XMrg0oxzY9kddih4ph9wzb35fjmgmR7QFh6v1WnHhnNs2jBfgeqMDvCyUdiNAQiXoSfq7q67I_p_"><script type="text/plain">
 use console;
 use math;
 
@@ -63,7 +63,7 @@ main() {
       </ul>
       <p>Если второй аргумент <code>z</code> не указан — округление выполняется до целого числа.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=jj5zvYVSzU7CQBB-lcmeaNIsURSwxAfwGayHBpa4yXZrSok1hAT8PXjy5t0XQCOxAcRXmH0jZ4EiEIE9tLNfv-_rTL7psKZUosW88w67CpJL5rEwkJrLxo1iLktEmhDUbgmoR7oVKVHztb2FxKXS15ZdcKDja6DTVFGQQAqnUOLlSvVkRrEfFmp-HctEKF3wGb6avnnAKX7iNz2HYJ4wM30c49QDn7mQOjvUcdTWjULqzKm2G55DTg3mp1iEo216ajSK1_U5tKovbdPXhVTr8gWyVOf_3zOBC4f_DGFRcrId8HJ1zxAbFivo0qKye44Nhz9wNs2yi66vWffCZToIBW0FvuAAvyi7D_NM-eEEB-YWh4t3RnkOKc8RZjbce3NHOY_MI10zD_DH9KiaEKUHJdq0ZhyF1vPNyvCduBmO4IzWUMl2SASZlx474GV-zLq_"><script type="text/plain">
 use console;
 use math;
 
@@ -93,7 +93,7 @@ ceil(x, 2): 3.68</idyl-output-block>
       <p>Обратите внимание: все три функции принимают необязательный второй аргумент — количество знаков после запятой. Без него результат получается типа <code>int</code>, а с ним — <code>float</code> (что логично: «3.68 знаков» — это всё ещё дробное число).</p>
       <p>А зачем вообще округлять «вверх»? Классика ремонта: нужно покрасить стену площадью 23 квадратных метра, а одной банки краски хватает на 5 квадратных метров. Деление даёт 4.6 банки — но в магазине не продают шесть десятых банки! Придётся взять пять:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=PUE6oIVSW0rDQBTdymW-Wiipr_qR4gJcg_Ej1BQDk4m0KVVKoQ-rSAvSBYgfbiCWRkM0cQt3duSZ1GJ_xPzMfcycx70ZiLYvva6wzwbiyo0uhS0C11eWf3EjRU1E3nWEUq_rUStU3VB6TUeZLMBdhI4ytytVGjiK8LVl6EbUd6WkEzo4tPaaVK8Tf_EHF_qBY17rBemxnnDCuZ4Tr4gzXpWNEceoo6pnxJ-c6ElZmu0it1wF4IbBpRK54DXnHBO_AiMHFsKsfDdGkv4mqZ5Q4x-yglfGkqH7cWv1O37kSVVxBD_pKb-Bo9iSFZxRBSiFvjdZ1SZH1Dbm60Zptfkn1jPYUshYgnesH43MKaYEkXqxgTEDtlqeLys7gAZx6CgxPK8J5QYeVsNLaHk30vWcE-MlLqe7OVNISzajQFPfggVD0ndIUxt7KWUY-yM6wrrbnTAwmC_mGVzm6GZ0in9B-r0AF_xtaIt969hqiOE3"><script type="text/plain">
 use console;
 use math;
 
@@ -116,7 +116,7 @@ main() {
       <h2>Возведение в степень: <code>math.pow(a, b)</code></h2>
       <p>Функция <code>math.pow(a, b)</code> возводит число <code>a</code> в степень <code>b</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=kzmX7YXQXUrDQBAH8KsM85TAujGxWyQ9Qc9gfAi6xYVkU5qUKiFQP9AHnzyDF6hCMIRqrzB7IydS-9p92f_s_mZhp8aZyXSJ8UWN87S6wRjz1Fhpru8yFFjp24qPlqWGq8KWRaYniR2qnC3HxA7a86FOLPDaI7lamEpn1huYnBcrLxJw7vsTJkEAkRof4UrA2YGHkTrCRwJOwj_P_FRGCrwwGPmJbRKLzaVAm-aa_0FvtKEv-qFP90ot0JY27oHa_d65F2rdPfXU8aV7co_0Tb175rKLgXZuzWnLZA2KZzNbFPnw5vvQRh9sO-phyoPLzDJnYP5jjKEcS4XNLw"><script type="text/plain">
 use console;
 use math;
 
@@ -133,7 +133,7 @@ main() {
 
       <p>Степени отлично описывают всё, что удваивается. Например, бактерия делится каждый час: была одна, стало две, потом четыре, восемь… Сколько их будет через сутки? Считать вручную — занятие на вечер, а <code>math.pow()</code> справится мгновенно:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=rmRG041RzU7CQBB-lcmeIGmWP-VQnsBnsB6Iltik3RIoUUNIBIweOBifwYPXQlipBcsrfPtGzlY4cWEvO7P7zffNfDMWvSD0h8K9Hot-N7kXroi6gZLB3VMoHJH4jwk_jYY-3cZqGId-x1M2ixjLoacsulKlsaeIT61G-ECK3MygzTMy805YQ2PL4cxMbZrz_zfWZoEfMm9IzdQlLDndIiUUDP9F6hCDZ4zcorAMK2iHsEfBjwV2tlAz4YI1tJTyX_3QonwYBIkfqoon8FW2obGh1kEMqUuecMoJZD9-qDQdalWrnTMoGvUjR4HVKUujfh4NTzbnMXJkpxzNi5Jj4ikxuXGE6kY--196urGqbJMm7LgJNvhwZ6UZU0vIn-bFzNnB3LxyygrY2z0wlOWpzTvtDeLIcn7aMiwZmyGnK154GIwiBgTH0BUN2ZaXYvIH"><script type="text/plain">
 use console;
 use math;
 
@@ -156,7 +156,7 @@ main() {
       <h2>Квадратный корень: <code>math.sqrt(n)</code></h2>
       <p>Функция <code>math.sqrt(n)</code> вычисляет квадратный корень из неотрицательного числа:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=mB5NX4WQX0rDQBDGr7LMUwJl25RoMT2BZ-j6EHSLC7sbTbZYCQFtRR988gxeoArBELReYfZGzkIEfeq-zB9--30zU8NSaVlBtqjhKneXkIHJleXq4lbDCJxcO2qtKsnOC1sVWs6FDZUhllJhAx3FrBaW0RsgflMqJ7WNAsar69JF6UkczwMyHrPZIXg6sAHGb3-HHX5iS_EL9yzhaZJOD0lM_khMhG2EheZsBDY3khbCF9zhB-7x3T9jy0h95zfYDrHzT-R2jz35tsw_-C0Z9_6Ryi77NxCb0ZGWZWGC5mv4hm_EdtizU7qgVitDgPpNM0j4MT-C5gc"><script type="text/plain">
 use console;
 use math;
 
@@ -173,7 +173,7 @@ main() {
 
       <p>Корень выручает, когда известна площадь квадрата, а нужна его сторона. Участок площадью 144 квадратных метра? Значит, забор с каждой стороны — по 12 метров:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=AdSeyjWQXUrDQBDHrzLMUwshtVBFUjyAZ3B9CHaDC5uNNikqpdAPP5D6IngDL1Brg2m08QqzN3J2qfuyM7P_mf9vdoyJ0jLH6GyMV3FxiRGmsTKhGtxpDLCQtwWXRrmEi8zkmZZ9YVyWspZDYZy61YaxMMAn0VlcQKKkHsAJdHu98KAPnQ7QL31TY59pRRv7AlTT2odTWtk57aihT2rALuwTF2ZcqmkFtPbCEOiHSjv34gfn6Zz2OOHNUBVSm5ZAemOPiodxZ0MbP3ULflrDvQ3t7DICgYGHD_PrYdHypO2Aq2wisM0rTYTByXmAJk4lr06vDPrF3Wu7pNKhOOJyf1cMXNoZY1b8aO_tgm1r-8hpFfHW7Ft5-ikc83cmwyx1M99dG32wtqIaTvmvtRqlLFD_YYTd8Cg8xMkf"><script type="text/plain">
 use console;
 use math;
 
@@ -188,7 +188,7 @@ main() {
 
       <p>А вот попытка извлечь корень из отрицательного числа закончится ошибкой выполнения — Idyllium не работает с комплексными числами на этом уровне:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=t1C5BjWPUUrDQBCGr7LMUwJ1QbBC4wk8g-lD0C1d2N1ossVKCFRb6oNPnqEXaIVgCFWv8O-NOgt1Xuafme8fZhqaaaNqyu4aeiz8nDKyhXZSP7wYGpFXS8-tRa3Efenq0qib3MXKMssyd5FOUtHkTnCcIflcaa-MSyIm66fKJxdXacqGNnfUTkfkCqt4MT6xxzd-8RU-0AkcsQ9v6M65D-_owisG9DwMm7DGD4aw5bLPBP7CitWRkZWY8LGzqrRx5y7acGC2xyBu-ROjF5YB_S8zupTXckztCQ"><script type="text/plain">
 use console;
 use math;
 
@@ -204,7 +204,7 @@ main() {
       <h2>Ограничение значения: <code>math.clamp(min, val, max)</code></h2>
       <p>Функция <code>math.clamp(min, val, max)</code> «зажимает» значение <code>val</code> в указанный диапазон: если <code>val</code> меньше <code>min</code> — вернёт <code>min</code>; если больше <code>max</code> — вернёт <code>max</code>; иначе — само <code>val</code>.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=VvLYRY1SS07DMBC9ysirRgppIhQWiTgAZyAsouIKS7ZTtSkfVZX6QbCgG8QBWHCB8omIKhquML4R4zYFiljUUhTPy3vj9yYesLaQvMei4wHrpPkZi5hKhfbE6ZVkLsv5ZU5Qv8ehleleJnmcaFsp4tI20ZbdcGCQaKBVk7yLrsi51A1L81oyVZ2G70LoQuA7Tgyr1WxCuItqb_-3jFT-Lqog_KMKfGu3LvDRjLDEDyzMKAKs8JXqOS6xNLf0TMwMzJSgCl-wwCWVK0ZFigVWZmwmWJLMTMAHfMOKuteuhM7hPJN9xeEQgiCM1_A3tO1yDVunvhP_Hyth-LB9tJlFkLCNmBKu0tH5w0Sz4YnLdKo4_TW8p0jvNoO5wwKowZx8F_XbJi3MmJqW9NFcmynFX5gbKksayefPgKg5XYV2N1O26ZPV4bOdFS7giO6JFH1FBLHZRizwDryQDb8A"><script type="text/plain">
 use console;
 use math;
 

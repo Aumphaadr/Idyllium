@@ -13,7 +13,7 @@
 <div class="docs-section">
   <h2>Первый сервер</h2>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=pCi-nV2QwUrEQAyGXyXm1EIZ2YMeuk_gVY-OSLWpO9BOu9N2VUph3YsHH0LEswcXFlTW-grpG5luUcQ5DPn_ZJJv0mBiUioxPG2wiKoZhphFxioT36YYYEU3lVh1SXBNF1NttV3kJoaktpeVyS3MKE1zT3LqmOY1lRU4mgcwGmWRW3npqPSh0RbkSKxKsrGnkR_7Jb_xmjf9ag_4pV9xB7zljt-Bv8Rd8rp_ENHfjWK4lUZfMNqBZAD1fjsPI0_ILchBVBTT0ZRI5fb8iioZuL-D1RiM1P6fGldLp7EvtmcB2igj-Tc_ydTuH0IodDvy7aBgImtKXJ4N5c_9PW_4lT8l-wFHssPU1JkUmJ8wxIk6VAfYfgM"><script type="text/plain">
 use web;
 
 void function hello(web.Request req, web.Response res) {
@@ -70,7 +70,7 @@ main() {
     В <code>send</code> можно отдавать настоящий HTML — браузер его нарисует:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=954Xm6WSzU7CQBDHX2WyJ0hIG0z0UJreverRGtLKAk3otvQDNYQE8OBBEw56VBPjC6ARRZTyCrOv4JM4WyLix8097M7O_jfz--9sl9W9Fo-ZsddloZM0mcF8xxOaVztusRJL-FFCqTTmcMjdii1s0Qm8GtRTcZB4gQAlroZOgxfoXNvh7ZTHCUS8XYJlIg4DQbcjHhehawugQbEWc1Er2Mxsli28wCm-ynN8xKkcmTqlzNDCaxzLAeBCjuQQJ7KPmQZ4Jc_gvX8JpqsEmTzFOclGIAdySJIxPuHY1F1LM_XQslmRiHu_oR03SJN_AN9QvRzpIZ8n68y4IBcDWueg2GCbHrLlpT7gM-0wUy7pTJ4oRzj7Cares7AqrIh2edThEThhWFkmKdICUW3whHh0m5W-mlD8U5LbVbo8WNdEKRVblma9_RITjs-p3XhLzjJ8-WbTUL3oE_yb2sEG_Y56FPhKfkd9mOA9-Z3ibOWYBN5naLCytqVtst4H"><script type="text/plain">
 use web;
 
 void function main_page(web.Request req, web.Response res) {
@@ -104,7 +104,7 @@ main() {
     <code>req.query</code>:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=achXTk1RsU7DMBD9lcNTqkZGCMEQVHVmhREjFKhbLDVO6jiFqorUlgEGBgZ2hPiBUhGpVFB-wf4jznUL9ZLz83vvLu-GpC26PCfR2ZBksb4mEUliIaloDbokJJrfaoSKnMMNvzxiksl-KlrQLuSVFqmEjuJcB_hGT3iv4LkGxXsheCDPUolKxfMaDJkEPLlWQnZAxgmHhuNSVKlBwIiDGKkdeZ5oQ-BJDWAE8Y2BO2hIcy5bqDJPYBZ2YpZgx-bHjszUPpi5mZmpqeykCebZLM073mb2EWkVNJ1rg1KKOkD8AzWVHds7-t_c99CFkmug9J_tvi-oc32wS4gTQt3_Ux3rHe9UurRcmMHf8C6WU676XEGcZWtzrGgqLzqYIyO7q0AZCX2ytS2OKtDJ-5LyPFwFhrsxrzjF0ny6ACocyo00imAVxtx8uRvs4yrbKk0c_c3emwoj-cbXBRzjnruiSJAgNmVE9ughPSDlLw"><script type="text/plain">
 use web;
 
 void function greet(web.Request req, web.Response res) {
@@ -138,7 +138,7 @@ main() {
     <code>send_json</code> — он помечает ответ как JSON:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=66NSWm1RTUrDQBS-yjCrBMIUwbpIT-BKUHBjpKTNa52STNKZSauUgrpx6QlciBeohUotWq_wciPfNDaIOIvh_Xzve_N9M-MDmYLh4cWMF7G94iHPYqmETG5SHnAL15ZKpQE2hV4nUi4amVxRGKlJLhM2KFXfylyxuJDdYSnTxCOoOIVxCcYyDeOA1QVT5IrGNRifzSLF6DgqcdIbQd-yWJkp6E7dqBMRJ4kX8R1rxIMafh6nJVAVn3BbPeAnLqpHVt1V99UtLvANFxH3_f9oMsh6oM0fonYDpocJAyrpuq73M2rzOt2h5k6188drFDhpZ6AnoMmAYr-2KESuukOwtLZFxrQaCY1L_i-sLomx5ufzy4CrOAOyHZ9xiVt8J3W4InVLd4cMvyhe44fL2CH90kDnmYO_kB0rfCVL1rhhx_SFqSwzAsh9GPIDcSTafP4N"><script type="text/plain">
 use web;
 use json;
 
@@ -173,7 +173,7 @@ main() {
     А свойством <code>res.status</code> можно выбрать код ответа:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=vEmbYl1RwU7CQBD9lcmeSmwqGPFQwgd41aM1ptBt3IRuS7tFCGkicPBggp9gjD-gJCSIiL8w-0fOAiXgHnZn37x9s_NmyELR4Rlzb4Ys8dU9c1nkC-mIYNBhNlO8rwjKMw4PvNXwpCd7sQggzGVbiVhCyttc9LhFWeeKd3OeKcK6NmyBLIklvU15VoGhJ4GWCMEihtOKgwE0m-Axj-2TZhHZyZSv8gyacF6tNv6luAwsj-GrnuiRHtM-BfzFNV2e8RuXegL4g3PC9CMuKFzgCj_01KEyR1IqT-UOKLbHUeWzaq1xAO-rbkT1ix7j2qXPwwmU3Rj5wlhkHLT2PRknrnna4yn4SbLTpMiJ5V0SZ4pkT-lFpxX3PWaXjlYOiGlOcltxVtzaTPoRp6ngG85wjV-gRzinf83M7paNr8wN6jTEMI0jQ3_XTzjHz40lS7ikCXdEHhFBlKHLas6FU2fFHw"><script type="text/plain">
 use web;
 
 void function receive(web.Request req, web.Response res) {
@@ -210,7 +210,7 @@ main() {
     файлы из папки:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=szA1TE1OzQqCQBB-lWVOCbLQIQ_6BJ07thH-rLSgq6xaiQh16jmiJygQKvp5hfGNGomgOQzfHzNfA7FKZAHuvIHcL1fgQuorzVVUJ2BDKbclSVUh2UYGntBCD_bIYo3QjIZUPpNmLQ3z89z7ioR4MYjLSBkZlpmpRwLyKkhUKMD6S5mKbhFvhYZ2YYP2U0n_8IgXfOGN9Xvs-h0R2i7DN-ErPgbGHKoXmywd4qf-gB2e8UnunU2pe6KqlALqB10Yc4dPoP0A"><script type="text/plain">
 use web;
 
 main() {

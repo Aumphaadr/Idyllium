@@ -24,7 +24,7 @@ array<array<int, 6>, 4> mx = [
       <h2>Чтение и запись ячейки</h2>
       <p>Чтобы добраться до значения, нужно указать два индекса: сначала <strong>номер строки</strong>, потом <strong>номер столбца</strong>. Индексы, как всегда, начинаются с нуля.</p>
       <p>А ещё в ячейку можно записать новое значение — точно так же, как в обычную переменную. Допустим, судья пересмотрел запись матча и исправил очки второго игрока в четвёртом раунде:</p>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=i2lK-I2R30rDMBSHX-WQqw1CWdr173T3PkObi6IdBtpM2g43xsDhhRe79Q18ARUGQxy-QvpG-3V14C4UQ0hyzvedA0mWbKLyrGJRvGR3aX3LIlakSlvqZpEzzupsXiM1qzK6nupqmmejRCe6VXp9WiaaMNKyTBcX3ap0zckbcxqOqZjTJcWd047Y9pAXnHyHkwg5BT4n15b8h-K5nOwBNBttgEXAyQnOFH-IKmhh2wWqjTgIzxSBahd4COxhD6H4nuwMebxCe_q-knVfqjrLda-YxwOJ2R_9yoWMnb-4I2P3yDvjVIGHCMN_dF0lmq0kZzotMry7eTbvzaP5NNvmweybjdkSgtdm3azNDmgTkfkC2nUKCXzZpJwWbelL82S25s3sQT_oCv-Zq1kBQZ2OEROWZ7lsdQA"><script type="text/plain">
 use console;
 
 main() {
@@ -53,7 +53,7 @@ main() {
     <div class="docs-section">
       <h2>Вывод двумерного массива</h2>
       <p>Чтобы вывести всю таблицу, используем вложенные циклы: внешний перебирает строки, внутренний — столбцы.</p>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=BGY0Fl2ST2rCQBTGr_KYjUqHYGIS88e67xmSLIKNNJBMSoyoiFDpogu3vUEv0BYEKS29wuRG_cZobToML2_e9_seM5lZs2maJTPmBWt2H1d3zGN5nAotvV1ljLMqWVYozWcJTQoxK7LED0UoFNLt0ToUhBGXZbwaNTEVFSd7zMkcU76kawoaRo3AsFHXOQ0HnHSXkzPkZBkR_4PYFiejD8xAG8i6w2ngtJChCRcwV3UBamDtuC1Eh9uCbEK28XWBDO2oIaLjEVQ2LUrqYsdUFgtste8fkxGZ_qmi4hXpvydtmSZF1phUMiLbP1VU_G9S4_QDtUWZVkk3XwboHgWgI04hw-z5F8PmkrZ9nTAUnTMJCpNtIs5EnCe4Kfks3-tH-Sn39YP8qndyT1i81tt6Kw-Qdh7Jb0iHBiEDlzwti1xZX-onuZdv8gvqB93gBWTpPAeQnlOP6ZqtWWzzAw"><script type="text/plain">
 use console;
 
 main() {
@@ -82,7 +82,7 @@ main() {
     <div class="docs-section">
       <h2>Сумма всех элементов</h2>
       <p>Кто выиграл турнир — вопрос отдельный, а вот сколько очков заработали все игроки вместе, посчитать легко. Обойдём таблицу теми же вложенными циклами и сложим всё в одну переменную:</p>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=YKg3UGWSzWrCQBCAX2XYk-ISTMx_rPc-Q5JDSCMNJJuyRqqIUOuhB699gdIXsIIgpbWvsHmjzma1rXQCO3_fzOxudkHGeZFNiB8uyF1S3xKflEnOtPxmXhBK6mxWY2g6ySCt2KQqsiBiEZNIpwuLiAFKwnkyH6o1ZzUFe0TBHEE5gysIFSMlNGyM6xScAQXdo-A6FCwjpn8Q26Jg9BEzsA2mdZfCwL1AHBOrEPNkF0QN9F3vAtGx2sK0iWkbtYeIY8eKiNsjSAs3C3VVJwXusx-o2Lji0JEJ3gZRDcEMWo9DD_SfU1_AqYJThO2g9dJ_sJTzNKV7eEUhj8M0Dn6xpTJP6nTr2j3P66xgnYiIl2YtPvDbgjg2T-JdHMUOmsdm3TyIT3HAdetDRKga0sXW2IssY0pYUmb4N8Wz2LU99rKi2Yg9yHbNqlmJA6Y2PogvTB0UAgN8CGNelbL0FSfuxZscJN7hGl9JkU9LBPKz6RNdszWLLL8B"><script type="text/plain">
 use console;
 
 main() {
@@ -109,7 +109,7 @@ main() {
     <div class="docs-section">
       <h2>Если выйти за границы</h2>
       <p>У двумерного массива границ в два раза больше, чем у обычного, — значит, и промахнуться мимо них в два раза проще. Попробуем спросить очки десятого игрока, которого в турнире нет:</p>
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=kWHtR1WQz0rDQBDGX2XYUwtL6Kb5r_buMyR7CLrFhexGkhRTQsDiwUOvvoEvoEKgiMVX2H2jToyCncPuzHy_b2CmI2tZiJokaUfu8-aOJETlUjvydlsQShrRNtja1AJuSl2XhbjIdKZHZDaHLtOAkVdVvr2cXqkbCsGKgrcC1cIVpBMzRuoG2GcUwiUFFlOIQgq-y-k_JPApuAvEXByDMosoLKMzJPTQhVg8TkHUxTqKzxCGbh9lD-UA_xiRMOATwX9WGLPflZyHSjai0DPVpmzB0wWfI9JnmvScEp0rgScwL-bDPpkvM9hHc7R7MwAWb3Znd-aA0j4B843SYULAw-utq1KN1lf7bAbzbo6ofsI1nraQG4WA_EsTwpzA8Ul_Ag"><script type="text/plain">
 use console;
 
 main() {
