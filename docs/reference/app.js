@@ -350,6 +350,14 @@
     `;
   }
 
+  /** Таблица раздела: первая колонка — имя (кодом), остальные — текст. Для перечней вроде словаря IdySS:
+   *  подсветка Idyllium такому списку не подходит, а своя подсветка ради одного блока не нужна. */
+  function tableHtml(table) {
+    const head = (table.head || []).map((cell) => `<th>${escapeHtml(cell)}</th>`).join('');
+    const rows = (table.rows || []).map((row) => `<tr>${row.map((cell, index) => (index === 0 ? `<td><code>${escapeHtml(cell)}</code></td>` : `<td>${escapeHtml(cell)}</td>`)).join('')}</tr>`).join('');
+    return `<div class="api-table-wrap"><table class="api-table">${head ? `<thead><tr>${head}</tr></thead>` : ''}<tbody>${rows}</tbody></table></div>`;
+  }
+
   function renderLanguagePage(page, sectionLabel = 'Язык') {
     els.view.innerHTML = `
       ${breadcrumbs([{ label: 'Документация', href: ROOT_PATH }, { label: sectionLabel }, { label: page.title }])}
@@ -365,6 +373,7 @@
           <h2>${escapeHtml(section.title)}</h2>
           ${section.description ? `<p class="api-section-intro">${inlineCodeHtml(section.description)}</p>` : ''}
           ${section.notes?.length ? `<ul class="notes-list">${section.notes.map((note) => `<li>${inlineCodeHtml(note)}</li>`).join('')}</ul>` : ''}
+          ${section.table ? tableHtml(section.table) : ''}
           ${section.code ? codeSample(section.code, section.language) : ''}
           ${section.link ? `<p class="section-link"><a href="${routeUrl('language', section.link.page)}">${escapeHtml(section.link.label)}</a></p>` : ''}
         </section>
@@ -529,6 +538,7 @@
       <section class="api-section">
         <h2>Имена значков</h2>
         <p class="api-section-intro">Все ${icons.names.length} имён для свойства <code>icon</code> — тот же набор, что у сайта и Конструктора GUI. Имя пишется строкой: <code>pic.icon = "star";</code></p>
+        <p class="api-section-intro">Значки взяты из набора <a href="https://aumphaadr.github.io/Klaarheid-Icons/" target="_blank" rel="noopener">Klaarheid Icons</a>, который разработан автором Idyllium и опубликован под лицензией MIT-0. На сайте набора значки можно рассмотреть и скачать в SVG и PNG.</p>
         <div class="icon-gallery">${items}</div>
       </section>
     `;

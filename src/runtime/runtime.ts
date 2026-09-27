@@ -3,7 +3,7 @@ const nodePath: any = require('path');
 const nodeBuffer: any = require('buffer').Buffer;
 
 // ─── Декомпозиция (2026-08-29): фундамент вынесен в соседние модули; этот
-// файл остаётся фасадом — внешние импортеры ничего не заметили. ───
+// файл остаётся фасадом — внешние импортёры ничего не заметили. ───
 import { IdylliumRuntimeError } from './runtime-errors';
 import {
   ContextualRuntimeFunction,
@@ -179,7 +179,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.6.4';
+export const IDYLLIUM_VERSION = '1.6.5';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {

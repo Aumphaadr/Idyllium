@@ -4971,6 +4971,8 @@
   var consoleFontSizeIncrease = document.getElementById("console-font-size-increase");
   var consoleFontSizeInput = document.getElementById("console-font-size-input");
   var autocompleteToggle = document.getElementById("autocomplete-toggle");
+  var squigglesToggle = document.getElementById("squiggles-toggle");
+  var openInIdeToggle = document.getElementById("open-in-ide-toggle");
   var colorPickerButton = document.getElementById("color-picker-button");
   var colorPickerMenu = document.getElementById("color-picker-menu");
   var fileAppMenuWrapper = document.getElementById("file-app-menu-wrapper");
@@ -9420,6 +9422,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   var FONT_SIZE_STORAGE_KEY = "idyllium-web-editor-font-size";
   var CONSOLE_FONT_SIZE_STORAGE_KEY = "idyllium-web-console-font-size";
   var AUTOCOMPLETE_STORAGE_KEY = "idyllium-web-autocomplete";
+  var SQUIGGLES_STORAGE_KEY = "idyllium-web-squiggles";
+  var OPEN_IN_IDE_STORAGE_KEY = "idyllium-open-in-ide";
   var WEB_IDE_BASE_URL = detectWebIdeBaseUrl();
   var folders = /* @__PURE__ */ new Set([WORKSPACE_ROOT]);
   var expandedFolders = /* @__PURE__ */ new Set([WORKSPACE_ROOT]);
@@ -9436,6 +9440,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   var editorFontSize = readSavedEditorFontSize();
   var consoleFontSize = readSavedConsoleFontSize();
   var autocompleteEnabled = window.localStorage.getItem(AUTOCOMPLETE_STORAGE_KEY) !== "off";
+  var squigglesEnabled = window.localStorage.getItem(SQUIGGLES_STORAGE_KEY) !== "off";
   var fileEditState = null;
   var internalDragPath = null;
   var internalDragType = "file";
@@ -9476,6 +9481,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   applyEditorFontSize(editorFontSize, false);
   applyConsoleFontSize(consoleFontSize, false);
   autocompleteToggle.checked = autocompleteEnabled;
+  squigglesToggle.checked = squigglesEnabled;
+  openInIdeToggle.checked = window.localStorage.getItem(OPEN_IN_IDE_STORAGE_KEY) === "on";
   applySavedLayout();
   runButton.addEventListener("click", runProgram);
   stopButton.addEventListener("click", () => stopProgram(false));
@@ -9519,6 +9526,16 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       applyEditorFontSize(Number(fontSizeInput.value));
       event.preventDefault();
     }
+  });
+  squigglesToggle.addEventListener("change", () => {
+    squigglesEnabled = squigglesToggle.checked;
+    window.localStorage.setItem(SQUIGGLES_STORAGE_KEY, squigglesEnabled ? "on" : "off");
+    updateMonacoDiagnostics();
+    setStatus(squigglesEnabled ? "Ошибки и предупреждения подчёркиваются" : "Подчёркивания выключены: ошибки покажет запуск");
+  });
+  openInIdeToggle.addEventListener("change", () => {
+    window.localStorage.setItem(OPEN_IN_IDE_STORAGE_KEY, openInIdeToggle.checked ? "on" : "off");
+    setStatus(openInIdeToggle.checked ? "У примеров учебника появится кнопка «В Web IDE»" : "Кнопка «В Web IDE» у примеров скрыта");
   });
   autocompleteToggle.addEventListener("change", () => {
     autocompleteEnabled = autocompleteToggle.checked;
@@ -9770,7 +9787,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     const monaco = window.monaco;
     const model = monacoEditor.getModel();
     if (!model) return;
-    if (!currentFile.endsWith(".idyl")) {
+    if (!currentFile.endsWith(".idyl") || !squigglesEnabled) {
       monaco.editor.setModelMarkers(model, "idyllium", []);
       return;
     }

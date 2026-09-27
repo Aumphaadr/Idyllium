@@ -1,28 +1,41 @@
 use console;
+use file;
 use image;
 use qr;
 use time;
 
 // ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
-const string TEXT = "https://aumphaadr.github.io/Idyllium/";  // что зашифровать
+const string TEXT_FILE = "текст.txt";        // файл с текстом для кода; нет файла — берётся TEXT
+const string TEXT = "https://aumphaadr.github.io/Idyllium/";  // текст, если файла нет
 const int CELL_SIZE = 8;                     // пикселей на клетку: больше — крупнее картинка
 const string RESULT_FILE = "qr.png";         // имя картинки с кодом
 const string TIMEZONE = "Europe/Moscow";     // часовой пояс отметки времени в конце
 // ───────────────────────────────────────────────────────────────────────────────
 
-// <--- Замените текст в кавычках на свой и нажмите «Запустить». Картинка появится в
-//      «Файлах».
-//      Wi-Fi для гостей: "WIFI:T:WPA;S:ИмяСети;P:пароль;;" — телефон предложит
-//      подключиться.
+// <--- Откройте файл «текст.txt» в панели «Файлы» слева и впишите свой текст или ссылку.
+//      Файл не нужен? Удалите его и замените текст в настройке TEXT выше.
+//      Wi-Fi для гостей: WIFI:T:WPA;S:ИмяСети;P:пароль;;  (телефон предложит подключиться).
+// <--- Нажмите «Запустить». Картинка с кодом появится в «Файлах».
 
 main() {
     console.clear();
-    console.writeln("Символов в тексте: ", TEXT.length, ", клетка ", CELL_SIZE,
-        " px. Кодирую…");
 
-    image.Static code = qr.to_static(TEXT, CELL_SIZE);
+    string text = TEXT;
+    string source = "настройки TEXT";
+    if (file.exists(TEXT_FILE)) {
+        file.istream fin = file.open(TEXT_FILE, "read");
+        string from_file = fin.read_all().trim();
+        fin.close();
+        if (from_file.length > 0) {
+            text = from_file;
+            source = "файла «" + TEXT_FILE + "»";
+        }
+    }
+    console.writeln("Текст взят из ", source, ", символов: ", text.length, ". Кодирую…");
+
+    image.Static code = qr.to_static(text, CELL_SIZE);
     code.export_to_file(RESULT_FILE);
 
-    console.writeln("Готово: ", RESULT_FILE, ", ", code.width, "×", code.height,
-        " пикселей, ", time.now(TIMEZONE).to_string());
+    console.writeln("Готово: ", RESULT_FILE, ", ", code.width, "×", code.height, " пикселей, ",
+        time.now(TIMEZONE).to_string());
 }

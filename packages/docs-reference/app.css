@@ -405,3 +405,41 @@
     padding: 50px 16px 16px;
   }
 }
+
+/* Таблица раздела (словарь свойств IdySS): имя кодом, описание текстом. */
+.api-table-wrap {
+  margin: 14px 0 18px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-12);
+  background: var(--color-code-bg);
+}
+
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-16);
+}
+
+.api-table th,
+.api-table td {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--color-border-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.api-table th {
+  color: var(--color-text-muted);
+  font-size: var(--fs-13);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.api-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.api-table td:first-child {
+  white-space: nowrap;
+}

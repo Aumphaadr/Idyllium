@@ -2,7 +2,7 @@
       <h2>Проблема: много однотипных данных</h2>
       <p>Представим, что у вас есть семь чисел, и их нужно вывести:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=6PsG1HXRwUrDMBjA8Vf5-E4bjGLdVrXFB_AZ7A5Zm85Amo41Q0cpbKcd9grefAEVBiKKr5C8kV9EMYclp_D7f4SQdFgJyVtMbztcMn2HKdZMqEiUG4kj1PxBE61bDkWj2kbyLFe5ciODIXS5AlpCaWBwDedX2T_MCS4nHhQEceJBSTCeesAJJmMPKoLkzIOFO-Pi5wqOfq8U3a-E5lIN2DA7HeahUIRCGQo8FKpQWLjQ5wr72QgVqzk9qHk0z3Znd-bNvNpDCubLbmn_YY52CzE9fLVqajf3ZPfmaF7MJ9V3uKFfkWJd04D426YYR0k0xf4b"><script type="text/plain">
 use console;
 
 main() {
@@ -60,7 +60,7 @@ array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];
       <p>Длина массива фиксирована и не может быть изменена после объявления.</p>
       <p>Кстати, количество ячеек не обязано быть «магическим числом» — сюда отлично встаёт именованная константа из прошлого урока. Обычная переменная не подойдёт (размер должен быть известен раз и навсегда), а константа — пожалуйста:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=g5M8rzWQvWrDMBSFX-VypwSMcf6c1GkLhS6dOxXLg2kUKrDlYCu0wRiSqUP7CN26dExTAiE06Stcv1GvHCLEkdB3dA5SiVOVyAKDsMRZbJ4wwDRW2lWTRYIOGvli-GheSHjMdJElciy00NbSakMpNPCwxIDSBm5vHu7hCobjE4jzPF5cMnAacg2FkbOCDWG_63kODDpWeyOrvmd12Lc6umhoz_Oipu5cwvXuc66MTHRLIH3Rmn7oSBtoJh3rFe3rJW153dKhfqdtAAKdU23oR21Oq4TGKnJQx6nkl9EHresVX9jRpn4LgP44YEe_HLKELv_ANM9S6_usXzn0mw5M93DH35OoecoGdd4G2HF9d4DVPw"><script type="text/plain">
 use console;
 
 main() {
@@ -99,7 +99,7 @@ array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];
       <h2>Сравнение с переменной: создание, редактирование, вывод</h2>
       <p>Всё, что вы умеете делать с переменной, у массива работает поячеечно — а вывести можно даже весь массив разом:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=H8KA6YWSz07CQBDGX2WyJ0ia8reIRUn05oVwbzk0WmKTdjFQooSQgB48cOAFvPkCiDQUpPgKs2_kbLExAmKbpu1k5vd93-72WdNx7Q7TjT67s_xbpjPPcrjq3PRcpjDffvCp1O3YcN3inZZrV0xuctmSSkPf5ECXw324qEAmA2KEG1zgHKcYYYgB4CcGYogBrumJ6N7gUgFqiXAqnuOabDuH7BZltdtW74yACmjZKlz-QV3T9IjKIc5wCvRaUDtgJJ7wg6BL6TFxViN6oXwYJEZAIyv6XyQ1XO_YE5M9a8Uq1Ilq5E8VKBcVyJUUKGiNSiIrJbXcVlKGl4Ir8UisIRmYHV2dLaFuZBsEOcn_DxGT2OmSYoQ7K5P4-d469b7t-LbLU7V0jMWZGFPbBudHnOzO1vdnZ6QX4Dtu9uQPAox8Y4_xKwTtCgEiShxQYrlna8ibfGByNmgojFueTWcSX360xFinCBQglAHEEAp0dpvtlif7XmP0W7xcK7iig-06XY8anORTZzm1pGps8AU"><script type="text/plain">
 use console;
 
 main() {
@@ -129,7 +129,7 @@ main() {
       <h2>Нумерация ячеек</h2>
       <p>Ячейки массива нумеруются <strong>с нуля</strong> — программисты вообще обожают считать с нуля. Поэтому <code>P[2]</code> из прошлой секции — третья по счёту ячейка:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=w_1Tin3QwUrDQBAG4FcZ5tTCEpomqZpW79JHSHJYdEsXNpOSbNESAu3Jg6_gzRdQoSCi-Aq7b-Sk6NHsadjvnzn8La60UQ2mWYsbadeYYik1Bfp2Z1CgVfeWv7aNgpuKmsqoeU459ZHRGNqcgJ-sa7lbaLICZlewhEvIzkMBcSIgigRMzwRcTNji4rTcr_weC-5qbZWh0TKbFOP5fxYO2HTAogGLByw5WZcTdoVAkqXiDtyTe_EHf3Dv7s0_puC-_Z7nT3f0e4i5q1VdlX3u2T-4o3t1X6wfcM1FGr0tOaD_xhTDYBYk2P0A"><script type="text/plain">
 use console;
 
 main() {
@@ -153,7 +153,7 @@ main() {
 
       <p>Если в массиве 6 ячеек — они пронумерованы от <code>0</code> до <code>5</code>. А что будет, если попросить ячейку с индексом 6?</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Rx20CzWOwUrDQBCGX2WYUwtLsLZJNVbv0kdIclh0iwubSUm2aAmB9tRDX6G3voAKBZGKrzD7Rk5E5_Qz3__P_C0urDMNplmLS-2fMMVSW4rs49qhQm9evKxWjYGHiprKmZuccuotgyG0OYGMrmu9nlnyCpI7mMMtZFcjBZNYwXis4HKq4PpC2KT4DfeRv2PRc229cTSYZ0kxFNrlhF2hkHRp5C8f-DVsw5Y_-D3sU-DvsBF95lPYQCz9FnVV9r5j2PGJ3_hL6CfcS3lnV6UY7L9McRQlUYzdDw"><script type="text/plain">
 use console;
 
 main() {
@@ -172,7 +172,7 @@ main() {
       <h2>Преимущество: перебор циклом</h2>
       <p>Помните программу из начала урока — семь переменных и семь <code>writeln</code>? С массивом она сжимается до нескольких строк:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=CslF4z1PzUrEMBB-lWFOXQxl6-622q7efYa2h6ApBpJU0hRdSmH35MFX8OYLqLAgovgKyRs51dVhYP6-b76ZARupRId5OeANd9eYo-bSxPJqo5ChE3eOWn0n4LI1XatEUZnKTJBoBkNlgIxbyzdraRyD7BxMrzs4g_L4lMHJkkGSMlisGCwXDNI51Vld_PKa1kJENJCEnxcU1pAVP5WEI0j-BSY7yMe3VjqhTDTJlLKeHXaNlSHHsWZouBZ0s3_0z2EXdv7Nv4aHHPxX2FL-4fdhCyn91thWT7incO_3_sV_0vQdLuhxJXtNAPmX5pjEabzC8Rs"><script type="text/plain">
 use console;
 
 main() {
@@ -198,7 +198,7 @@ main() {
       <h2>Массивы других типов</h2>
       <p>Массивы не ограничены типом <code>int</code>. Соберём рюкзак искателя приключений: названия инструментов, их вес и отметки «взято с собой»:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=04vxNX1SwU7CQBD9lcmeIGk2EUQNqHe_gRJTdIFNyta0S5AQklIPHjQx8WSMJ_kBRImIAr8w-0fOtmjwgE3a7HTfm3nv7fZZQ_oiYuVqn114usXKrO1JxeV5z2cO0-JS069OJOAsUFHgi4qrXGUhuTz0XQX0eGHo9Q4jHUrVdKB4DDoI_AiOoOoyfMSZiXGOY5c5QPUzLnGFSxOv6xG-UXWdIWqVzY4NP_B02rArZLOlbcciLzmwywsO7PCDv_A6TU3RUp3WvaZF67AjHMi-Dc-PRC2VbzlrO7wbSi18lSMpD7gwQ5OY2FzhF06pSsxNGazQ1FG-spV6j1MzhBy5eM1njEzyv5R3c2cSXAIxzZBieaH3I2NnFraxUzXVQs0GCDixsynlZGPu7yYJcgAXNIVSJnM4xk8c0-oWbPDkc8w5d5kdNXAVG9Qcpry2oEPHpxRIrXFic8AVHeTMJmNi2KfL0QiDtsWN6PimpH5Bu3M4oZvjy06bAPJnWWY7fI-X2OAb"><script type="text/plain">
 use console;
 
 main() {
@@ -224,7 +224,7 @@ main() {
     <div class="docs-section">
       <h2>Итог: что нужно знать о массивах</h2>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=8zpAhI1SzUrDQBh8lY89pRhjqrbWVgWP4qX3tEjQFBeSjaQRlVKwKnrwUPDixYPiwasWQ2u1-gq7b-RsWrUVFZfA5htmZ76_Bqtx36uzotNgO268zYoscLmw-NaBz0wWe_sxoN26R5uhqIe-V6oIHUWu2AoDBBWh-UaGGhVBODMzJG_kq-zKR3kvB7InE1ItUseyj7ibYgN1Ll9kjxAO5L06k4kmqrYGhypuFLkHS1zEJuVWqEzL5MzOm7SYNSk_B8w2aaFQTe3_MEWUqBPgz-roT1MybMvW9GfVppofunFmPI8UMamwQusTltfQ0IZ9yPfUIYw6X_bt1OIJZY9qKjt2FYXM5iY07vA2Gb35nhoB7f6ghL7QKqTKTnayB5ewf9P14v2HqDrF1Qf0Kl-GzFoYkaE1ODTsEq4lKpTSiNMUZT9nqc-6w3XWw3lbm5Hnxt5G2hBjGpOYy5SG3OZ4HhfodQeGj_90z_3mPlo6ay_isecLo4xsxhzxsWbVZMINPKypvEL3WqoFy446L5J8w1B6GHCiDqmAda5FYaB5t2lHH9IO9WkNu-7z3QAE_vFbZFkrb-VY8x0"><script type="text/plain">
 use console;
 use random;
 
@@ -266,7 +266,7 @@ main() {
       <h2>Бонус: типичные ошибки</h2>
       <p>Операции, которые работают с переменной, <strong>не работают со всем массивом сразу</strong>. Попробуем сравнить массив с числом:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=b__cI0VQwUrDQBD9lXFOKYTUqq021d699d7tIegGF5KNJClaQqA9KdiD3kTEixePUQgEG-svzP6Rk1ZxWJbZN2_evJ0MfRXIBN1xhpdeeoEuhp7SjjqfBWhjKq9ThqaJhLNIJ1EgB0IL3VCsFmRCA4cXx97sWOnUhu4QRnAC48MjG_odG3r7jO3asHcw2TQ2dOWDNYIh46wA7TbQC73RIz3QE927YBZmTgV90BdVfBdUUg2clFxYAtVUcLJoakwFc0MVv1a0pnor38SvV-cqVqkMtCWQ1de0MktzS-WOwNZgS86F5oP5xEbthZK_Ss__A8ydC_TNdioeW5o59HklfhyFDe-VR5f0vrH5Cae8r0BNQyaov9TFjtNzupj_AA"><script type="text/plain">
 use console;
 
 main() {
@@ -282,7 +282,7 @@ main() {
 
       <p>Компилятор отказывается: «больше 50» может быть число, но не коробка с пятью числами. То же самое со сложением:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=kSnCP0WQMU_DMBCF_8rJUyustIG2QArsbN2bDhG4wlLioCQVVFGkZmIoA2wIIRYWxlIRqWoD_IXnf8QVgfByz8-fn-4uF2MdqlR4w1xcBtmF8EQUaOPo82kopMjUdcbWJFV0Fps0DlXfN77ZIo0m5b4hPkGSBNMjbTJJ3RMa0DEN9w8kHbqSenvstSXtdkY_H7f4b5BzlehMNQa0Q51mn1otwjNe8YB7POLOI1tijQ0WeLdzLLlWqIlFZUt7S6ixYFFihSWjZG-w4tsGn6h9U_hGFCMpTBApbh9P_7Cde4QvO2Ndc9aM3DbPOU7iaAu-cE6FN3zw85pOeQmhnkQM6D_pCdfpOV1RfAM"><script type="text/plain">
 use console;
 
 main() {
@@ -296,7 +296,7 @@ main() {
 
       <p>А вот с <strong>отдельной ячейкой</strong> обе операции работают отлично — ведь в ячейке лежит обычное число:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=nKg1YoVRTUvDQBD9K-OcEgxpo_1MtXfxYO9JDkFTXEi2kqRoKYUWDwoVxLs3_0AqLdR-6F-Y_UdOUovgxTksO7PvPd6bHWJXhEGCtjPEGz-9RhsjX0hTXA1CNDAN7lIe9ZMALnsy6YVBy5WuzCGaDkNXApcfx_7gRMjUgGobOnAKTr1hQNMyoHbMs7IBRxWvIOZw0QWt45Q9aPMTi0CpBBfnNqiJGlNG77SlJZ8ZLWgD9Elz2qp7UM_qgScftOJGqzd27J1iXj_2zNtYpEEoNRfphclr9aQeaXHgot7agUd7H38ZHcfy4BAqeuvXEa1ozU7mavqfo6ZVcF3J-jjyDJR-FPDq6JUyTjbJM6mpDfTFKZe0oYUag2XxjrtxL8qBb4XcrIi_gjP-gFD0IwaI_dVGy6yZVRx9Aw"><script type="text/plain">
 use console;
 
 main() {

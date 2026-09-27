@@ -1662,7 +1662,7 @@ var Idyllium = (() => {
             propertySpec("font", fontsFont),
             ...fontSized,
             propertySpec("title", types_1.STRING),
-            propertySpec("theme", types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
+            propertySpec("theme", types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "breeze", "oxygen" (светлые), "idyllium", "dracula", "nord" (тёмные; "nord" — с 1.6.5); другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
             ...styleable,
             ...pointerEventsFor(guiWindow),
             ...focusEventsFor(guiWindow),
@@ -1812,7 +1812,7 @@ var Idyllium = (() => {
             ...clickableFor(guiIcon),
             ...doubleClickableFor(guiIcon),
             ...pointerEventsFor(guiIcon),
-            propertySpec("icon", types_1.STRING, false, `Имя значка из единого набора Idyllium (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`)
+            propertySpec("icon", types_1.STRING, false, `Имя значка из набора Klaarheid Icons (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`)
           ], [], guiWidget),
           typeSpec("LineEdit", [
             ...positioned,
@@ -36322,13 +36322,43 @@ ${outerPadding}${close}`;
         }
         return null;
       }
-      function pixelValue(min, max) {
+      var LENGTH_RE = /^(-?)(\d{1,4}(?:\.\d{1,2})?)(px|pt)?$/u;
+      var PERCENT_RE = /^(\d{1,4}(?:\.\d{1,2})?)%$/u;
+      var PIXELS_PER_POINT = 4 / 3;
+      function roundTo2(value) {
+        return Math.round(value * 100) / 100;
+      }
+      function lengthInPixels(raw, signed) {
+        const match = LENGTH_RE.exec(raw.toLowerCase());
+        if (!match)
+          return null;
+        if (match[1] === "-" && !signed)
+          return null;
+        if (match[3] !== "pt" && match[2].includes("."))
+          return null;
+        const amount = Number(match[2]) * (match[3] === "pt" ? PIXELS_PER_POINT : 1);
+        if (!Number.isFinite(amount))
+          return null;
+        return roundTo2(match[1] === "-" ? -amount : amount);
+      }
+      function percentAmount(raw, range) {
+        const match = PERCENT_RE.exec(raw);
+        if (!match)
+          return null;
+        const amount = Number(match[1]);
+        if (!Number.isFinite(amount) || amount < range.min || amount > range.max)
+          return null;
+        return amount;
+      }
+      function pixelValue(min, max, percent) {
         return (raw) => {
-          const match = /^(\d{1,4})(px)?$/u.exec(raw);
-          if (!match)
-            return null;
-          const amount = Number(match[1]);
-          if (amount < min || amount > max)
+          if (percent) {
+            const share = percentAmount(raw, percent);
+            if (share !== null)
+              return `${share}%`;
+          }
+          const amount = lengthInPixels(raw, false);
+          if (amount === null || amount < min || amount > max)
             return null;
           return `${amount}px`;
         };
@@ -36421,6 +36451,9 @@ ${outerPadding}${close}`;
         return `${kind}-gradient(${normalized.join(", ")})`;
       }
       function opacityValue(raw) {
+        const share = percentAmount(raw, { min: 0, max: 100 });
+        if (share !== null)
+          return String(roundTo2(share / 100));
         if (!/^(0|1|0?\.\d+|1\.0+)$/u.test(raw))
           return null;
         const amount = Number(raw);
@@ -36435,9 +36468,9 @@ ${outerPadding}${close}`;
         background: gradientValue,
         "border-color": colorValue,
         "border-width": pixelValue(0, 20),
-        "border-radius": pixelValue(0, 100),
+        "border-radius": pixelValue(0, 100, { min: 0, max: 100 }),
         "border-style": keywordValue("solid", "dashed", "dotted", "none"),
-        "font-size": pixelValue(6, 96),
+        "font-size": pixelValue(6, 96, { min: 50, max: 400 }),
         "font-weight": keywordValue("normal", "bold"),
         "font-style": keywordValue("normal", "italic"),
         "text-align": keywordValue("left", "center", "right"),
@@ -36452,7 +36485,7 @@ ${outerPadding}${close}`;
         "text-decoration": keywordValue("none", "underline", "line-through"),
         "text-transform": keywordValue("none", "uppercase", "lowercase", "capitalize"),
         "letter-spacing": signedPixelValue(-5, 20),
-        "line-height": ratioValue(0.8, 3),
+        "line-height": ratioValue(0.8, 3, { min: 80, max: 300 }),
         "font-family": fontFamilyValue,
         // Курсор — то, что дети замечают в «настоящих» программах первым.
         cursor: keywordValue("default", "pointer", "text", "wait", "not-allowed", "help"),
@@ -36487,21 +36520,23 @@ ${outerPadding}${close}`;
         // исходному прямоугольнику — это сказано в справочнике прямым текстом
         // (вердикт владельца: берём, но предупреждаем честно).
         rotate: angleValue(-360, 360),
-        scale: ratioValue(0.1, 5)
+        scale: ratioValue(0.1, 5, { min: 10, max: 500 })
       };
       function signedPixelValue(min, max) {
         return (raw) => {
-          const match = /^(-?\d{1,4})(px)?$/u.exec(raw);
-          if (!match)
-            return null;
-          const amount = Number(match[1]);
-          if (!Number.isFinite(amount) || amount < min || amount > max)
+          const amount = lengthInPixels(raw, true);
+          if (amount === null || amount < min || amount > max)
             return null;
           return `${amount}px`;
         };
       }
-      function ratioValue(min, max) {
+      function ratioValue(min, max, percent) {
         return (raw) => {
+          if (percent) {
+            const share = percentAmount(raw, percent);
+            if (share !== null)
+              return String(roundTo2(share / 100));
+          }
           if (!/^\d+(\.\d+)?$/u.test(raw))
             return null;
           const amount = Number(raw);
@@ -37071,7 +37106,7 @@ ${outerPadding}${close}`;
           obj.title = "";
           (0, runtime_state_12.defineTrackedRuntimeProperty)(obj, "x", 0);
           (0, runtime_state_12.defineTrackedRuntimeProperty)(obj, "y", 0);
-          (0, runtime_state_12.defineEnumRuntimeProperty)(obj, "theme", "Window", "default", ["default", "idyllium", "dracula", "breeze", "oxygen"]);
+          (0, runtime_state_12.defineEnumRuntimeProperty)(obj, "theme", "Window", "default", ["default", "idyllium", "dracula", "breeze", "oxygen", "nord"]);
           (0, runtime_state_12.setTrackedRuntimePropertyDefault)(obj, "background_color", (0, runtime_values_22.colorWhite)());
           obj.show = async () => {
             obj.__shown = true;
@@ -56925,7 +56960,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.6.4";
+      exports.IDYLLIUM_VERSION = "1.6.5";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";

@@ -381,7 +381,7 @@ btn.style_hover = "background-color: #c0392b;";
 - **A red button is red.** Unlike LCL, the toolkit does not defer to a system
   theme that ignores the request.
 - Window-wide `theme` (`"default"`, `"idyllium"`, `"dracula"`, `"breeze"`,
-  `"oxygen"`) is the bottom layer; anything the student sets explicitly wins
+  `"oxygen"`, `"nord"`) is the bottom layer; anything the student sets explicitly wins
   over it.
 
 The one inherited weakness is Qt's: **typos inside a sticker string are silent**

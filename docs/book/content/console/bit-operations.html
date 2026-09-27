@@ -15,7 +15,7 @@
         правые биты выпадают и теряются, а слева появляются нули:
       </p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=leQ2TWWQUUrEMBCGrxLmqYUStogiXTyAZzCyVE1tIE2XJlGXUhAf9MEnz-AFVCgUUfcK0xvtpLv7oCYvM3---SczLRRKSwvZWQvL3JWQQZUrw9XVSkMCTt45kryV7LI2ttZyLkzI3GopLcXCBDyKWSsMozPp3CvjjtlNrr1kJzutaOpqcUGsgNksDTcVkDABEywgnv93aKT12pHFZMVtqQq3aNR16aKDeOoeKnY_47eNclKbaAu7euoW733_UlvvX1gnDHTnCZi8kjQ1vuAwPuAPfozP2DMK1tiP9_g2PuKAQ8ZwTdmAX0FlKa0rzBgKX8cn7PEdv-n1k53SLrXyFQFqH2aQ8iN-CN0G"><script type="text/plain">
 use console;
 use types;
 
@@ -93,7 +93,7 @@ console.writeln(value.shift_right(-3).to_bin());
         играл каждый бит. Он просто двигает ячейки, теряет крайние и добавляет нули.
       </p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=ecPkQI2QwUoDMRCGXyXMaRdKwNZ62MUH8BlcKVETG8gmZZOiZVkQD3rw5DP4AiosLKL2FSZv5KRdbz04p3_--WaGmRaUNtJDcd7CSoQlFFALbbm-3hiYQJB3gay1l-zKWe-MLCubsrBZSU-6sgnPctZWllHsfK6ME2E2ZdY1tTDslB3zeXkI8KER9kYSsUe5X2oVFkaqkM3y3fzUNO7mt40O0thshINbXKbleXkYG6f_l0vlrrLQXUzAilrS4fiCQ3zAH_yIz9gzElvs4z2-xUcccCgYbikb8Cu5bEofU42rU-NrfMIe3_Gbqp_sjN5p9LomQP_JAo74CZ9D9ws"><script type="text/plain">
 use console;
 use types;
 
@@ -128,7 +128,7 @@ main() {
       <p>Кроме сдвигов, биты двух ячеек можно комбинировать. Метод <code>bit_and()</code> сравнивает значение с <strong>маской</strong> — вторым числом того же типа — и оставляет единицы только там, где они есть <strong>и в значении, и в маске</strong>. Все остальные позиции обнуляются.</p>
       <p>Классическое применение — «вырезать» из ячейки нужный кусочек. Маска <code>00001111</code> оставляет только младшие четыре бита:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=OeTkEYVRXUrEMBC-SpinFkrYIop08QCewciSdbMYTNOlSdWlFMQHffDJM3gBFQpF1L3C9EZO4u6TCw55mPnmm29-0sJSG-WgOGthJf0lFFBKbblerA1k4NWtJ6hxil1U1lVGTYUNkV-vlCNf2EBPUtYKy8gizhtt_TG7lqZR7GSLLeuqnM2JKyCf5PEJyJiASBaQTv8qlNJd7ROYkOVk_wrUyjXGk0Schc-1n0m7SIJuGqcPBdvN-E2tvTI2-S3ivord0p3uflrIdsJCd56BlaWia-EzDuM9fuP7-IQ9I2eD_XiHr-MDDjgUDDcUDfgZUHZAZw6rhcKX8RF7fMMvyn6wU_oDo5uSCHrnFpDzI34I3Q8"><script type="text/plain">
 use console;
 use types;
 
@@ -152,7 +152,7 @@ main() {
       <h2>Битовое ИЛИ: <code>bit_or()</code></h2>
       <p>Метод <code>bit_or()</code> работает наоборот: единица остаётся там, где она есть <strong>хотя бы в одном</strong> из двух чисел. Это удобный способ принудительно «зажечь» нужные биты, не трогая остальные:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=V3sN04VQUUrEMBC9SpivFkrYBRXp4gE8w0aWrqYaSNOlTdSlFMQP_fDLM3gBFQpF1L3C5EY7ieuXCw75ePPy3stkOiiVli3k8w5Whb2CHKpCGa4u1hoysPLWEuVayc5r09ZazoQJnV2vZEtYmCBPUtYJw6giz50y9phdF9pJdrLjyqauFkvSCphMpvEIyJiAKBaQzv4mlLq43BdA3lj_BjSyddpSRJyFL5Vd1E0SYtM4fNDvPsZvGmWlNsmPh9s6PpYGYS8M9GcZmKKStA58xtHf4ze--yccGIENDv4OX_0DjjjmDDfUjfgZWHZAewyzB-OLf8QB3_CLbj_YKS1ZK1eRQP3CHKb8iB9CvwU"><script type="text/plain">
 use console;
 use types;
 
@@ -175,7 +175,7 @@ main() {
       <p>Метод <code>bit_xor()</code> оставляет единицу там, где биты двух чисел <strong>различаются</strong>. Позиции, где в маске стоит единица, переключаются на противоположные; где ноль — остаются как были.</p>
       <p>У этой операции есть волшебное свойство: повторное применение той же маски возвращает всё как было. Получается игрушечный шифр:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=4mO6uHWRwUrDQBCGX2WZUwMlNIcUSfEBfAZXStpOcTHZlGSLDaGgIip48uRV8AWqEAii7StM3sjZ1EaoddnDzOx8_z-7W8BURZhBcFrALDTnEEAcKu2qSR5BFwwuDJfmGYpxorMkwoHUNjP5DDOOpbbtHUcUUgteTd2dK22ORIbjFI04Fn1_8Pf0AnM-2lamaRIPR6wjwet5vHs9CV0hoWmV4DRO-wqox2k-Mzhhna2XO1JmuEjSDos7Bzwn-Eu09D60xX6u616mymBkJ6NnWtUPVNW39RWt6Z1W9EXrQNhJW7Gd6wH8hfHr_wTayazAUmpYnnVBhzHy69MTMzeWqB-pFBxsqGSJVX1HFVWBoA1nFX3aqvD52-x7WvC1vqeS3timog9xwn8aqXnMDWoXBuC5fdeH5Tc"><script type="text/plain">
 use console;
 use types;
 
@@ -201,7 +201,7 @@ main() {
       <h2>Инверсия: <code>bit_not()</code></h2>
       <p>Последний метод четвёрки обходится без маски: <code>bit_not()</code> просто переворачивает все биты ячейки — нули становятся единицами, единицы нулями:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=nDJPvG1QTUrEMBS-SnirFkqYLhykgwfwDEaGjmYwkCZDk6pDKYgLXbjyDF5AhUIRda7wciNf4sxKk833vve97_30sFZaOqjOetjU_goqaGpluLrcaijAy1tPVOcku7DGWS0XwsTIbzfSERYmyrOc9cIweonnnTL-mF3XupPsZM-tW9ssV6QVMJuV8ZcCCiYgiQXki78OrXSd9mSRrPhK-aWxPstT4yjeD8VvWuWlNtlvAfc2dcoPnv_LYnYQBobzAkzdSFoUn3EK9_iN7-EJR0Zgh2O4w9fwgBNOFcMdRRN-RpbN6UJxrVj4Eh5xxDf8ouwHO6XzadU1JFAHWEHJ5_wIhh8"><script type="text/plain">
 use console;
 use types;
 

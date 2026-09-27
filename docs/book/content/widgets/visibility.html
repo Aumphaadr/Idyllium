@@ -7,7 +7,7 @@
       <p>Представьте игру: сначала на экране главное меню с кнопкой «Играть», а после нажатия меню должно исчезнуть и вместо него появиться игровое поле. Удалять и создавать виджеты заново для этого не нужно — достаточно уметь их прятать и показывать. Именно этим мы сегодня и займёмся.</p>
       <p>У каждого виджета есть свойство <code>visible</code> логического типа (<code>bool</code>). Если <code>visible = false</code> — виджет не отображается на экране, но продолжает существовать в памяти.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Jea4un2Sz0rDQBDGX2XZUwslNinV0uDFmzdvHozI1mybhWRTshvTUgptLx705Cv4AlqtSNH6Crtv5Gz6x1WKgYTlN7PzfZmZEe6ymArcvhjhPpERbuOEMO6wcBjjGpZ0IAHlgqJezvyAB9yEK1U0CjiCB6hzzniYFqhg3F9DODkyoglFxyjAplTM8iTAVrhgoYwg3GjWLRpR1oskYLdlY8lkvK6lHtS7eoX3Q630VM_0PVJfeqJW6gW-C0BT9ayeSjIvBX9snmVpL6NCnJAM9Tvupj6cnAHU9uoWGBpnNtjZdW16Q-Lc-Dpq_iPk7S54f4W8Uqhlg31C3k6o8QsywTplX7okFtRH6OAAwf8v9UTf6dnWkWkgCcOr64jFYQVsV_39Ac8OiCgtKgaMA47HlzXMSUJhE_YNYF6iN2j_zLS9vR6JSVnoCXJhjbpZmpjLj_pWLWBAnxBdotPNYkDCdkcgyXUOnSYefwM"><script type="text/plain">
 use gui;
 
 main() {
@@ -53,7 +53,7 @@ main() {
       <h2>Динамическое изменение видимости</h2>
       <p>Свойство <code>visible</code> можно менять во время работы программы. Например, по нажатию на кнопки:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=W3AfQ52TwW7TQBCGX2XZUypVlp0qVUnEpTck7hwwitx4XY9Yr1G9blqiSIELh3LiBRDiAWirBtoUwiuM34hZ2-vYbbhgyZb9z87vb3ZnZjwCKTI-fDXjbwMd8yFPAlAOhOeS73ItzjRJeSbYcQ4jX_nKhHs7bOYrRhepzktQYTplU1CjSqQ3R8ciEewZ87mxkpAnPm-FpxDqmMJ7A7elxgKOY02yd9CWNWhZeeFXXBWL4qL4gLe4ZHjL8A-ucYWX-LP031C9CI6EZNI8a6vy3TElVV7fGV6TzQ3dv4oLvGN4j0u8wyu8f9LAVkkWt--6Hb0B3uvqZyQNutL541VRqvQ4g3emNm-_Q3-Ya50qFkMoDrXd1_qrVUKzHcWnFn0DbxM6OFY0QAcPRVuo13e38WRxOt3w1F8tni_2MPDyX0w2yTB5T90HagfKitugLHCqxhMJkzcUPk0hZFGuJhrSVotu9vsUMjgqOykKZCbqv8wbT_u___PUJ_ljS9O-QRiOJzHIsFem7Iy2hep6tgdrsHbQSD0jzH3F5693uQoSQaOKn21L47p4Xx1C1eU_cEljs8brIQ1NsSiXLIsF69OcRydpYpK_FR_pwK7wN0VX7Hk9ubTADjEt8px9Z8DnfwE"><script type="text/plain">
 use gui;
 
 main() {
@@ -112,7 +112,7 @@ main() {
       <p>Прятать виджет — не всегда правильно. Вспомните любой установщик: кнопка «Далее» никуда не исчезает, пока вы не поставили галочку «Принимаю условия», — она стоит на месте, но <strong>серая и не нажимается</strong>. Так интерфейс честно сообщает: «действие существует, но пока недоступно».</p>
       <p>Для этого у каждого виджета есть второе свойство-переключатель — <code>enabled</code> (тоже <code>bool</code>). Если <code>enabled = false</code>, виджет остаётся на экране, но выключается: рисуется приглушённо-серым (точный оттенок подбирает текущая тема окна), не реагирует ни на мышь, ни на клавиатуру, и его события не срабатывают.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=dGw77o1TwWrbQBD9lemeHAhKnKAUbHJJT_2CHqpStt61tURaFWtVOxiD7VJySE-l11JKP6CpUxeRxPEv7P5CvqSzWsuWTA4VCK3ezLx982Z3RLoi4ilpvR6R91SFpEViKqQn2EVE9oniQ4VQlnLoZaIdyEDacGMPRoEEfBD1XgnJkgEMhGw7EFeeCnnM4RQCYqkikcUBqYQHgqkQw8f-YQUNueiFCuHmSRVWQkWOS__QD_pG3-lrM9W5XoCZgl6Zib7Wc_xHXN_rvNhpq-9FyDvnZ8kQaK_P-Zq3WHu2P0f8y_E8mEudmxny3O0QA35uzMRcbfpwFEOsPzqsQRcW8mtQ2e9R0e9W21mmVCIhVbSv1gXFuqLsGzZ7ie_MfC41fNxocMk1DQ6yGp77NajU0PTrqVzSdxFnGOnSKOVtgIMDbB6dvrVt77iwRNd3rFqaK3icfAXMX2LVqqjDAa1svOzW-ZDIt52Qyp4d54dEMOhmsqNEUjlSTwlzxSLFYpwlZ2v9442XrsCyR6Jz_j_kW4O_o-aF-WRnrvNnG2u35PYMUsZwcxGxRqFlr_1UqGCuhtIwGTQsMA4kGb_ZJ5LGHC-U_oJ2_sH3Hm2cutHOC-gvSpmhoHnLuWxTFmYCx3gbu_0ktsU_0fmF_o1m5_oWXq7vFyaUVw2Tmt6J55PxPw"><script type="text/plain">
 use gui;
 
 main() {
@@ -169,7 +169,7 @@ main() {
       <h2>Скрытие контейнеров (Frame)</h2>
       <p>Если скрыть виджет-контейнер (<code>Frame</code>), то <strong>все его потомки</strong> тоже станут невидимыми. Это удобно для скрытия целых групп элементов.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=rEMpF41VS2vbQBD-K4tONgTHzsMpNr0EWij03kNdgmJJ1lJ5FexVnGAMeRx6aGggp9JLWvoHXFM3ql_5C7P_qDMr6xXbpAuWV9_s7Mz3zeyqbzjcs7tG7X3fODGla9SMtslFiVvnnrFlSPtMIhR0bdYKeL0hGoLMhSLrNwTDgWjpHReW32M9LuoRiLOSdO22zV6yhkFbeTxoN4yMucct6aJ5r1zOoK7NW65EeOdFFpZcetFe8AMm6kJ9VlcQwpjBBBYwx5cx_IU5jNUFDHWYyHd7m8F3GMIM1w2ZumTwCAtcvYgQfIYpi9cdExN26LkMreelM0qnnIPOV6GYz241jyeMKgd5Q4bTPaaCycNU3TB1DY_EAkYwRWgOobrNMKJE35rHtsc8ei531HOdaGU_B1GilXIOoopGYb_CTN1qSSgyPOD_CIZazKm6rSXlivxighVdmUw2XNivLC4ZFyeBXLroeT6hCKKEdvNQvPFOOb_xYSClL3CRsDuHUiQ-0WuGxzdUaYE0qMbIYK6u1RVKGDKtI1U6TLgk7k9yW6KU3sEKui7DqIimZR01Xe5ZBS1Ssb7eqIluNkZhirm2zZJa1xPENITf-JthS18i4xv1JcOYFailNulRXJFZ-q2WZ6c6J-8ZoZOzh32KqSVNm6ibOuUOTQrrg1NZxZPmqqYKp1ZfHDU93vyIC059bjEnEE3J_cwtpMvlsEKk7Snv8mPPzllT5ZdW3MwxvW581uOxjvc9VoKuiwc6HZu40xgwG3d8LqzsBP8T9Vm1dcRoOkhUo-sy7S0dulhfZ0pCZs1d1-8VCMB9jcGHLUOgP97_cPe02eL--4OXLl2ooxrTTUpL8Bpme_jxcDp-m5x_qk-Y-i9qXJiwN8vPAS6Ivwy4qFKqlvaNwT8"><script type="text/plain">
 use gui;
 
 main() {

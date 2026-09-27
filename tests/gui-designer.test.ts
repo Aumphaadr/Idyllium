@@ -202,6 +202,36 @@ test('gui-designer: a font from a project file becomes fonts.Font and runs', asy
   assert(JSON.stringify(codegen.stripModel(model).fonts) === JSON.stringify(model.fonts), 'the saved layout keeps font names and files');
 });
 
+test('gui-designer: a picture from a project file becomes image.Static, set_image and runs', async () => {
+  // Картинка — не свойство реестра, а метод set_image: в макете это поле image виджета и список images.
+  const model: any = { version: 1, window: { name: 'win', props: {}, handlers: [] }, images: [{ name: 'picture1', file: 'cat.png' }], widgets: [
+    { id: 1, type: 'ImageBox', name: 'image_box1', parent: null, props: { resize_mode: 'fit' }, image: 'picture1', handlers: [] },
+    { id: 2, type: 'ImageBox', name: 'image_box2', parent: null, props: { x: 200 }, image: 'picture1', handlers: [] },
+  ] };
+  const code = codegen.generateCode(model, {});
+  assert(code.includes('use image;') && code.includes('image.Static picture1;') && code.includes('picture1.load_from_file("cat.png");'), `the picture is declared and loaded:\n${code}`);
+  assert(code.includes('image_box1.set_image(picture1);') && code.includes('image_box2.set_image(picture1);'), 'two widgets share one picture variable');
+  assert((code.match(/image\.Static /gu) ?? []).length === 1, 'one file — one variable');
+  assert(code.indexOf('picture1.load_from_file') < code.indexOf('gui.Window win;'), 'pictures are declared before the window');
+  await assertRuns('picture', code);
+
+  const stripped = codegen.withoutMissingFonts(model, () => false);
+  assert(stripped.missingImages.length === 1 && stripped.missing.length === 0, 'a picture without its file is reported as missing');
+  const bare = codegen.generateCode(stripped.model, {});
+  assert(!bare.includes('image.Static') && !bare.includes('set_image') && !bare.includes('use image;'), 'without the file the preview code has no pictures at all');
+  const saved = codegen.stripModel(model);
+  assert(JSON.stringify(saved.images) === JSON.stringify(model.images) && saved.widgets[0].image === 'picture1', 'the saved layout keeps picture names, files and owners');
+
+  const compiled = compileIdyllium(code, { file: 'main.idyl' });
+  const imported = importer.importProgram(compiled.ast, { source: code, colorConstants: COLOR_CONSTANTS });
+  assert(imported.foreign.length === 0 && imported.notes.length === 0, `the designer's own pictures are not foreign: ${JSON.stringify(imported.foreign)} ${imported.notes.join('; ')}`);
+  assert(imported.model.images && imported.model.images[0].file === 'cat.png' && imported.model.widgets[0].image === 'picture1', 'image.Static + load_from_file + set_image come back as a model picture');
+  assert(codegen.generateCode(imported.model, {}) === code, 'round trip reproduces the program');
+
+  const unknown = 'use gui;\n\nmain() {\n    gui.Window win;\n\n    gui.Label label1;\n    label1.set_image(picture1);\n    win.add_child(label1);\n\n    win.show();\n}\n';
+  assert(!codegen.generateCode({ version: 1, window: { name: 'win', props: {}, handlers: [] }, images: [{ name: 'picture1', file: 'cat.png' }], widgets: [{ id: 1, type: 'Label', name: 'label1', parent: null, props: {}, image: 'picture1', handlers: [] }] }, {}).includes('set_image'), `only widgets that take pictures get set_image (${unknown.length})`);
+});
+
 function sampleValue(prop: any, index: number): unknown {
   switch (prop.kind) {
     case 'int': return Math.max(prop.min ?? 0, 10 + index);
@@ -262,11 +292,12 @@ function kitchenSinkModel(): any {
 }
 
 const FONT_FIXTURE = new Uint8Array(fs.readFileSync(path.resolve(process.cwd(), 'tests', 'fixtures', 'fonts', 'Lobster-Regular.ttf')));
+const IMAGE_FIXTURE = new Uint8Array(fs.readFileSync(path.resolve(process.cwd(), 'tests', 'fixtures', 'images', 'cat.png')));
 
 async function assertRuns(label: string, code: string): Promise<void> {
   const compiled = compileIdyllium(code, { file: '/workspace/main.idyl' });
   assert(compiled.success, `${label}: generated code must compile, got:\n${compiled.diagnosticsText}\n--- code ---\n${code}`);
-  const fileSystem = createMemoryRuntimeFileSystem({ '/workspace/main.idyl': code, '/workspace/Lobster-Regular.ttf': { bytes: FONT_FIXTURE } }, '/workspace');
+  const fileSystem = createMemoryRuntimeFileSystem({ '/workspace/main.idyl': code, '/workspace/Lobster-Regular.ttf': { bytes: FONT_FIXTURE }, '/workspace/cat.png': { bytes: IMAGE_FIXTURE } }, '/workspace');
   const result = await runIdyllium(code, { fileSystem }, { file: '/workspace/main.idyl' });
   assert(result.success && result.runtimeError === null, `${label}: generated program must run, got: ${result.runtimeError}\n--- code ---\n${code}`);
 }

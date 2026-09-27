@@ -73,7 +73,7 @@ export function initializeGuiObject(obj: RuntimeObject, typeName: string, state:
     // «не задавали» от «задали 0».
     defineTrackedRuntimeProperty(obj, 'x', 0);
     defineTrackedRuntimeProperty(obj, 'y', 0);
-    defineEnumRuntimeProperty(obj, 'theme', 'Window', 'default', ['default', 'idyllium', 'dracula', 'breeze', 'oxygen']);
+    defineEnumRuntimeProperty(obj, 'theme', 'Window', 'default', ['default', 'idyllium', 'dracula', 'breeze', 'oxygen', 'nord']);
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
     obj.show = async () => {
       obj.__shown = true;

@@ -6,7 +6,7 @@
       <h2>Проблема: одинаковый вывод</h2>
       <p>Создадим класс <code>Cat</code> с именем и методом <code>meow()</code>. В методе просто выведем «Кот мяукнул!»:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=ds4epl2Rz0rDQBDGX2WcUwslkIIeUjx58hlcDyFN7EKykezGKiEQW8GjeBPx5gsoWCy11VeYfSNnTf_hHpbhY37ffjNbYSLTWGNwVuFlaEYYYBZK5cnhTYo9NPG1YanUMUS50nkaD4QSKkpDreEkNFAJBXy0KaS6ABVmbYPTrnI5hKRUkZG5gizOx53upt-dtaE3LqSJU9URSM_0bSdAS_tgp7SgFd9fBwK7g5aqhaqdu0u483IxotD46yZXei4IHANbPtKbbewtzWkhcJttzfR3TH-PebFT29DnP-bPuB1jH9sqHA3r8x46H94ZPdEHzXiGCc3tnfPiJBMesAEzkjoA-uFH5rSkGUs-Lzsp8syBr_aewXdaOQhO-SdSWWbcIDdlgL535B1i_Qs"><script type="text/plain">
 use console;
 
 class Cat {
@@ -40,7 +40,7 @@ main() {
       <h2>Решение: идентификатор this</h2>
       <p>Внутри метода есть специальный идентификатор <strong><code>this</code></strong>, который ссылается на объект, вызвавший этот метод. Через <code>this</code> можно обращаться к свойствам и методам текущего объекта.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=gbhL962SwUrDQBCGX2XcUwslpQE9pHjy5DO4HkKa2oVkI92tVUqgtoIHEfHmwZsvUIulpdr6CrNv5EzS2uLZhSTLMP83_7-bgWirJDYiOBuIy9B2RCDSUGlPtW4SURM2vrZU6pkYokybLImbUksdJaExcBJaGEgNtIztKn0BOkzLBq5dZaoF7Z6OrMo0pHHWr1S3_bw2QK_fVTZOdMV2lPGYUAMpAL_ckxvjElf0_jyQotospbnUOY9gmzsge4lC29g08bZgwTHB8BknbuhucYFLKX4NbjT-TuPvaV7d2A1x_kdTgMssTYB6HXAK7tGNcO1G5BnX9MzI8wg4DhQJJjh3Dzil74ybVjgpMHtT_wXoFwcj8vOa4BR0bfiCH6UYF-6Ok9A5MHlYwALAb4q44AlU8um-290sZeGbuyfhO6FJBKf0MySql1KD2m4D0fCOvEOR_wA"><script type="text/plain">
 use console;
 
 class Cat {
@@ -82,7 +82,7 @@ main() {
       <h2>Объект — это ссылка</h2>
       <p>Мы сказали, что <code>this</code> — <strong>ссылка</strong> на объект. Переменные типа класса вообще хранят не сам объект, а ссылку на него. Поэтому запись <code>Cat b = a;</code> не создаёт второго кота: обе переменные указывают на <strong>один и тот же</strong> объект. Изменим кота через <code>b</code> — увидим изменение и через <code>a</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=wkX-CW1RwWoCMRD9lWFOCrJSxB5Weuqp39DtIdpVA7tRTKQti7BKodAeSqGH3vsDCt0itq6_MPmFfklnrOupySV58968eUmGfZ3EFsPLDMfKDTHEVGkT6Ou7BBvo4lvH0NTG0BsZO0riTmQi00uUtXCuHGSRAV7WTbQZgFGpEATRxoEayG0mCmlaq1d0UaoDUQWigjOIkF5o6XM_pzVtIjzWuQ2XW3vnSt1lRHVgv5pNvv7kr0BbKoA2VNKO1v65AbQEP-f9RF8ML4XAyIJKvwD6FHJJK_9IBW384q9592DXPtodggc3E-3ixNT2A9U7_xe7VZFT4-yqgRKOX5De6INttmy-9vcSkKPKIDm4obYh0M7nDH9TwVCLn74_GaUifPcPLFzx6CyCC_6XRE9TJujqGOJJcBq0cfYL"><script type="text/plain">
 use console;
 
 class Cat {
@@ -114,7 +114,7 @@ main() {
       <h2>Типичная ошибка: поле без this</h2>
       <p>Внутри метода к свойствам объекта нужно обращаться <strong>строго через <code>this</code></strong>. Если написать просто <code>name</code>, компилятор будет искать обычную переменную с таким именем — и не найдёт её:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=TMCLkk2QwUrDQBCGX2WcUwshUFAPCZ48-Qyuh5Bu7MJmI9mNVUIgVsGjePPuCyhYKLXVV5h9I2dNi85hGX7-_5vZabFQWlpMzlu8ytwMEywzZWI1vdUYoZM3jqXGSsgrYystU2GEyXVmLZxmDlphgMu6WplLMFk5GIJ2XakpFI3JnaoMlLKaj8Z7f6gdMJ7XykltRiEcgUCgjX_y97SmLb-fBwLH6ZDqhOkCPWz4xwpr5Jmb7EyhjQMLThhGz_Tme39HK1oL_G8ZFkp_kdhdRBgy_Fd6oQ9a8uwFrfxDyDFhQV--BzdTNgH69j3LG1qydMhHKuqqDMFX_8jBd9qGEJzxBbVqSjaofZvgJD6Oj7D7AQ"><script type="text/plain">
 use console;
 
 class Cat {
@@ -142,7 +142,7 @@ main() {
       <h2>Проблема: вывод объекта на консоль</h2>
       <p>Что будет, если попробовать вывести объект напрямую?</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=2tN4ozWPwUoDMRCGX2WYUwsl0EM9bOmpJ5_BeAhragPZrGxSVJaFtQievXn3BRQslNLqK0zeyBmWzWny831_Mi1unLcRi5sWH0zaYoGVcUG5u2ePM0z2KXG0ixbKOsTa26UOOpTexAhrk6DVAfjE1LhwD8FUAnTCSM1kOgLClibNl8NVRiU0rEAjvdNX7vMLHemkcUSG99Rj45L1YSLKdCjH7naGYvPX6IN-6ECXvKdjfpUG7trTb-4hbV0sgP5yz_GZDhwteKdNU1cifuY3Fr_pIhJc88Le7SoG3DgWOFdXaoHdPw"><script type="text/plain">
 use console;
 
 class Cat {
@@ -166,7 +166,7 @@ main() {
       <h2>Решение: метод info()</h2>
       <p>Добавим в класс метод <code>info()</code>, который печатает информацию об объекте в удобном виде:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=fubP8F1Sy07DMBD8lZVPrRRFaoEegjhx4hsIhyhNWkuJjRKXh6pIoSA4cOKGEDd-oDwCpaXlF9Z_xDqkTcCX2JOdnfGsxyzkUZAy53DMjj01ZA6LPS5s3j-PmMVUcKYIGqUB-FKkMgp2XeEKP_LSFPY9BWNXAK1UJVwMQHixKTAIFwq8wfpU_fdlJJOygwFPJO9DOBK-4lIQIZSt9rqhWZWifZpwFUSi5TJ8wJWeAH7jCnCOC5zpG_oW4DIL1JCntnFg0dGpIXJhEMBXXOEbTi3Q1_iCBTXa1JTG2pXZzBWZ8WiCqB2Z2_qe6lRFZluqwR61wTuc6lxf4AznLmuWkDpVbDWhUqykEeUW34n0WZL-CHVrSrch9KgvdY4f_4W6ldB2E6qF8BkLXJBYU6g08xt7k7VBKASWHVnMiNMjwHtKr8ClnlDsV8YA3XlCA8nLDB0aCzmb4RdFm0OPXk-YyNgQn2hKBVlYGhIc0NOK-CimAr7eOqxj9-wdlv0A"><script type="text/plain">
 use console;
 
 class Cat {

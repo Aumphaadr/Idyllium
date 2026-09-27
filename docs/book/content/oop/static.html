@@ -2,7 +2,7 @@
   <h2>Проблема: метод, которому не нужен объект</h2>
   <p>До сих пор все методы, которые мы писали, вызывались у конкретного объекта. Но что, если метод не использует никакие свойства объекта? Например, метод <code>meow()</code> у кота — он просто выводит «Мяу», не обращаясь к <code>this.name</code> или другим свойствам.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=ugefaEVQzUrDQBB-lWFOLYSUHvSQHD35DEYkpBtcSHal2VqlBGp6EFTwBbyIL9BKU0M19RVm38jZtMU57Xzz_SzfDFOZiQKDixnexOYaA8xjqXw5us_QQyPuDEOTQkCiVaEzEUYqUkkWFwWcxQZmkQKeWy1HkE5UYqRWkAs97fWPNzcHsT8dSyMy1YuQ3uyrXUTYD_esMlKls3bp_1oXUehcXCWxORCPq79PCRkaDIBau6ANtbQD-0A7-qI1LemTlrayL8DAyj5RTVtbedCdNlQD1cz9psbdW7Zw0N6nprb7D5aXHqo4F1wCvdvK-VFjHzvllhqn-OGlYoe1fQ6Afu2cYYfNYcgNpmOdO_GHE9GKQxrawjnXm8lJzgR5fAY49E_9Eyz_AA"><script type="text/plain">
 use console;
 
 class Cat {
@@ -27,7 +27,7 @@ main() {
   <p><strong>Статический метод</strong> — это метод, который принадлежит не конкретному объекту, а самому классу. Для его вызова не нужно создавать объект — достаточно обратиться к классу.</p>
   <p>Синтаксис: ключевое слово <code>static</code> перед объявлением метода.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=xcVVw0VQzUoDMRB-lXFOLZQtCnrYPXryGYyHsM1iIJtIN2uVZaFuD4IefAEv4gtYcGUpVl9h8kZOrMWBhJmP72eSBgttVIXpeYNX0l9iiqXUNtGzW4MT9OrGM1RXCnJnK2dUJqywuZFVBafSQyMscFVeep3DtdMzKGqbe-0slMotRuM9JdafR7KYa6-MHQmk5_AUVgLH2Y7VCtvGhLjEv5aTkp1bxtN0CrSlnq-wog_qaQv0RevwwO0mdAe_FtheTNDKUvH69BI6euMzhHvqwx1taIj6Tx46lr6HxxToOywZjtgSjvjtxdyVUfwaRbTmyIE2cMYfY3RdMkHv2xQPk5PkGNsf"><script type="text/plain">
 use console;
 
 class Cat {
@@ -80,7 +80,7 @@ class Cat {
   <h2>Практическое применение: вспомогательные функции</h2>
   <p>Статические методы идеально подходят для функций, которые логически относятся к классу, но не требуют объекта. Например, математические утилиты, конвертеры, фабричные методы.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=Z0uXHoWSy0rDQBSGX-Uwq0RC8EJdpATXLly6MiLTdIoDk4lmJhophVoXXbhy6058gVZaCMXLK5x5IyfpDYTUs5mZw_9_w_k5fdLjgikSXPTJDdXXJCAJ5dLn3QdBPKJZoW0rVwziVKpUsHYkIxkLqhScWf255kJBP5JgS2mqeQxcaujlMtY8laBuc5oxp-oV7lpYVcZ0nkkoYA-K9rI9qNhNoDjv_IfZgeqkqdiyuLpid0w245K06xQeHLoQhrC_ZdbYKiBn46oYFEJorVSrnPz7jGsmpBMRfMUPnODMDHFiRhARD6hnj6C-blL0V1FR192BMk84bUbUITUDag-YsXkxI_zCb5yf_AGsk1ky7LhkcOkRSRNm1wDfrM2OgKUZ49w84gJLnAN-2sfI0mbmOQD8sXOWdW8IR3aHelmaVOb3yoRT-2-JCzi1CyZ4nlgBX18DcuAf-y0y-AU"><script type="text/plain">
 use console;
 
 class MathUtils {
@@ -167,7 +167,7 @@ main() {
     тетрадь одна. Классика — счётчик созданных объектов:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=jeG4F51SzUoDMRB-lWFOLZbFgnrY4smTz-CKLNvUBrLZssmiUhaqHjz0IF7Fi_gCVSzW0tZXmLyRk7pttUcDC8nk-5vM9rEjlTAYnvSxF9suhpjGUgeyfaWwgVZcWi4VRkCSaZMp0Yp0pBMVGwNHsYV-pIGXsbGVCUhtoZf1CsWnTMMh7C7hP4hc6nPQcSq4HiG90pg-3JBm7p7mNOfdZ4RruHezeZHYLPc-tYouLs-8Qn3l65ftShNUutV9a3PL5OBPpK3CDjQrdBnp0tv7_mtrh6rt4CKXVihd4-SPtHA3tKC3kPtobAnWKzX_OB2ZG-sZDzRyA3dNE5pG-BthBOu3PeTJ3boBTWm0AfzHmjvA8rSB_hV4cPTM8BF_E3dHY04w5QxjoBkfvM67G4ZAX-w8WdYGsMdT7-RZ6skvnsSDmvvgcMy_hJJFygC52obYDA6CfSy_AQ"><script type="text/plain">
 use console;
 
 class Cat {
@@ -212,7 +212,7 @@ main() {
     константа и так одна на класс, по-другому не бывает:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=UwuUgnVQwUoDMRD9lWFOXVgWPLSHrQoiHoroxR4EVyTUtA1kU9lNqaUU6l4UFLwLHsQfqGBxqbb-wuSPnFSFghgIycy892bejLCttMwxPhnhhbBdjDEVykTqfKgxRCsvLaf6uYRWz-Q9LeuJSUxLizyHXWFhlBjg44sWlLFwsHN8tt9oNvcOj2ALagwfe4YXrQTrcNaKBpmyUptKgvRIM6AXWtK7u3M3HCQY-g7RmmDISaA5LV3h7l2RYLCaxiuKLBPDTR7gD2kbBlJ1ujav_9v7gRUn9EYlLVh9CvxMV_1_mJGWpmO7wbcZHJ-GaEQqeTH05Aqa8i3dNc3cFdNLb-SDg4LNvLrbGOiT1ctVbgJV3mo766We_OxJbHrB1Tk0eOVa9VMGqN9vjBtRLari-As"><script type="text/plain">
 use console;
 
 class Cat {

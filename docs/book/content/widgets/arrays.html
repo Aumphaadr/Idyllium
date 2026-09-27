@@ -7,7 +7,7 @@
       <p>Представьте экран выбора уровня в игре: десять кнопок — «Уровень 1», «Уровень 2»… «Уровень 10». Заводить десять переменных <code>btn1</code>, <code>btn2</code>, … <code>btn10</code> и десять раз копировать одинаковый код — тоска смертная. К счастью, вы уже знаете инструмент, который решает такие задачи, — массивы. В этом уроке мы научим их хранить виджеты.</p>
       <p>Сначала вспомним. Массив — это набор переменных одного типа, объединённых общим именем. Доступ к элементам происходит по индексу (начиная с 0).</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=iXbf5j1QS07DMBC9ymhWqbCiBGgrJYU9Z4izCOBQS4mD8hFUUaSWDQuuwI4LQEQRQnyuML4Rk9Iw8pPH8-Y929NiqjNVYRC1eJ3USwwwT7Rx9eUqQ4G1uq251FQKLgpTFZkKpZFmaHEm0EoDHElZJquFNrWA-SmYJj9XZQUnEPmegEPGEeOYMWXMGHMv3tkM4rQowWEtaFZ4IW-L0cLNlLmql-GO0nAA_v-VQ-wf5N6UulaZcSTudZFEAVqAxJiFw2EkdDwJ_ww6aXhhFws0Sa74j_RIz3ZjN_ROvX0A6jl5pTfa2jv6pj4A-rFrrn1yZQ0-Dycti3wQPtl72tILfTH7AWc8uUw3OTfoMQ3Qd2fuFLtf"><script type="text/plain">
 use console;
 
 main() {
@@ -35,7 +35,7 @@ numbers[6] = 70</idyl-output-block>
       <h2>Массив из лейблов</h2>
       <p>Создадим 7 лейблов и будем управлять ими через массив. Одна кнопка — меняем текст сразу на всех лейблах:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=IWYuhZVTzW7TQBB-ldGeHIispFUpilsO3JC4c6iryI2deFR7F9lr0iiK1ObCobwBcEC8AI0oastPX2H2jTpr19ZWKkjsZXe_-dn5vtlZiilmSSlGB0vxNtKpGIk8QuljvMhEX-jkRDNUlQnMKgxCGUpr9nqwDCXwYtR_gzJWc5ijDBqQT75OkzyBfQiFTZVhlYfCMc8x1imbtwYDB00TnKXaws9dWKPOmlz0ib6ZM3NGV7QB-kmXdE0XvP-hTZ2-iYmKIlrs2dJeR0dJ1ofdF5DZU9m5TFUBHkoNyHkHAW97sBvUN4SnMOwI2tXEHuChf1KXHDxmWtQmjkV4AtuP-1g5Gx4f29L5wjFajUtdoJx52HMiLfkojseTFLPY6_K0LquWjaX6stJaSTjSbRf45Dz4hX7xk7_pyqzNBzBrvtywkuuuK9b9AT0L1KS2XaRt3HBn0IlpcSXHkwwnx2x6pzCGaSUnGpXzVf5b9r9p99m225zTtUPjnzKu7uXqCn6oK5ffc35bmaq5ZwEOE6vDvpBRnvAQuH_PnANt-PCdftAlV8EFjYBuzSljrLM5hS2enmmhchv41bznOi-s-nQDr-7ngR3a0WCnof_M3xGrOw"><script type="text/plain">
 use gui;
 
 main() {
@@ -88,7 +88,7 @@ main() {
       <h2>Динамический массив полей ввода</h2>
       <p>Используем <code>dyn_array</code> для создания массива, размер которого можно задать во время выполнения:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=pQvcbF2SwU7bQBCGX2W0J0ORkxCZQ0y5cUDizgFXkcVu4pHsdWRvlERRJOilhx6qSj1Wqqq-AESEuhDSVxi_EbMxBoN98Pr7Z8bjf2YuBhirXPTO52IUmkj0RBKidlHOYrEnjJoaRuNcwXCMfqADbWVnB-aBBr6YumeoZTqBCWq_gnxyTaQSBR8hELZUjOMkEA15gtJELHfb7QaNFA4jw3jfa2KDJq5q0Q8q6JGuaU1F-YVW5RXdM1kB_acNPZTfth-pMuVM98MsC2eHtslT1OpYojkC1KOxyV_CWi2g35z8l27puvxOa_Ceq9GK_gEt-d5YrQofpBk4qA0gN9T2-XEInr99Q_gAnRdnanfqD4OS_quipDu1_9l-y2ZbxnUQdqHrvRVrz_YP3mWN4vBCRWksVVa59Ktqn49cyqT93GSohw7uNPIqG9xQSkfJpmAdZ9q_iDBuaovaMRuQR-nEsQpTsfi0J3SYKN4U-skmXvFYClqWX617BXt3x5P6zD0te2xteclszeQSurxigyxNbOIfO0-64ekWdA8nz0vDAfX-cFDHPXA9sXgC"><script type="text/plain">
 use gui;
 
 main() {
@@ -128,7 +128,7 @@ main() {
       <h2>Добавление виджетов во время работы</h2>
       <p>Динамический массив позволяет добавлять новые виджеты прямо во время выполнения программы:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Arxug21TTW_TQBD9K6M9JVBZDhCQEsqhN84cOGAUWfYmHnW9ruJ10yiKRHvhAEeO3PgDadSg8Nm_MP5HzMROakf4Yu97Mzsf73mhxmh0rgbvFuoidIkaqDRE62E8N-pEOX3lGCpyDZMCh4ENrNCdLiwCC_ww6r1FG2czmKEdViB_eS7RqYZTCJRcZbBIA9WgZxi7hOmnfb-BJhoniRPYb8IOnanuoi_0l25pRWv6RRv6Q1vaQHnNhxX9oDvalB84YL0rVeXHczsKp9Nw_lJafWMw1tNXkO_e-SFKuLPCucxCGMdnbj9JdfBkDcf1t-VN-fmo9mHEOu-Kk574bWz-H2y_jd5uGy0qs6PIYHTO7GWGMYwLGznMGhLIg9ZBlBVWuqxn84y2E5cMH4IeFgB5A87bbVaQdPnCh8f1rY9YqBZ_0K_XzkvRMnqEhVKg57fRy9AUImq_Bde98_CdvNsgxAYMjqIETYNaHtbVDqiW1214KE-yWUeAZWDV8v2JsmGq2dr0lVblNcu4pXX5CURY1vI7q3kjThoA3bOntvRb9IVn_E-Mp1kqid_Kj2zB250Jf8Lr2uUcsDc8B_W8515fLf8B"><script type="text/plain">
 use gui;
 
 main() {
@@ -177,7 +177,7 @@ main() {
       <h2>Удаление виджетов из массива</h2>
       <p>Здесь важно не запутаться, кто за что отвечает. <code>remove_at(0)</code> убирает виджет только <strong>из списка</strong> — из массива. Сам виджет при этом продолжает существовать и как ни в чём не бывало остаётся на экране. Помните урок про видимость? <code>visible = false</code> не удаляет виджет, а прячет его. В этом примере оба приёма работают в паре: сначала прячем виджет с экрана, потом убираем его из массива:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=DJiUkX1UzU7bQBB-lZFPSYuMQ0kPmHLg1ltvPRAUbeJNvKq9juxNQhRFInDg0Fao914qXiD8pJj_V5h9o87a2Dgg1Qfb-83Pzn7zzU6tngh4Ym3tTa0BU761ZYVMSFt4k8BasxQ_UAQNEw79oXBb0vzFTHpRSIuWNL61OkxbEughF_urIOMYxkK6OUh_tvJ5yOETtCyTNxDDsGVVzGPhKZ_MH5pOBfW56PvKwE4VVkIFeS48wytc4B0u8QFTXAI-6UN8xEt6L_Vcz_EcFxlykW2X5_Amss3imE22Tblf4qgf8yTZZfEOdFiclH7r64B_KPbabKJ_4T00_7MB0OLRvO70sT6hqm7wQX_He0yBMjyQ20lepj41YL5FL4qhJqQCQedxXPpsQ9PNVgLeQ6MktiC3Ui0MOu6LcdCxDyhqw1nFJhl7lErAO9h8ZSxZb7wyjFgwNAznfba7MWeKt6nOmrMGDcepV9wNZTbzvNqgU4VNowhtd30RVG2zgl1zmt2hUpGEmIfRiO-qQjDl2jbqW-10qo_0D2oD0X-IF0TwTSmkl7AVJl5gQ8bG5lu84KGRqe-1NZLtbiC638hhFAkPekPZVSKqqN48oge1jIqAyz5l2wFnxV5Qtefs2yORiE4m4R4LEu7mUiNl6dNMJPeAFyTnK_xLpzwiTYH-ibd03oXR0ducdl5sm1F_6m5hoZz6mPSZZoFZ1iVekkYp9bUR6hOZ5nhbzTh7blJJw2obS1LqlXFM_GhcMwAFW7P9NUuykNOVgb9J82ZEUtOnlSOZednKZymlYaBWQpPuml4chSbwLGPhPJvpW_j8fGGQQ3F3kFPD_mg3rdk_"><script type="text/plain">
 use gui;
 use random;
 
@@ -240,7 +240,7 @@ main() {
         тип — три кнопки значит три кнопки, четвёртую положить некуда:
       </p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=yk7nOU1QMU7DQBD8yuqqRLJOQkAKByjoeAEFpjhkB59kn5F9loksSwkUFPACRJcPQISRiQj5wt6P2LON4aq9md2Z2S3ZTEZBxtyLkt0IHTKXxUIqLv15xBymg1tNUJ4FcJ3Lqac8ZenRGEpPAT1C-blUflJAIdW0A6niOgziAI7BY1Yqknnssf-01FFH4zNu8Rt3uMEGzL1Z0GdNUI2f7UQ3I9JUzI-s22mudaIc2D-BK62yoeOPAwqdit6srbndo3Nb9QY1bs0THAyhrBYXvj9qB8aDrA2bhUkxslDlKVZdOkyJOKCz4Au-mqVZYoNr8wik2uA7fmBt7qyHC7gjtwa_CFnAhO45S5PYDq7MAyV4ozUb3MBZfyFq-D0WNe3xCT9k1Q8"><script type="text/plain">
 use gui;
 
 main() {

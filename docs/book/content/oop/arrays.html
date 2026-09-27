@@ -6,7 +6,7 @@
       <h2>Напоминание: что такое массив?</h2>
       <p><strong>Массив</strong> — это набор ячеек памяти, способных хранить много значений одного типа.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=8G0nW12Qz0rDQBDGX2WYU4ohmIM5JNW7z5DkEDTRhWQjmxQtIZCYg6AnwWMPoi_QFqql-OcVZt_ISYwiDgs7M_sN-_umwkSkcYGuX-FFVJ6ji1kkpCVO5ymaWMZXJbdmRQwnuSzyNPYCGcheYkygCiRwREpF82lRKiHPTHCOQEZZXMAh-AHSPS11o1va0i5AE7iz0J1uaEfLsX6kDe10O1ZPuqPXP-oHnu7ohT7-zY-acODpKZJcgSFkCYJ_3vf4moLjDZWAPbB_cfsYzViXSpRxKo2B2BfhxPvW1IHkg3VoYv_EK6AFG2kHI2t9B8yz0rcD-TXnaxfok6m29EYb3YDNu0tUnvWDz_qGdSt674nhmBebilnGAvGTumhbjnWA9Rc"><script type="text/plain">
 use console;
 
 main() {
@@ -33,7 +33,7 @@ main() {
       <h2>Каждая ячейка — переменная</h2>
       <p>Если массив работает как набор переменных, то каждая ячейка массива по сути является переменной. А значит, после <code>names[i]</code> можно ставить точку и обращаться к методам:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=srHWRl1RzUrDQBB-lWFPLcbUCvaQ1N6FvkHTQ9Btu5BsJNmiJQSa9iDoSfDYg-gLtMVqqH-vMPtGzsZUxWVhZ2a_b-bbb1M2EAFPmNNL2bmvRsxhoS-kLc4mAbOY4peKSuOEw2kkkyjgric9aSC1OqSeBFp-HPuTdqJiIYcWtDog_ZAncAw9j-EtLvVU51jg1mMWUGWh53qKW1xW-T1ucKvzKnvQc3z5g74j9hyf8eMfv8L0Sz1GxSCKoSakAkGTD1w62tByy0zAHjR_5JplcF26KZX2RN8OuByqkUtXjQbgE75S-3dcgs71jKbRdCx-6ZUX9kUsFA9kbdfG6IP9Dhil3br7Tcg8SZtlfYsZHNmJCzIlL01Z6xug7it9Xbowo3jtAH7SzALfcKOncEj_MIij0BAf9RXhViSNXg8n9EmBGIcEELvQYU27ZR-x7As"><script type="text/plain">
 use console;
 
 main() {
@@ -61,7 +61,7 @@ main() {
       <h2>Массив объектов</h2>
       <p>С объектами это работает точно так же, как с переменными. Можно создать массив, где каждая ячейка — это объект какого-либо класса.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=xKS5rmWRwU4CMRCGX2WcEySbjUDwsKgnLz4Dy6HCsjTutmZbVEI2AT2Y6Mm7BxMvHgFDYlD0FaZvZLuAovY0nXz9_386Q-zyJFIYNId4xnQPA0wZFz7vDBL0UEeX2rb6KoK2FEomUSMUoWgnTCk4kjEMQwH2KJ1xEYNgqQNchwsNLF7h7n4ueQe6fdHWXAo4Ydlpqbx57c5a3r_IuI4SUdI9rnyn50GIQC80oRktaGmu6W0nxPLaJg9F7ixc6B9BlmVssG_zeVA7hI6M1XcOd2nutgppOLDa9EwTM6JXWoTY2GIq28w9fdD0P1PdZh5pTgszLojfXvYfLFL7o77q1v_orbrVRjEX5i0PnYPdAT3YnGMztilm5g5cIHNbWF7ZehYAfRZjvNPcjKBml9fNZOoePpkby01p6QaAY7vZhPdTC_BNGWDF3_PrmH8B"><script type="text/plain">
 use console;
 
 class Dog {
@@ -135,7 +135,7 @@ for (int i = 0; i < 7; i = i + 1) {
       <p>Иногда мы не знаем заранее, сколько объектов понадобится. На помощь приходит <code>dyn_array</code> (динамический массив).</p>
       <p>Попробуем сэкономить: заведём <strong>одну</strong> временную переменную <code>tmp</code>, добавим собаку в массив, а потом переиспользуем <code>tmp</code> для второй собаки:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=QqHmsm1STU_CQBD9K5M9QWyKRvEA6MmLv4Ea09BSNmm3pK1RQkhUDiZqNN5NPHjxCEQUoeBfmP1HzpRWPbBp0-17b9587PZFW_puLGrNvujaSUfURGBLZUqn5wtDJO5FQtBZ7EIrVHHou3VLWarl23EMR6EHfUsBrTiJpPJA2QELGJEqAdvjvwFHsGmpXMidnjq1o8juNcjjEJzQizNf5tg1Cbq5De1MdoUDsAS-4Uhf4gznlvjHUxqid3OEzUzbcUpElesEVCqA77jCMY5wggv9iFNMQV_l0FwPASeAKXlfETrDSVEKR77glFJOcUbUN4Us9D1-6uHa45pjP3AKRK1lKb1LXOqhfuCslI3M9TWuiF3h17-0ONvU4VNGb-6wurHDoth2GEGJpy5Jul2nT2Ot9F3lJZ16hkvYgp3fY-CVH6t5HsnE9VWJQ5ryJCvJoIroMaAAqY5yXsQgO1gxODEES-mS4PPfBPUdcCP6lsYx5_ZxUqMhZYeX8qhgj25XOwoDDnzVN6Qb0-CocTimq-fLs4AEstjWxI65b1bF4Ac"><script type="text/plain">
 use console;
 
 class Dog {
@@ -175,7 +175,7 @@ main() {
       <h2>Как правильно: новая собака на каждом витке</h2>
       <p>Каждое объявление <code>Dog tmp;</code> создаёт <strong>новый</strong> объект. Значит, объявлять временную переменную нужно <strong>внутри тела цикла</strong> — тогда на каждом витке рождается новая собака, и в массив попадают ссылки на разные объекты:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=OPxe0X1SzUrrUBB-leGsWgypWuqiUVdufIamSDBpPJCcSBLRUgq2goIuRHfCvZcLbgQ3sdh7S63eV5jzRnfm1NS60EMgZ37ON983Mz3RkVGQiWarJw69_EA0RexJZUu_GwlL5MFJTq6jLID9RGVJFDiuctV-5GUZ7CQh9FwFdLI8lSoE5cWcwB6pcvBCtvr8gkEr1TLd76o9L0297iZhbIOfhJnB5djcPwe0oL5tQDPYgpYr8AELfYoTnLrCArJv8A2fluzfOMapHrii7SyjERkDRYQMUt2ChgXr7UXRTpJChSlLCq869NuEumMsCSuwtmDOh3Xn8aEDy6dWA3zFAnCKBf7BZyI2AxzhRA_JNQZ9zjTxhVL0gIJ_KaXQN3qoB_oa8Cf-wlt8xDtgRfrS6Bh-1KR6NjeCCJl-tGSpsIySNgqyws8xbq7t-X6FkqrOEttn07uCOL7oa6o3mxNj11SfEXfAGVEckHeCozlg_7uGmUpRoML84KvWvS-RfZzKPIhUhZ8QXSONBwg8x9JJWqrOoi59ot-2BKfSSuKPD2766lPX6D5qAv4zmzLDsT6FBu1yJ01ifnivLyjviaZFA4FdWvRIHsWUIMtrU6zZG3ZD9P8D"><script type="text/plain">
 use console;
 
 class Dog {

@@ -21,7 +21,7 @@ databases, GUI applications and networking without installing anything and
 without leaving the site; a teacher can build a lesson plan from the same
 pages.
 
-Current language target: Idyllium 1.6.4 (machine-readable at
+Current language target: Idyllium 1.6.5 (machine-readable at
 https://aumphaadr.github.io/Idyllium/version.json).
 
 Important rule for AI assistants: do not invent site features. If a feature is
@@ -42,6 +42,7 @@ Idyllium language syntax use the companion file `idyllium-ai-reference.md`
 | `/handouts/` | «Файлы для заданий» | Downloadable handout files used by tasks and projects |
 | `/authors/` | «Авторам» | For teachers and site owners: embeddable units and the unit builder |
 | `/about/` | «О проекте» | What Idyllium is, who it is for, philosophy, links |
+| `/about/author.html` | «Nathaniel Larsson» | About the author (since 1.6.5): teaching, approach, other projects; reached only from the «О проекте» article, not from the menu |
 | `/recipes/` | «Рецепты» | Ready-made programs for everyday tasks (since 1.6.4): a grid of square cards, one page per recipe with the code, real results and an «Открыть в Web IDE» button — see 7c |
 | `/why/` | «Почему Idyllium» | Placeholder (since 1.6.3): the case for the language vs. industrial languages; for now links to the contrast references in `/ai/ru/` |
 | `/gui-designer/` | «Конструктор GUI» | Visual window designer (since 1.6.3): drag widgets onto a window, tune properties, get `main.idyl` in textbook style — see 7b |
@@ -52,7 +53,8 @@ the Web IDE on every page except the IDE itself), the version and a section
 badge. Centre: three identical dropdown menus — «Материалы» (Документация,
 then Учебник, Задачник, Проекты, Файлы для заданий), «Инструменты» (Генератор
 цвета, Конструктор GUI, Рецепты, Генератор юнитов = `/authors/`, then the
-sister sites «Кодировки», «Пантограф», «WebGuide», «ООМ» opening in a new tab)
+sister sites «Кодировки», «Пантограф», «Klaarheid Icons», «WebGuide», «ООМ»,
+«Информатика» opening in a new tab)
 and «О проекте» (О проекте, Почему Idyllium, «Исходники на GitHub»). Right,
 on document pages: the «Открыть IDE» button and the theme toggle. In the Web
 IDE the same three menus sit after its own «Файл», «Правка» and «Внешний
@@ -148,7 +150,11 @@ Top bar:
   replace (Ctrl+H), comment/uncomment selection.
 - **«Внешний вид» menu** — dark/light theme, editor font size, console font
   size, and an «Автодополнение» checkbox (since 1.6.0): unticked, typing
-  `console.` no longer pops the completion list; Ctrl+Space still works.
+  `console.` no longer pops the completion list; Ctrl+Space still works. Since
+  1.6.5 two more checkboxes: «Подчёркивать ошибки» (on by default; off — no
+  red/yellow squiggles, errors show only on run) and «„В Web IDE“ у примеров»
+  (off by default; on — textbook, task book and project examples get a «В Web
+  IDE» button, see section 3).
 - **«Генератор цвета»** (since 1.6.3 an item of the «Инструменты» menu, not a
   separate button) — a floating colour window with two modes, RGB (R/G/B/A
   sliders, code lines `colors.RGB(34, 145, 188)` and `colors.HEX("#2291bc")`)
@@ -246,7 +252,11 @@ pattern `/book/#section/lesson-id` (e.g. `/book/#console/variables`); the older
 `#/console/variables` form still resolves. Every lesson has a title and a
 one-line subtitle. Code blocks have a «Скопировать» button — the intended flow
 is copy from the lesson, paste into the Web IDE, run. There are no embedded
-run buttons inside lessons.
+run buttons inside lessons. Since 1.6.5 every complete example (a block with
+`main()`) also carries a project link, and a «В Web IDE» button appears next to
+«Копировать» — but only after the reader ticks «„В Web IDE“ у примеров» in the
+Web IDE «Внешний вид» menu (the choice is stored in the browser; the default is
+off because typing the examples by hand is part of the course).
 
 The lesson list is data-driven (`/book/lessons.json`), so section and lesson
 ids are stable identifiers an assistant can reference.
@@ -361,18 +371,22 @@ IdySS style strings (`style`, `style_hover`, `style_active`,
 `style_disabled`) have their own group; ComboBox items, Table columns and
 rows, and chart values are edited in the inspector too and become
 `add_item`, `set_columns`/`add_row`, `add_value`/`add_slice` calls; the
-`gui.Icon` name is picked from a searchable grid of icons. Event handlers are not generated;
+`gui.Icon` name is picked from a searchable, scrolling grid of icons; an ImageBox
+takes a picture from a file (since 1.6.5: «Картинка» → «Добавить картинку из
+файла…» — PNG, JPEG, GIF, WebP or BMP becomes an `image.Static` variable with
+`load_from_file`, the widget gets `set_image`). Event handlers are not generated;
 each widget's inspector lists a checkbox per event of its type («Заготовки
 обработчиков»: `on_click`, `on_change`, the eight Canvas events, the window's
-`on_close`) and a ticked event becomes an empty stub. Panels resize with
+`on_close`) and a ticked event becomes an empty stub; since 1.6.5 the row shows
+only the event name, the description lives in the hover hint. Panels resize with
 splitters; the code pane collapses. Ways out: **«Открыть в
 Web IDE»** (a `#p1=` project link, opens as a guest — then save as own
-project), **«Скопировать код»**, **«Скачать main.idyl»**; the «Макет…» menu
+project), **«Скопировать код»**, **«Скачать main.idyl»** (a `gui-project.zip`
+with fonts and pictures when the design uses files); the «Макет…» menu
 saves the design as `.json`, can embed it as a trailing `// gui-designer:`
 comment in `main.idyl`, and reopens either; a hand-edited file is reported
 line by line: which ranges of the file the model does not know (they would be
-lost on regeneration) and how many model lines were deleted. Not offered: ComboBox items, Table
-columns, chart data, fonts, IdySS styles — those are written in code. Needs a
+lost on regeneration) and how many model lines were deleted. Needs a
 screen at least 1000 px wide. The textbook lesson «Конструктор GUI» (section
 «Виджеты», after SpinBox) is optional — teachers may keep a group on
 hand-written widgets.

@@ -47,7 +47,10 @@
     «как в языке по умолчанию»: такие свойства в код не попадают. Крестик рядом с полем
     возвращает умолчание. Цвет подбирается тем же генератором цвета, что и в Web IDE,
     с пипеткой; шрифт — из файла <code>.ttf</code> или <code>.woff2</code>, как в уроке
-    «Шрифты»: конструктор сам напишет <code>fonts.Font</code> и <code>load_from_file</code>.</li>
+    «Шрифты»: конструктор сам напишет <code>fonts.Font</code> и <code>load_from_file</code>.
+    Так же и картинка у виджета «Картинка»: файл <code>.png</code> или <code>.jpg</code>
+    станет переменной <code>image.Static</code>, а виджет получит её через
+    <code>set_image</code>.</li>
     <li><strong>Внизу — код.</strong> Он меняется при каждом вашем движении. Это и есть
     результат.</li>
   </ul>
@@ -80,7 +83,7 @@
   </ol>
   <p>Внизу тем временем вырос такой код (координаты у вас могут отличаться на шаг сетки — это
   нормально):</p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=s2q8snWUQWvbMBTHv4rQKYFi7G4Lw2UUBmMUdh07zKO4sVILFLnEMmkXAu162GWnHXcb-wJpmEfI2uQrPH-jPll2HCVODkb6v_d4v7_0ogkdcMFS6n-e0KtQxdSnw5BLh0c3gh5Rxa4VSlnKyGXGTwIZSB3udMkkkAR_qDqfuIySMRlzeWJEXDmKK8HIGxJQ-A3_YQX_IIcnWEAe0K20MY9UjGkveu6WGjN-GSuUj4_dsmnd6kN4wQQR-utV-WbjXOts19ZuWrRNw92Atmp4f8IcWf_CovgGOcHFHGak-I77O3QyI7Ag6GSGjh7rnCUKK1jDsri37IVRdN6PuYg6pkvXdsMlexdxRQZ8lKqqrFzbdoyk3fRsqTbjvbT1KxH2WZyIiI2MpTXkxS36WO0cf8NXFh7AS1k_kVFVZjYloPfatUULsdL2GavAHuQcz3KFmIchTaVN-TZTKpFEJ12Uy6qyEezD3NI1rue1BDZD4rYEm0GpBxuHoPhxALkp7LZM8oilmahv3mxs2korSXs74j5lFdgiLO5xSB9h5pPTDWCVNUikOk_5V1beZCu8yWzAdTSNk3FHS9NA0umXIyrDIcM3An7hWTwVd3gWt9h1aS6TvP945hNY47UukAOnkHj4rgxGyVDX_MG_VQ4P5cOwJGf46AieDTGB10ufek7PeUWnzw"><script type="text/plain">
 use gui;
 
 main() {
@@ -143,9 +146,9 @@ main() {
     «Файл» → «Сохранить как свой проект».</li>
     <li><strong>«Скопировать код»</strong> — и вставьте его в любой файл Web IDE или VS Code.</li>
     <li><strong>«Скачать main.idyl»</strong> — файл на диск, потом «Файл» → «Открыть файл».
-    Если в макете есть шрифт из файла, вместо одного файла скачается архив
-    <code>gui-project.zip</code> с программой и шрифтом — его открывает «Файл» → «Открыть
-    проект».</li>
+    Если в макете есть шрифт или картинка из файла, вместо одного файла скачается архив
+    <code>gui-project.zip</code> с программой и этими файлами — его открывает «Файл» →
+    «Открыть проект».</li>
   </ul>
   <p>Запустите. Окно выглядит ровно так, как в конструкторе. Кнопка пока ничего не делает —
   как мы и договаривались.</p>
@@ -157,7 +160,7 @@ main() {
   из полей приходят строками, поэтому нужны знакомые <code>to_int()</code> и
   <code>to_string()</code>, а на случай, если в поле написали не число, — <code>try</code>
   и <code>catch</code>:</p>
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=RK2MWn1UzY7TMBB-FcunVqyipkCFWiEkJIRW4oo4EFRlE7exSO1V4tAtVaVd9sCFE8e9IV6gVBRVZbd9BeeNGNtJE_cHHyrPNzOe75tMZ4oHNCYp7r6f4ktfRLiLRz5lDg0nMT7DglwJgLKUoGFGex7zmHI3mmjqMQQHUOcdZSEfozFlPQPCzRFUxAQ9Rx6WP-RfuZF_5FI-yJVcergWNqahiCDscadVQyNCh5EAuN1u6aJlqTf-BYlRrH7dIt4YzpWKbtnY5Ai2K7jvUFIN3-9yAVx_y1X-RS4RXBZyjvKvYN-AkjmSKwRK5qDovoxZA7CRW7nOby15fhj2g4jGYcNUadpqKCOvQirQgCapKNL03ZZjIKWmY0OlGPeJjV_GfkAiHockMZK2cplfg47NXvsrfjrxBL2UBJyFRZoxNEH3WcsGLYoFdsixcByQXEAvN0DzNEmTabN8mQnBGVJBF_paZFaA3cwarui67hHHbkhaR5zVoJSDDUOQfztBuUpsHpnkhKRZXH55Y9hsC0wz7eyBhywLR41hfgtDei_nXfRiR7CIGnAm-in9TPSXPEreRFbEa13grB_ENPgIyZ84DdEgY4GgvLYa1BHJpG6qQ5lAggs_hkzB-2Ca2dOsm-hRCRZTotGe_cT_ZHrYPJGKhLJhQ1eq589Q4IsgQg2SJM19bgcP26ug2gG7XuonzXW2a5NqYhrxcUMVBi-efTjDzB8RWKXyDkbmIb-BkbkG1msz8-j12_MukluY_hXogD8rasP6HSR8pHJ-QuWl_KX35xqdw26OaTaCAFpeu9h1Os5TPPsH"><script type="text/plain">
 use gui;
 
 main() {
@@ -254,6 +257,7 @@ main() {
       <tr><td>Внутрь рамки или вкладки</td><td>отпустить виджет над рамкой или страницей; или перетащить строку в дереве</td></tr>
       <tr><td>Порядок слоёв</td><td>перетащить строку дерева выше или ниже соседа</td></tr>
       <tr><td>Шрифт из файла</td><td>свойство <code>font</code> → «Добавить шрифт из файла…»</td></tr>
+      <tr><td>Картинка из файла</td><td>виджет «Картинка» → группа «Картинка» → «Добавить картинку из файла…»</td></tr>
       <tr><td>Текст на месте</td><td>двойной щелчок</td></tr>
       <tr><td>Копия</td><td>Ctrl+C и Ctrl+V, либо Ctrl+D</td></tr>
       <tr><td>Удалить</td><td>Delete</td></tr>

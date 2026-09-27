@@ -63,6 +63,11 @@ function fontsOf(model) {
   return Array.isArray(model.fonts) ? model.fonts.filter((font) => font && typeof font.name === 'string' && typeof font.file === 'string') : [];
 }
 
+/** Картинки макета: [{ name, file }] — переменные image.Static, загруженные из файлов проекта. */
+function imagesOf(model) {
+  return Array.isArray(model.images) ? model.images.filter((image) => image && typeof image.name === 'string' && typeof image.file === 'string') : [];
+}
+
 function usesColors(model) {
   const check = (type, props) => Object.keys(props || {}).some((name) => {
     const prop = propertyOf(type, name);
@@ -133,6 +138,8 @@ function generateCode(model, options = {}) {
   if (usesColors(model)) lines.push('use colors;');
   const fonts = fontsOf(model);
   if (fonts.length > 0) lines.push('use fonts;');
+  const images = imagesOf(model);
+  if (images.length > 0) lines.push('use image;');
   lines.push('', 'main() {');
 
   // Шрифты — до окна: как в уроке «Шрифты», fonts.Font + load_from_file, потом присвоение.
@@ -141,6 +148,14 @@ function generateCode(model, options = {}) {
     lines.push(`${indent}${font.name}.load_from_file("${escapeString(font.file)}");`);
   }
   if (fonts.length > 0) lines.push('');
+
+  // Картинки — как в уроке «Картинка»: image.Static + load_from_file, потом set_image у виджета.
+  for (const image of images) {
+    lines.push(`${indent}image.Static ${image.name};`);
+    lines.push(`${indent}${image.name}.load_from_file("${escapeString(image.file)}");`);
+  }
+  if (images.length > 0) lines.push('');
+  const imageNames = new Set(images.map((image) => image.name));
 
   const win = model.window;
   lines.push(`${indent}gui.Window ${win.name};`);
@@ -152,6 +167,7 @@ function generateCode(model, options = {}) {
     lines.push('');
     lines.push(`${indent}gui.${item.type} ${item.name};`);
     lines.push(...propertyLines(indent, item.name, item.type, item.props));
+    if (def.image && typeof item.image === 'string' && imageNames.has(item.image)) lines.push(`${indent}${item.name}.set_image(${item.image});`);
     lines.push(...dataLines(indent, item.name, item.type, item.data));
     if (def.container === 'tabs') {
       // Для предпросмотра показываем страницу, которую сейчас правят; в код ученика это не попадает.
@@ -190,14 +206,17 @@ function stripModel(model) {
     return copy;
   };
   const fonts = fontsOf(model).map((font) => ({ name: font.name, file: font.file }));
+  const images = imagesOf(model).map((image) => ({ name: image.name, file: image.file }));
   return {
     version: MODEL_VERSION,
     window: withHandlers(model.window, { name: model.window.name, props: { ...model.window.props } }),
     ...(fonts.length > 0 ? { fonts } : {}),
+    ...(images.length > 0 ? { images } : {}),
     widgets: model.widgets.map((item) => {
       const copy = { id: item.id, type: item.type, name: item.name, parent: item.parent, props: { ...item.props } };
       if (item.tabTitle !== undefined) copy.tabTitle = item.tabTitle;
       if (item.data && Object.keys(item.data).length > 0) copy.data = JSON.parse(JSON.stringify(item.data));
+      if (typeof item.image === 'string' && item.image !== '') copy.image = item.image;
       return withHandlers(item, copy);
     }),
   };
@@ -252,13 +271,16 @@ function codeDifference(fileCode, regeneratedCode) {
 }
 
 /**
- * Копия макета без шрифтов, файлов которых нет (hasFile(file) → false): предпросмотр не должен
- * падать на load_from_file, а честно показать окно без шрифта. Возвращает { model, missing }.
+ * Копия макета без шрифтов и картинок, файлов которых нет (hasFile(file) → false): предпросмотр не
+ * должен падать на load_from_file, а честно показать окно без них. Возвращает { model, missing,
+ * missingImages } — missing про шрифты (так его знают прежние вызовы), missingImages про картинки.
  */
 function withoutMissingFonts(model, hasFile) {
   const missing = fontsOf(model).filter((font) => !hasFile(font.file));
-  if (missing.length === 0) return { model, missing: [] };
+  const missingImages = imagesOf(model).filter((image) => !hasFile(image.file));
+  if (missing.length === 0 && missingImages.length === 0) return { model, missing: [], missingImages: [] };
   const gone = new Set(missing.map((font) => font.name));
+  const goneImages = new Set(missingImages.map((image) => image.name));
   const strip = (props) => {
     const copy = { ...props };
     if (gone.has(copy.font)) delete copy.font;
@@ -268,16 +290,23 @@ function withoutMissingFonts(model, hasFile) {
     model: {
       ...model,
       fonts: fontsOf(model).filter((font) => !gone.has(font.name)),
+      images: imagesOf(model).filter((image) => !goneImages.has(image.name)),
       window: { ...model.window, props: strip(model.window.props) },
-      widgets: model.widgets.map((item) => ({ ...item, props: strip(item.props) })),
+      widgets: model.widgets.map((item) => {
+        const copy = { ...item, props: strip(item.props) };
+        if (goneImages.has(copy.image)) delete copy.image;
+        return copy;
+      }),
     },
     missing,
+    missingImages,
   };
 }
 
 module.exports = {
   MODEL_VERSION,
   fontsOf,
+  imagesOf,
   withoutMissingFonts,
   MODEL_COMMENT_PREFIX,
   generateCode,

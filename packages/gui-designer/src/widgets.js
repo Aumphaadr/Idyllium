@@ -18,7 +18,7 @@ const KEYWORDS = new Set([
 /** Имена, которые заняты самой программой конструктора или библиотеками. */
 const RESERVED_NAMES = new Set(['win', 'gui', 'colors', 'fonts', 'image', 'console', 'math', 'time', 'random']);
 
-const WINDOW_THEMES = ['default', 'idyllium', 'dracula', 'breeze', 'oxygen'];
+const WINDOW_THEMES = ['default', 'idyllium', 'dracula', 'breeze', 'oxygen', 'nord'];
 
 /** Имена единого набора иконок (сгенерировано tools/build-icons.js) — значения gui.Icon.icon. */
 const ICON_NAMES = require('../../icons/icon-names.json');
@@ -123,6 +123,8 @@ function widget(type, label, defaultName, group, size, own, options = {}) {
     ],
     container: options.container || null,
     data: options.data ? { ...DATA_KINDS[options.data], ...(options.dataOptions || {}) } : null,
+    // Картинка из файла (ImageBox): не свойство реестра, а метод set_image — в макете это поле item.image.
+    image: options.image === true,
     hint: options.hint || '',
   };
 }
@@ -213,7 +215,7 @@ const WIDGET_TYPES = [
   ]),
   widget('ImageBox', 'Картинка', 'image_box', 'Индикаторы', { width: 160, height: 120 }, [
     { name: 'resize_mode', kind: 'enum', group: 'values', label: 'вписывание: целиком, с обрезкой, растянуть, как есть', values: ['fit', 'fill', 'stretch', 'original'], default: 'fit' },
-  ], { hint: 'Картинка задаётся в коде: image_box1.set_image(…)', events: [ON_CLICK, DOUBLE_CLICK('ImageBox')] }),
+  ], { image: true, hint: 'Картинка — из файла: в коде это image.Static, load_from_file и set_image', events: [ON_CLICK, DOUBLE_CLICK('ImageBox')] }),
   widget('Icon', 'Значок', 'icon', 'Индикаторы', { width: 24, height: 24 }, [
     { name: 'icon', kind: 'enum', group: 'values', label: 'имя значка из единого набора сайта', values: ICON_NAMES, default: 'star' },
   ], { icon: 'star', hint: 'Значок вписывается в квадрат по меньшей стороне; цвет — text_color', events: [ON_CLICK, DOUBLE_CLICK('Icon')] }),

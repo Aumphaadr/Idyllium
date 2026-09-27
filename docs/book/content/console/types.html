@@ -10,7 +10,7 @@
       <p>Например, тип <code>types.uint8</code> занимает 8 бит и может хранить значения от <code>0</code> до <code>255</code>.</p>
       <p>Но что будет, если увеличить <code>255</code> ещё на единицу? Проверим:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=cjR8-KtWSsvMSS1WsoquVipILMlQslLKTczM08tMqcxR0lEqSa0oAQqVFqcqJOfnFefnpFrH5IF4JZUFqcVAdkweSLmGpkJ1TJ4CEIDF9Uoz80osFPwUbBWMTE2sITJQ_XrlRZklqTl5Gn6aUAmQMj8FbQVD-iqsjclTqo3VUcpLzE0FevHCxAs7Lmy8sBtI7rvYdGHrhV0XNkB8Y6VwYf_FBqD4ngtbLzYoGAKDJa0oPxekZ_HFdqDKjRf2AmV3KXgCwywnszQXqCATxrRSMtQz0zNVqgUA"><script type="text/plain">
 use console;
 use types;
 
@@ -67,7 +67,7 @@ main() {
       <p>Буква <code>u</code> — от англ. <em>unsigned</em> («беззнаковый»).</p>
       <p>Запоминать эти громадные числа не нужно: границы каждого типа встроены в библиотеку как константы — <code>types.INT8_MIN</code>, <code>types.INT8_MAX</code>, <code>types.UINT8_MAX</code> и так далее до <code>types.UINT64_MAX</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=ql1iNIWQwUrDQBCGX2WZUwthwbSGsj15zKE9KRS6IkG3dGEzKc0GLSFQvHj2GXwBCxakan2FyRs5ofaiLd3DMvPP__0wU8LEOpODGpcwS_wUFKSJRWnvFg4C8ObBs1TkRtxmmGfO9DU2nV_MTM61xsbeaotSo-D365L3c-uNw5YGi76nBG3rR6Eh2IEyHl72bgbxMGBN0Btt_80uRu3-sciCMzuh-gteMdkJT6NR9yAadfdopRGq6wAwSQ1vT8_0Tiv64J-3oDVt6HXHcc53vWT9k9b1UoR8sck8SxvmpX5i54q-eLoRMZ_T2SJlg92XCs5kJM-h-gE"><script type="text/plain">
 use console;
 use types;
 
@@ -84,7 +84,7 @@ uint64: до 18446744073709551615</idyl-output-block>
 
       <p>Если значение не помещается в диапазон — оно «оборачивается» по правилам модульной арифметики. Звучит солидно, но вы давно это умеете: стрелка часов после 12 снова показывает 1 — это она и есть. Посмотрим на обороты в деле:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=oDfb442S3UoCQRTHX2WaKwVbNdOLlQg_oWdouxAbaWB3FHelRAT1oggK6Rl6gdUSF019hTNv1JlZJdQVmothPs7_nP9vzvRog9vMpeZtj7Zq3gM1qVPjwuD3XZsmqMeePDzquIzUm8Jt2ixvCbXzui3m4toSKjwWJz1LEBz63ODCS-dIgVyRTApHnuiRTBLYwBp-YCZfwcd5JIdyfCwsovDyQLiCWaT6LJRv3RmPbe4xW8QK8Xz0RTGuXe-VzFyQUkRJn8A3LOWYhCHyXY5gvXMiB-hlAkuYoSP_OGF5B58Ks4YMKA8ISr7Uao4UG_DlcJtzgkxDWGBe3MoXDFtFM5ROwZUP4Trhg1bQTPaP7h-N2AqrKDxP7wnXGDyAQD6j8xF6XMo3BaYAppoBueZ44muSqSpzfaJJlVMcVXXRtwTt3yWoqDkM_yB8QKAfPFAWsMwCG6TNmmE7As0zIBn8t41201GaT_2ME7QTwILc4Ke2ecfBAL5bmjRt5Iws7f8C"><script type="text/plain">
 use console;
 use types;
 
@@ -121,7 +121,7 @@ main() {
       <h2>Кто обрезает значение?</h2>
       <p>Важная тонкость: оборачивает число не оператор, а <strong>ячейка, в которую вы его кладёте</strong>. Операторы <code>+</code>, <code>-</code>, <code>*</code> считают в обычных, точных числах Idyllium — они не знают и не должны знать, куда вы отправите результат. Обрезка случается в момент записи в <code>types</code>-переменную:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=HnHVw22RUUrDQBCGrzLsU4MlbUVFEjyAZzA-pHGLC8mmNFu0hEBaH0TwpeANvEAqBktt2ivMXqEncXZrQagJZCf_P_PN7G7OBiLmGfNucjYM1T3zWBIK6Yq7SczaTPFHRdI44xClMktj7gfS_KnJkGcUB9KktxzIAwn0WN0dC6kuIYQrOO12_WOnT07POnvvl-0-jITisWyFcAJ9xzdWpwN6qp9wTW8FWOsXPQdscIkrUj-N1mAN-IUVbnGpp7Q2WB3If7tG1NWSLdiQTfUHbvQM9Axrqq91qV9hV74dASkRLOb_iSOHNlMEkhW3bSbDhNOp4ZymXOA3fTeWvyKMHcgD3OqS9LXpCGd00oNRmpiad_1MmYv9DuGariEW44QSxCH0WM-9cM9Z8QM"><script type="text/plain">
 use console;
 use types;
 
@@ -157,7 +157,7 @@ console.writeln(S);
 
       <p>Чтобы понять, как десятичные числа превращаются в двоичные, взгляните на результат работы программы:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=m6sek0VQwUrDQBD9lWFOEcPSHCqS2A_w0kuPrkjUjS4km5Js0BIC1YtHEfwDf0DFQKm2_YXJHzmb2jrs7sy-N_OGmRoTnaoSw7Map7G9xRCzWBuhr2cp-mjVvWWoKhVc5abMUxVJ4352NlUlx9K4dO8AammALckL8HpSVNrYYxjDCAYRuxMIej_iewjBvsJZaQttbmDiSGHzi0snGf3zf73FXaGtSo0nkV6p7R665-6RFt0TrWhNbQgSfRj77FiIvuiT0T3bk5OdaiMNH2zOfTRxpnhGeqEFfdA3v2tWbWlJ79sxQ6BNN2f8h3vOYch7SYo8czVvrN5y1YrZJZzy0lJdZZygd2GIgTgSQ2x-AQ"><script type="text/plain">
 use console;
 use types;
 
@@ -262,7 +262,7 @@ console.writeln(s); // -93
       </ul>
       <p>Оба типа хранят приближённые значения — но <code>float64</code> точнее. Чтобы разглядеть разницу, попросим консоль ничего не скрывать: функция <code>console.set_precision(n)</code> задаёт, сколько знаков после запятой (от 0 до 25) показывать при выводе дробных чисел. Возьмём максимум:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Z835KJWQS2rDMBBArzLMyqZGJE7ihUMXya5nqEoxqUwFsmQshTYYQ-im656hF2gKhpJ-cgX5Rh3XyardVIthNPPeSEyNuVTCYnpZY5m5W0yxyKRm8majMEIn7h2V1lbAymhrlJhz3d_cphSWcq57PAih5hroHClmhbsuK7GSVhodxLNwPvR_PJYrk7lJDAs4hxEbwxnF-DeRTGH5B3F6466STigdcByxCfhX6B78mz_4Fo7zU-AYwSL8n5dMB2_Zew3X2FxFqLNC0CL8E5E7_07xi6zW7_3L8OMU_KHbUv3Dt90WElpeXpmid567RyJ3_pO6e7igzSq5LgiQpzTFMUvYDJtv"><script type="text/plain">
 use console;
 use types;
 

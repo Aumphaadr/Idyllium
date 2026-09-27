@@ -1,4 +1,4 @@
-/* Idyllium 1.6.4 — Конструктор GUI; собрано tools/build-gui-designer.js из packages/gui-designer/; править источники. */
+/* Idyllium 1.6.5 — Конструктор GUI; собрано tools/build-gui-designer.js из packages/gui-designer/; править источники. */
 "use strict";
 (() => {
   var __create = Object.create;
@@ -324,7 +324,7 @@
         "public"
       ]);
       var RESERVED_NAMES = /* @__PURE__ */ new Set(["win", "gui", "colors", "fonts", "image", "console", "math", "time", "random"]);
-      var WINDOW_THEMES = ["default", "idyllium", "dracula", "breeze", "oxygen"];
+      var WINDOW_THEMES = ["default", "idyllium", "dracula", "breeze", "oxygen", "nord"];
       var ICON_NAMES2 = require_icon_names();
       var PROPERTY_GROUPS2 = [
         ["geometry", "\u041F\u043E\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u0438 \u0440\u0430\u0437\u043C\u0435\u0440"],
@@ -424,6 +424,8 @@
           ],
           container: options.container || null,
           data: options.data ? { ...DATA_KINDS[options.data], ...options.dataOptions || {} } : null,
+          // Картинка из файла (ImageBox): не свойство реестра, а метод set_image — в макете это поле item.image.
+          image: options.image === true,
           hint: options.hint || ""
         };
       }
@@ -512,7 +514,7 @@
         ]),
         widget("ImageBox", "\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430", "image_box", "\u0418\u043D\u0434\u0438\u043A\u0430\u0442\u043E\u0440\u044B", { width: 160, height: 120 }, [
           { name: "resize_mode", kind: "enum", group: "values", label: "\u0432\u043F\u0438\u0441\u044B\u0432\u0430\u043D\u0438\u0435: \u0446\u0435\u043B\u0438\u043A\u043E\u043C, \u0441 \u043E\u0431\u0440\u0435\u0437\u043A\u043E\u0439, \u0440\u0430\u0441\u0442\u044F\u043D\u0443\u0442\u044C, \u043A\u0430\u043A \u0435\u0441\u0442\u044C", values: ["fit", "fill", "stretch", "original"], default: "fit" }
-        ], { hint: "\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0432 \u043A\u043E\u0434\u0435: image_box1.set_image(\u2026)", events: [ON_CLICK, DOUBLE_CLICK("ImageBox")] }),
+        ], { image: true, hint: "\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 \u2014 \u0438\u0437 \u0444\u0430\u0439\u043B\u0430: \u0432 \u043A\u043E\u0434\u0435 \u044D\u0442\u043E image.Static, load_from_file \u0438 set_image", events: [ON_CLICK, DOUBLE_CLICK("ImageBox")] }),
         widget("Icon", "\u0417\u043D\u0430\u0447\u043E\u043A", "icon", "\u0418\u043D\u0434\u0438\u043A\u0430\u0442\u043E\u0440\u044B", { width: 24, height: 24 }, [
           { name: "icon", kind: "enum", group: "values", label: "\u0438\u043C\u044F \u0437\u043D\u0430\u0447\u043A\u0430 \u0438\u0437 \u0435\u0434\u0438\u043D\u043E\u0433\u043E \u043D\u0430\u0431\u043E\u0440\u0430 \u0441\u0430\u0439\u0442\u0430", values: ICON_NAMES2, default: "star" }
         ], { icon: "star", hint: "\u0417\u043D\u0430\u0447\u043E\u043A \u0432\u043F\u0438\u0441\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0432 \u043A\u0432\u0430\u0434\u0440\u0430\u0442 \u043F\u043E \u043C\u0435\u043D\u044C\u0448\u0435\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u0435; \u0446\u0432\u0435\u0442 \u2014 text_color", events: [ON_CLICK, DOUBLE_CLICK("Icon")] }),
@@ -706,6 +708,9 @@
       function fontsOf2(model2) {
         return Array.isArray(model2.fonts) ? model2.fonts.filter((font) => font && typeof font.name === "string" && typeof font.file === "string") : [];
       }
+      function imagesOf2(model2) {
+        return Array.isArray(model2.images) ? model2.images.filter((image) => image && typeof image.name === "string" && typeof image.file === "string") : [];
+      }
       function usesColors(model2) {
         const check = (type, props) => Object.keys(props || {}).some((name) => {
           const prop = propertyOf2(type, name);
@@ -764,12 +769,20 @@
         if (usesColors(model2)) lines.push("use colors;");
         const fonts = fontsOf2(model2);
         if (fonts.length > 0) lines.push("use fonts;");
+        const images = imagesOf2(model2);
+        if (images.length > 0) lines.push("use image;");
         lines.push("", "main() {");
         for (const font of fonts) {
           lines.push(`${indent}fonts.Font ${font.name};`);
           lines.push(`${indent}${font.name}.load_from_file("${escapeString(font.file)}");`);
         }
         if (fonts.length > 0) lines.push("");
+        for (const image of images) {
+          lines.push(`${indent}image.Static ${image.name};`);
+          lines.push(`${indent}${image.name}.load_from_file("${escapeString(image.file)}");`);
+        }
+        if (images.length > 0) lines.push("");
+        const imageNames = new Set(images.map((image) => image.name));
         const win = model2.window;
         lines.push(`${indent}gui.Window ${win.name};`);
         lines.push(...propertyLines(indent, win.name, "Window", win.props));
@@ -779,6 +792,7 @@
           lines.push("");
           lines.push(`${indent}gui.${item.type} ${item.name};`);
           lines.push(...propertyLines(indent, item.name, item.type, item.props));
+          if (def.image && typeof item.image === "string" && imageNames.has(item.image)) lines.push(`${indent}${item.name}.set_image(${item.image});`);
           lines.push(...dataLines(indent, item.name, item.type, item.data));
           if (def.container === "tabs") {
             const previewIndex = options.previewTabs && options.previewTabs[item.id];
@@ -815,14 +829,17 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
           return copy;
         };
         const fonts = fontsOf2(model2).map((font) => ({ name: font.name, file: font.file }));
+        const images = imagesOf2(model2).map((image) => ({ name: image.name, file: image.file }));
         return {
           version: MODEL_VERSION2,
           window: withHandlers(model2.window, { name: model2.window.name, props: { ...model2.window.props } }),
           ...fonts.length > 0 ? { fonts } : {},
+          ...images.length > 0 ? { images } : {},
           widgets: model2.widgets.map((item) => {
             const copy = { id: item.id, type: item.type, name: item.name, parent: item.parent, props: { ...item.props } };
             if (item.tabTitle !== void 0) copy.tabTitle = item.tabTitle;
             if (item.data && Object.keys(item.data).length > 0) copy.data = JSON.parse(JSON.stringify(item.data));
+            if (typeof item.image === "string" && item.image !== "") copy.image = item.image;
             return withHandlers(item, copy);
           })
         };
@@ -867,8 +884,10 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       }
       function withoutMissingFonts2(model2, hasFile) {
         const missing = fontsOf2(model2).filter((font) => !hasFile(font.file));
-        if (missing.length === 0) return { model: model2, missing: [] };
+        const missingImages = imagesOf2(model2).filter((image) => !hasFile(image.file));
+        if (missing.length === 0 && missingImages.length === 0) return { model: model2, missing: [], missingImages: [] };
         const gone = new Set(missing.map((font) => font.name));
+        const goneImages = new Set(missingImages.map((image) => image.name));
         const strip = (props) => {
           const copy = { ...props };
           if (gone.has(copy.font)) delete copy.font;
@@ -878,15 +897,22 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
           model: {
             ...model2,
             fonts: fontsOf2(model2).filter((font) => !gone.has(font.name)),
+            images: imagesOf2(model2).filter((image) => !goneImages.has(image.name)),
             window: { ...model2.window, props: strip(model2.window.props) },
-            widgets: model2.widgets.map((item) => ({ ...item, props: strip(item.props) }))
+            widgets: model2.widgets.map((item) => {
+              const copy = { ...item, props: strip(item.props) };
+              if (goneImages.has(copy.image)) delete copy.image;
+              return copy;
+            })
           },
-          missing
+          missing,
+          missingImages
         };
       }
       module.exports = {
         MODEL_VERSION: MODEL_VERSION2,
         fontsOf: fontsOf2,
+        imagesOf: imagesOf2,
         withoutMissingFonts: withoutMissingFonts2,
         MODEL_COMMENT_PREFIX,
         generateCode: generateCode2,
@@ -1055,7 +1081,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       var { WIDGETS: WIDGETS2, TAB_PAGE_TYPE: TAB_PAGE_TYPE2, widgetDefinition: widgetDefinition2, propertyOf: propertyOf2, eventsOf: eventsOf2, nameProblem: nameProblem2, freeName: freeName2 } = require_widgets();
       var { MODEL_VERSION: MODEL_VERSION2, normalizeHex: normalizeHex2 } = require_codegen();
       var { flattenTree } = require_model_ops();
-      var KNOWN_MODULES = /* @__PURE__ */ new Set(["gui", "colors", "fonts"]);
+      var KNOWN_MODULES = /* @__PURE__ */ new Set(["gui", "colors", "fonts", "image"]);
       var ImportRefusal = class extends Error {
         constructor(message) {
           super(message);
@@ -1116,6 +1142,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         const windowModel = { name: "win", props: {}, handlers: [] };
         const widgets = /* @__PURE__ */ new Map();
         const fonts = /* @__PURE__ */ new Map();
+        const images = /* @__PURE__ */ new Map();
         const previewTabs2 = {};
         const childOrder = /* @__PURE__ */ new Map();
         let nextId2 = 1;
@@ -1123,6 +1150,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
           if (name === windowName) return { kind: "window", type: "Window", target: windowModel };
           if (widgets.has(name)) return { kind: "widget", type: widgets.get(name).type, target: widgets.get(name) };
           if (fonts.has(name)) return { kind: "font", target: fonts.get(name) };
+          if (images.has(name)) return { kind: "image", target: images.get(name) };
           return null;
         };
         const colorOf = (node) => {
@@ -1193,6 +1221,10 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
             fonts.set(statement.name, { name: statement.name, file: null, node: statement });
             return;
           }
+          if (type.moduleName === "image" && type.name === "Static") {
+            images.set(statement.name, { name: statement.name, file: null, node: statement });
+            return;
+          }
           reject(statement, `\u0442\u0438\u043F ${type.moduleName}.${type.name} \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 \u043D\u0435 \u0437\u043D\u0430\u0435\u0442`);
         };
         const handleAssignment = (statement) => {
@@ -1208,6 +1240,10 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
           }
           if (owner.kind === "font") {
             reject(statement, "\u0443 \u0448\u0440\u0438\u0444\u0442\u0430 \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 \u0441\u0432\u043E\u0439\u0441\u0442\u0432 \u043D\u0435 \u0440\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u0443\u0435\u0442");
+            return;
+          }
+          if (owner.kind === "image") {
+            reject(statement, "\u0443 \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0438 \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 \u0441\u0432\u043E\u0439\u0441\u0442\u0432 \u043D\u0435 \u0440\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u0443\u0435\u0442");
             return;
           }
           const event = eventsOf2(owner.type).find((known) => known.name === target.name);
@@ -1262,6 +1298,14 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
             reject(statement, '\u0443 \u0448\u0440\u0438\u0444\u0442\u0430 \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 \u0437\u043D\u0430\u0435\u0442 \u0442\u043E\u043B\u044C\u043A\u043E load_from_file("\u0444\u0430\u0439\u043B")');
             return;
           }
+          if (owner.kind === "image") {
+            if (callee.name === "load_from_file" && args.length === 1 && stringOf(args[0]) !== null) {
+              owner.target.file = stringOf(args[0]);
+              return;
+            }
+            reject(statement, '\u0443 \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0438 \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0442\u043E\u0440 \u0437\u043D\u0430\u0435\u0442 \u0442\u043E\u043B\u044C\u043A\u043E load_from_file("\u0444\u0430\u0439\u043B")');
+            return;
+          }
           if (owner.kind === "window") {
             if (callee.name === "show" && args.length === 0) return;
             if (callee.name === "add_child" && args.length === 1 && isIdentifier(args[0]) && widgets.has(args[0].name)) {
@@ -1285,6 +1329,10 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
             }
             page.tabTitle = stringOf(args[0]);
             addTo(item.id, page);
+            return;
+          }
+          if (def.image && callee.name === "set_image" && args.length === 1 && isIdentifier(args[0]) && images.has(args[0].name)) {
+            item.image = args[0].name;
             return;
           }
           if (def.data) {
@@ -1336,8 +1384,19 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
           if (props.font !== void 0 && !readyNames.has(props.font)) delete props.font;
         };
         dropFont(windowModel.props);
+        const readyImages = [];
+        for (const image of images.values()) {
+          if (image.file === null) {
+            notes.push(`\u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 ${image.name} \u043E\u0431\u044A\u044F\u0432\u043B\u0435\u043D\u0430 \u0431\u0435\u0437 load_from_file \u2014 \u043F\u0440\u043E\u043F\u0443\u0449\u0435\u043D\u0430`);
+            reject(image.node, "\u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 \u0431\u0435\u0437 \u0444\u0430\u0439\u043B\u0430");
+            continue;
+          }
+          readyImages.push({ name: image.name, file: image.file });
+        }
+        const readyImageNames = new Set(readyImages.map((image) => image.name));
         for (const item of widgets.values()) {
           dropFont(item.props);
+          if (item.image !== void 0 && !readyImageNames.has(item.image)) delete item.image;
           if (!item.__added) {
             notes.push(`${item.name} (gui.${item.type}) \u043D\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D \u0432 \u043E\u043A\u043D\u043E \u0447\u0435\u0440\u0435\u0437 add_child \u2014 \u043F\u043E\u0441\u0442\u0430\u0432\u043B\u0435\u043D \u0432 \u043E\u043A\u043D\u043E`);
             addTo(null, item);
@@ -1345,6 +1404,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         }
         const model2 = { version: MODEL_VERSION2, window: windowModel, widgets: [...widgets.values()] };
         if (readyFonts.length > 0) model2.fonts = readyFonts;
+        if (readyImages.length > 0) model2.images = readyImages;
         const taken = [windowModel.name];
         for (const item of model2.widgets) {
           if (nameProblem2(item.name, taken)) {
@@ -2469,7 +2529,8 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     dialogBody: $("dialog-body"),
     dialogOk: $("dialog-ok"),
     dialogCancel: $("dialog-cancel"),
-    fontInput: $("font-file-input")
+    fontInput: $("font-file-input"),
+    imageInput: $("image-file-input")
   };
   var model = null;
   var selectedId = null;
@@ -2478,6 +2539,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
   var marquee = null;
   var fontFiles = /* @__PURE__ */ new Map();
   var pendingFontTarget = null;
+  var pendingImageTarget = null;
   var history = [];
   var future = [];
   var ui = { grid: true, gridSize: 5, embedModel: false, codeCollapsed: false, layout: { palette: 236, side: 340, code: 232, tree: 34 } };
@@ -2507,7 +2569,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     return model.widgets.reduce((max, item) => Math.max(max, item.id), 0) + 1;
   }
   function takenNames() {
-    return [model.window.name, ...model.widgets.map((item) => item.name), ...(0, import_codegen.fontsOf)(model).map((font) => font.name)];
+    return [model.window.name, ...model.widgets.map((item) => item.name), ...(0, import_codegen.fontsOf)(model).map((font) => font.name), ...(0, import_codegen.imagesOf)(model).map((image) => image.name)];
   }
   function pruneSelection() {
     selection = new Set([...selection].filter((id) => widgetById(id)));
@@ -2603,6 +2665,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       if (typeof item.tabTitle === "string") widget.tabTitle = item.tabTitle;
       const data = cleanData(item.type, item.data);
       if (data) widget.data = data;
+      if (import_widgets.WIDGETS[item.type].image && typeof item.image === "string") widget.image = item.image;
       result.widgets.push(widget);
     }
     for (const widget of result.widgets) {
@@ -2626,6 +2689,15 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     };
     dropUnknownFont(result.window.props);
     for (const widget of result.widgets) dropUnknownFont(widget.props);
+    const images = [];
+    for (const image of Array.isArray(raw.images) ? raw.images : []) {
+      if (!image || typeof image.name !== "string" || typeof image.file !== "string" || image.file.trim() === "") continue;
+      if ((0, import_widgets.nameProblem)(image.name, [result.window.name, ...names, ...fonts.map((known) => known.name), ...images.map((known) => known.name)])) continue;
+      images.push({ name: image.name, file: image.file });
+    }
+    if (images.length > 0) result.images = images;
+    const imageNames = new Set(images.map((image) => image.name));
+    for (const widget of result.widgets) if (widget.image !== void 0 && !imageNames.has(widget.image)) delete widget.image;
     return result;
   }
   function cleanProps(type, props) {
@@ -2728,11 +2800,15 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
   }
   function previewFiles(code) {
     const files = { "main.idyl": code };
-    for (const font of (0, import_codegen.fontsOf)(model)) {
-      const bytes = fontFiles.get(font.file);
-      if (bytes) files[font.file] = { bytes };
+    for (const asset of [...(0, import_codegen.fontsOf)(model), ...(0, import_codegen.imagesOf)(model)]) {
+      const bytes = fontFiles.get(asset.file);
+      if (bytes) files[asset.file] = { bytes };
     }
     return files;
+  }
+  function missingImagesNote(prefix) {
+    const missing = (0, import_codegen.withoutMissingFonts)(model, (file) => fontFiles.has(file)).missingImages;
+    return missing.length > 0 ? `${prefix}\u043D\u0435\u0442 \u0444\u0430\u0439\u043B\u0430 \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0438: ${missing.map((image) => image.file).join(", ")} \u2014 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0435\u0433\u043E \u0437\u0430\u043D\u043E\u0432\u043E \u0443 \u0432\u0438\u0434\u0436\u0435\u0442\u0430` : "";
   }
   function scheduleRun(delay = 60) {
     if (runTimer) clearTimeout(runTimer);
@@ -2769,7 +2845,8 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     const lineCount = code.split("\n").length - 1;
     const missingFonts = (0, import_codegen.withoutMissingFonts)(model, (file) => fontFiles.has(file)).missing;
     const fontsNote = missingFonts.length > 0 ? ` \xB7 \u043D\u0435\u0442 \u0444\u0430\u0439\u043B\u0430 \u0448\u0440\u0438\u0444\u0442\u0430: ${missingFonts.map((font) => font.file).join(", ")} \u2014 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0435\u0433\u043E \u0437\u0430\u043D\u043E\u0432\u043E \u0432 \u0441\u0432\u043E\u0439\u0441\u0442\u0432\u0435 font` : "";
-    setStatus(`\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430 \u043C\u0430\u043A\u0435\u0442\u0430 \u0441\u043A\u043E\u043C\u043F\u0438\u043B\u0438\u0440\u043E\u0432\u0430\u043D\u0430 \u0438 \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u0430: ${lineCount} \u0441\u0442\u0440\u043E\u043A, \u0432\u0438\u0434\u0436\u0435\u0442\u043E\u0432: ${model.widgets.length}${fontsNote}`, missingFonts.length > 0);
+    const imagesNote = missingImagesNote(" \xB7 ");
+    setStatus(`\u041F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430 \u043C\u0430\u043A\u0435\u0442\u0430 \u0441\u043A\u043E\u043C\u043F\u0438\u043B\u0438\u0440\u043E\u0432\u0430\u043D\u0430 \u0438 \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u0430: ${lineCount} \u0441\u0442\u0440\u043E\u043A, \u0432\u0438\u0434\u0436\u0435\u0442\u043E\u0432: ${model.widgets.length}${fontsNote}${imagesNote}`, missingFonts.length > 0 || imagesNote !== "");
     requestAnimationFrame(() => requestAnimationFrame(syncOverlay));
   }
   function setStatus(text, isError = false) {
@@ -3774,7 +3851,9 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       container.appendChild(box);
     }
     if (item && def.data) container.appendChild(dataEditor(item, def));
+    if (item && def.image) container.appendChild(imageEditor(item));
     if (!item) container.appendChild(fontsEditor());
+    if (!item) container.appendChild(imagesEditor());
     const events = (0, import_widgets.eventsOf)(type);
     if (events.length > 0) {
       const box = groupBox("\u0417\u0430\u0433\u043E\u0442\u043E\u0432\u043A\u0438 \u043E\u0431\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u043E\u0432");
@@ -3794,11 +3873,10 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
           target.handlers = events.map((known) => known.name).filter((name) => list.has(name));
         }));
         const code = document.createElement("code");
-        code.textContent = event.name + (event.params ? `(${event.params})` : "()");
-        const hint = document.createElement("small");
-        hint.textContent = event.comment;
-        row.title = `\u0412 \u043A\u043E\u0434 \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u0441\u044F \u043F\u0443\u0441\u0442\u0430\u044F \u0444\u0443\u043D\u043A\u0446\u0438\u044F: ${event.comment}`;
-        row.append(check, code, hint);
+        code.textContent = event.name;
+        const about = String(event.comment || "");
+        row.title = `${about.charAt(0).toUpperCase()}${about.slice(1)}. \u0412 \u043A\u043E\u0434 \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u0441\u044F \u043F\u0443\u0441\u0442\u0430\u044F \u0444\u0443\u043D\u043A\u0446\u0438\u044F-\u043E\u0431\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A.`;
+        row.append(check, code);
         box.appendChild(row);
       }
       container.appendChild(box);
@@ -3908,6 +3986,127 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       if (model.window.props.font === fontName) delete model.window.props.font;
       for (const item of model.widgets) if (item.props.font === fontName) delete item.props.font;
     });
+  }
+  function assetRow(entry, removeTitle, onRemove) {
+    const row = document.createElement("div");
+    row.className = "font-row";
+    const name = document.createElement("code");
+    name.textContent = entry.name;
+    const file = document.createElement("span");
+    file.className = "font-file";
+    file.textContent = entry.file + (fontFiles.has(entry.file) ? "" : " \u2014 \u0444\u0430\u0439\u043B\u0430 \u043D\u0435\u0442, \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0437\u0430\u043D\u043E\u0432\u043E");
+    file.title = entry.file;
+    if (!fontFiles.has(entry.file)) row.classList.add("is-missing");
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset";
+    remove.title = removeTitle;
+    if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("x", { size: 12 }));
+    else remove.textContent = "\xD7";
+    remove.style.visibility = "visible";
+    remove.addEventListener("click", onRemove);
+    row.append(name, file, remove);
+    return row;
+  }
+  function imagesEditor() {
+    const box = groupBox("\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0438 \u0438\u0437 \u0444\u0430\u0439\u043B\u043E\u0432");
+    const images = (0, import_codegen.imagesOf)(model);
+    if (images.length === 0) {
+      const note = document.createElement("p");
+      note.className = "ui-empty inspector-empty";
+      note.textContent = "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442. \u0424\u0430\u0439\u043B PNG, JPEG, GIF, WebP \u0438\u043B\u0438 BMP \u0441\u0442\u0430\u043D\u0435\u0442 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 image.Static, \u0430 \u0432\u0438\u0434\u0436\u0435\u0442 \xAB\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430\xBB \u043F\u043E\u043B\u0443\u0447\u0438\u0442 \u0435\u0451 \u0447\u0435\u0440\u0435\u0437 set_image.";
+      box.appendChild(note);
+    }
+    for (const image of images) box.appendChild(assetRow(image, "\u0423\u0431\u0440\u0430\u0442\u044C \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0443 \u0438\u0437 \u043C\u0430\u043A\u0435\u0442\u0430 (\u0432\u0438\u0434\u0436\u0435\u0442\u044B \u043E\u0441\u0442\u0430\u043D\u0443\u0442\u0441\u044F \u043F\u0443\u0441\u0442\u044B\u043C\u0438)", () => removeImage(image.name)));
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "ui-button ui-button--sm inspector-action";
+    add.id = "add-image-button";
+    add.textContent = "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0443 \u0438\u0437 \u0444\u0430\u0439\u043B\u0430\u2026";
+    add.addEventListener("click", () => {
+      pendingImageTarget = null;
+      els.imageInput.click();
+    });
+    box.appendChild(add);
+    return box;
+  }
+  function imageEditor(item) {
+    const box = groupBox("\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430");
+    const select2 = document.createElement("select");
+    select2.className = "ui-field ui-field--sm inspector-action";
+    select2.id = "image-choice";
+    const none = document.createElement("option");
+    none.value = "";
+    none.textContent = "\u043D\u0435\u0442 \u2014 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0432 \u043A\u043E\u0434\u0435";
+    select2.appendChild(none);
+    for (const image of (0, import_codegen.imagesOf)(model)) {
+      const option = document.createElement("option");
+      option.value = image.name;
+      option.textContent = `${image.name} \u2014 ${image.file}`;
+      select2.appendChild(option);
+    }
+    const add = document.createElement("option");
+    add.value = "__add__";
+    add.textContent = "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0443 \u0438\u0437 \u0444\u0430\u0439\u043B\u0430\u2026";
+    select2.appendChild(add);
+    const current = typeof item.image === "string" ? item.image : "";
+    select2.value = current;
+    select2.title = "\u0412 \u043A\u043E\u0434 \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u0441\u044F image.Static, load_from_file \u0438 set_image";
+    select2.addEventListener("change", () => {
+      if (select2.value === "__add__") {
+        pendingImageTarget = item.id;
+        select2.value = current;
+        els.imageInput.click();
+        return;
+      }
+      const chosen = select2.value;
+      applyChange(() => {
+        const target = widgetById(item.id);
+        if (!target) return;
+        if (chosen === "") delete target.image;
+        else target.image = chosen;
+      });
+    });
+    box.appendChild(select2);
+    return box;
+  }
+  function removeImage(imageName) {
+    applyChange(() => {
+      model.images = (0, import_codegen.imagesOf)(model).filter((image) => image.name !== imageName);
+      for (const item of model.widgets) if (item.image === imageName) delete item.image;
+    });
+  }
+  function imageFormatOf(bytes) {
+    if (!bytes || bytes.length < 12) return null;
+    if (bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71) return "png";
+    if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return "jpeg";
+    const tag = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
+    if (tag === "GIF8") return "gif";
+    if (tag === "RIFF" && String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]) === "WEBP") return "webp";
+    if (bytes[0] === 66 && bytes[1] === 77) return "bmp";
+    return null;
+  }
+  async function addImageFile(file, targetId) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!imageFormatOf(bytes)) {
+      setStatus(`\xAB${file.name}\xBB \u2014 \u043D\u0435 \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0430: \u043D\u0443\u0436\u0435\u043D PNG, JPEG, GIF, WebP \u0438\u043B\u0438 BMP`, true);
+      return;
+    }
+    const fileName = file.name;
+    fontFiles.set(fileName, bytes);
+    void storeFontFile(fileName, bytes);
+    applyChange(() => {
+      let image = (0, import_codegen.imagesOf)(model).find((known) => known.file === fileName);
+      if (!image) {
+        image = { name: (0, import_widgets.freeName)("picture", takenNames()), file: fileName };
+        model.images = [...(0, import_codegen.imagesOf)(model), image];
+      }
+      if (targetId !== null) {
+        const owner = widgetById(targetId);
+        if (owner) owner.image = image.name;
+      }
+    });
+    setStatus(`\u041A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 \xAB${fileName}\xBB \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0430 \u0432 \u043C\u0430\u043A\u0435\u0442 \u043A\u0430\u043A ${(0, import_codegen.imagesOf)(model).find((known) => known.file === fileName).name}`);
   }
   function openFilesDb() {
     return new Promise((resolve, reject) => {
@@ -4132,7 +4331,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       wrap.className = "ui-stepper ui-stepper--sm number-control";
       const minus = document.createElement("button");
       minus.type = "button";
-      minus.textContent = "\u2212";
+      stepperSign(minus, "minus", "\u2212");
       minus.title = "\u041C\u0435\u043D\u044C\u0448\u0435";
       const input = document.createElement("input");
       input.type = "number";
@@ -4143,7 +4342,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       input.value = explicit ? String(props[prop.name]) : "";
       const plus = document.createElement("button");
       plus.type = "button";
-      plus.textContent = "+";
+      stepperSign(plus, "plus", "+");
       plus.title = "\u0411\u043E\u043B\u044C\u0448\u0435";
       const commit = (raw) => {
         if (String(raw).trim() === "") {
@@ -4432,6 +4631,10 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     box.appendChild(note);
     return box;
   }
+  function stepperSign(button, icon, fallback) {
+    if (window.IdylliumIcons && window.IdylliumIcons.has(icon)) button.appendChild(window.IdylliumIcons.element(icon, { size: 12 }));
+    else button.textContent = fallback;
+  }
   var iconPicker = null;
   function openIconPicker(anchor, current, onPick) {
     if (!iconPicker) {
@@ -4504,6 +4707,8 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     search.value = "";
     iconPicker.renderGrid();
     root.hidden = false;
+    const chosen = iconPicker.grid.querySelector(".is-current");
+    if (chosen && typeof chosen.scrollIntoView === "function") chosen.scrollIntoView({ block: "center" });
     const rect = anchor.getBoundingClientRect();
     let left = rect.left;
     let top = rect.bottom + 6;
@@ -4623,15 +4828,23 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     link.remove();
     setTimeout(() => URL.revokeObjectURL(link.href), 1e3);
   }
+  function projectAssets() {
+    const seen = /* @__PURE__ */ new Set();
+    return [...(0, import_codegen.fontsOf)(model), ...(0, import_codegen.imagesOf)(model)].filter((asset) => {
+      if (!fontFiles.has(asset.file) || seen.has(asset.file)) return false;
+      seen.add(asset.file);
+      return true;
+    });
+  }
   function downloadCode() {
     const code = currentCode(false);
-    const fonts = (0, import_codegen.fontsOf)(model).filter((font) => fontFiles.has(font.file));
-    if (fonts.length === 0) {
+    const assets = projectAssets();
+    if (assets.length === 0) {
       downloadText("main.idyl", code, "text/plain;charset=utf-8");
       flash(els.downloadCode, "\u0421\u043A\u0430\u0447\u0430\u043D\u043E \u2713");
       return;
     }
-    const entries = [{ name: "main.idyl", bytes: new TextEncoder().encode(code) }, ...fonts.map((font) => ({ name: font.file, bytes: fontFiles.get(font.file) }))];
+    const entries = [{ name: "main.idyl", bytes: new TextEncoder().encode(code) }, ...assets.map((asset) => ({ name: asset.file, bytes: fontFiles.get(asset.file) }))];
     const blob = new Blob([zipBytes(entries)], { type: "application/zip" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -4657,11 +4870,10 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     const code = currentCode(false);
     const title = String(model.window.props.title || "\u041C\u0430\u043A\u0435\u0442 \u043E\u043A\u043D\u0430");
     const assets = [];
-    for (const font of (0, import_codegen.fontsOf)(model)) {
-      const bytes = fontFiles.get(font.file);
-      if (!bytes) continue;
+    for (const asset of projectAssets()) {
+      const bytes = fontFiles.get(asset.file);
       const sha = await fingerprint(bytes);
-      if (sha) assets.push({ path: font.file, size: bytes.length, sha });
+      if (sha) assets.push({ path: asset.file, size: bytes.length, sha });
     }
     let fragment;
     try {
@@ -4761,7 +4973,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     });
     const missingFonts = (0, import_codegen.withoutMissingFonts)(model, (name) => fontFiles.has(name)).missing;
     const fontsNote = missingFonts.length > 0 ? `; \u043D\u0435\u0442 \u0444\u0430\u0439\u043B\u043E\u0432 \u0448\u0440\u0438\u0444\u0442\u043E\u0432: ${missingFonts.map((font) => font.file).join(", ")} \u2014 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u0445 \u0437\u0430\u043D\u043E\u0432\u043E` : "";
-    setStatus(`\u041E\u0442\u043A\u0440\u044B\u0442 \u043C\u0430\u043A\u0435\u0442 \u0438\u0437 \xAB${file.name}\xBB: \u0432\u0438\u0434\u0436\u0435\u0442\u043E\u0432 ${model.widgets.length}${report ? " (\u0440\u0443\u0447\u043D\u044B\u0435 \u043F\u0440\u0430\u0432\u043A\u0438 \u043A\u043E\u0434\u0430 \u0432 \u043C\u0430\u043A\u0435\u0442 \u043D\u0435 \u0432\u043E\u0448\u043B\u0438)" : ""}${fontsNote}`, Boolean(report) || missingFonts.length > 0);
+    setStatus(`\u041E\u0442\u043A\u0440\u044B\u0442 \u043C\u0430\u043A\u0435\u0442 \u0438\u0437 \xAB${file.name}\xBB: \u0432\u0438\u0434\u0436\u0435\u0442\u043E\u0432 ${model.widgets.length}${report ? " (\u0440\u0443\u0447\u043D\u044B\u0435 \u043F\u0440\u0430\u0432\u043A\u0438 \u043A\u043E\u0434\u0430 \u0432 \u043C\u0430\u043A\u0435\u0442 \u043D\u0435 \u0432\u043E\u0448\u043B\u0438)" : ""}${fontsNote}${missingImagesNote("; ")}`, Boolean(report) || missingFonts.length > 0);
   }
   async function importIdylFile(fileName, text) {
     if (!api || typeof api.compileIdyllium !== "function") {
@@ -4875,9 +5087,9 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     els.undo.disabled = history.length === 0;
     els.redo.disabled = future.length === 0;
     pruneSelection();
-    const withFonts = (0, import_codegen.fontsOf)(model).some((font) => fontFiles.has(font.file));
-    els.downloadCode.textContent = withFonts ? "\u0421\u043A\u0430\u0447\u0430\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442 (.zip)" : "\u0421\u043A\u0430\u0447\u0430\u0442\u044C main.idyl";
-    els.downloadCode.title = withFonts ? "main.idyl \u0438 \u0444\u0430\u0439\u043B\u044B \u0448\u0440\u0438\u0444\u0442\u043E\u0432 \u043E\u0434\u043D\u0438\u043C \u0430\u0440\u0445\u0438\u0432\u043E\u043C \u2014 Web IDE \u043E\u0442\u043A\u0440\u043E\u0435\u0442 \u0435\u0433\u043E \u0447\u0435\u0440\u0435\u0437 \xAB\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442\xBB" : "";
+    const withFiles = projectAssets().length > 0;
+    els.downloadCode.textContent = withFiles ? "\u0421\u043A\u0430\u0447\u0430\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442 (.zip)" : "\u0421\u043A\u0430\u0447\u0430\u0442\u044C main.idyl";
+    els.downloadCode.title = withFiles ? "main.idyl, \u0448\u0440\u0438\u0444\u0442\u044B \u0438 \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0438 \u043E\u0434\u043D\u0438\u043C \u0430\u0440\u0445\u0438\u0432\u043E\u043C \u2014 Web IDE \u043E\u0442\u043A\u0440\u043E\u0435\u0442 \u0435\u0433\u043E \u0447\u0435\u0440\u0435\u0437 \xAB\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442\xBB" : "";
     renderTree();
     renderInspector();
     renderCode();
@@ -4989,6 +5201,13 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       const target = pendingFontTarget;
       pendingFontTarget = null;
       if (file) void addFontFile(file, target);
+    });
+    els.imageInput.addEventListener("change", () => {
+      const file = els.imageInput.files && els.imageInput.files[0];
+      els.imageInput.value = "";
+      const targetId = pendingImageTarget;
+      pendingImageTarget = null;
+      if (file) void addImageFile(file, targetId);
     });
     els.copyCode.addEventListener("click", () => {
       void copyCode();

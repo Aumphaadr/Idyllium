@@ -188,6 +188,7 @@
   padding: 6px 4px 4px;
   color: var(--color-text-muted);
   font-size: 12px;
+  line-height: 16px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -199,6 +200,7 @@
   padding: 6px 4px 4px;
   color: var(--color-text-muted);
   font-size: 12px;
+  line-height: 16px;
   font-weight: 700;
   text-transform: uppercase;
   cursor: pointer;

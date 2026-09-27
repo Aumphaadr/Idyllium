@@ -39,7 +39,7 @@ use encoding;
       </ul>
       <p>Имена можно писать в любом регистре и в привычных сокращениях: <code>cp1251</code>, <code>latin1</code>, <code>ibm866</code> — Idyllium поймёт. Список можно получить и прямо из программы:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=4XzrmX1RzWoCMRB-lTAnhXXpFuxhbXvvMxiRxY0ayGbLJmJFhOqll4L00EsvPfQFVCosVu0rTN6os_3ZFgsGQubn-76ZyYyhK5UwEDbHcB3ZPoSQRFL7Mh4p8MCKG0uhgRGsk2qTKtHguvCE7qSx1D1yuS4YlSobc83oxCPdjrIsGp0bmxHksgQbdlHavpLGtstMpdr4Yn-X8YeZtELpCgd8wj2-Yu5u6V3R3YSMg_er6iuhe7Z_ROEZ18Re4cLND7jNk5b3GcF33LspvuGaau3c_D_ysB6rsaB1pOijm7qZu2ekmbOh1HE6NLXgtB4ctk9cSz9oiPQXxqFaqE-4hknLAx0lglaBD5jjstCkfmfU7QYXpVZIY9CgOW6LgVlAG-xmaVLQXtwdgZe4o-yGXdF6lRwkBJA_ZgiBf-bXYfIB"><script type="text/plain">
 use console;
 use encoding;
 
@@ -60,7 +60,7 @@ main() {
       <h2>Кодовая точка символа</h2>
       <p>Функция <code>encoding.char_to_codepoint()</code> получает один символ и возвращает его постоянный номер Unicode. Имя кодировки ей не нужно.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=hsRwGIWQTWrDMBCFryJmEweCoIV24dBFlzlDXYJQlGZAHgVboQ3GELLJumfoAdosAiX9u8L4Rh2ndQLdVAuhp_c-zWgqmKJ3JaQ3FcxNnEEKuUHSOFl6GEB0D1GuFqVTNlAZvBtm1CpHNkyQ7kRm1BJJX1UZKVlIUXkTkdTVMabtzBTjGMYi3TxIJOld9_rDE2GXBXqP9h-Inw_UD_fbkr4vMDpPyaFq9-hfsyvQ-nVGUN8OgEzu5Hv8yK-85TfZP5s173jPL8cuUsVfzUqsd941K3UuU5kWIW-xp2Yj4S1_iLtXIxmZx0UuAeyOKZzpS30B9Tc"><script type="text/plain">
 use console;
 use encoding;
 
@@ -90,7 +90,7 @@ console.writeln(letter);
       <h2>Превращаем текст в байты</h2>
       <p>Функция <code>encoding.encode(текст, кодировка)</code> превращает строку в динамический массив байтов. Теперь кодировка действительно имеет значение:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=MC92NH2Rz0rDQBCHX2WZUwpJIEolpOpRKB4EUTy4IqHZ6GIykWRDDSFQvHj2GXwA7aEgrX9eYfNGzjZWBG1zCLv5fd_sbKaGWCaigOC8httQXUMAaSjRlVGVgA1K3Cn6VBaCjTIsskQMOJqdwFEWSbyiLUdjWD1Wc2T0FCqngBmV7TEO-pnDEjNhVOFlmOdhtStR7bNSxcSsirnLhbCMapNJqeNz6A3-dccSN7iURtm4cLytvre2xE0mN5Sg1HfyTu7073_gjnOpRIIWh9OTA8cPCLbNXVbH_OXOfrXT4dTgevzwaOg7xx1IbRiw4QjNhQ0YpoJGoh_1q57qBb0_2ns903P98nOTgOnPdkLRm561E7ZNk4zzLDXaU_tA8FS_UzpnQxpzIsuUALlaBuC5O24fmi8"><script type="text/plain">
 use console;
 use encoding;
 
@@ -118,7 +118,7 @@ KOI8-R: [241]</idyl-output-block>
       <h2>Собираем текст из байтов</h2>
       <p><code>encoding.decode(байты, кодировка)</code> выполняет обратное преобразование. Важно указать ту же кодировку, которой пользовались при записи.</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=qwbGY22Rz0oDMRDGXyXMaQvrQsV62FXvPoMRWbtpDexOJEmpSynUvXjw5BMI-gKtUKj13yskb-TsrisKzSHMJN_3y2RmBiOZCwPx2QyuU3sFMRSpxEhmZQ4hWHFj6WhiBBsqNCoXCcc6EzhUmcQxpRxrR9BjM46MlrGaLpjSciwxzdkx4-Ae_cJt3Itb-4pD0gqzEi9SrdPySKI9YZelFYbUHTpqAhF0oJA4U4mZmpq9_v6gz6GX_HtRC2OVFtlfRiYaRsPeDWgRP7-LplpakWNAJT-4pXv1lb-PyRe25XUv7pA_ubXb-ltftfKumNox5wjz8xAwLQR1k8gbt3JvtH_6qra55W_FMXNfTa_eqVcLdkBDGGlV1LZnf0filfug2y07pQnlclKQQHZhDP3oMBrA_Bs"><script type="text/plain">
 use console;
 use encoding;
 
@@ -137,7 +137,7 @@ main() {
 
       <p>Если прочитать старый файл не той кодировкой, числа будут истолкованы иначе. Так и появляются знаменитые «кракозябры» — теперь их можно вырастить самостоятельно, в лабораторных условиях:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=r9_nm52Rz07CQBDGX2UzJ0igSUloSP1z9xlcY2q76IZ2lrQl2DQkyMWDXnwAT74AHEgQBF9h9o2cVuzBm-5hM7M7v292vylhqGOVgX9ZwjjI78CHJNDo6KiIoQO5us_5aJIpERrMTKxOJFaZwtBEGm85lVgRrbYoJQpeUYHXQZoGxanG_FzcFLnKxFlDOHWgWhLolQ52Th-0pJ19pr19ondhF7SmrX2wCwkdIWGqMTLTrOv2-q6Edt2v6nJ8jjNNda5ibDXykarl67a_BHosUCn8iQ_HA8_7DzgyetBNj-RMIsyuOoBBothQeqENrWjH--H7x7RsHPIFfbIvG3Zmbeeiz3MYpiapsDf7yMUr2vPtVlzwkGI9SbhA_4Q-uI7n9GH2BQ"><script type="text/plain">
 use console;
 use encoding;
 
@@ -161,7 +161,7 @@ main() {
       <h2>Ошибки не прячутся</h2>
       <p>ASCII не знает русских букв. Idyllium не станет молча заменять неизвестный символ вопросительным знаком:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=uUVXXT1Oy4rCUAz9lZCVQinMYlzUx36-Ya7I1V410EZpb8FSCuLG9XzD7GVcCIPPX0j_yChoFuGQ88ipcEqJyzH6rnBp_RwjTC1xSHGZYIDerbyeityB48kiJp51DRt-aFptqAyDTlzyyGaZLXvEfgDj0rsc-m9H-ASuZVB2BgMwaPMJkcG2ZtWGsR4GyDZ1-kl-5F_2ctJ9bTZykKP8vYMikFuzVuosh2YNHS04zRbpw_bbbFW8l4uyR_jS9gkVqQroBSP8CDvhJ9Z3"><script type="text/plain">
 use encoding;
 
 main() {
@@ -172,7 +172,7 @@ main() {
 
       <p>Повреждённые байты UTF-8 тоже дают ошибку. Например, байт <code>208</code> начинает двухбайтовый символ, но в массиве нет его продолжения:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=AWifqz1PzWrCQBB-lWFOCmloBa3EtnefwZWybTZ1MZmUzQYMISC9ePYZfIF6EIr9e4XJGzlBdA7Dx3w_fFNjYlNTYDSr8V37BUaYaUuhjasUA_Rm5eVUFgYMveaxpbeJIkWdpteHWhHIxBU9a-d09WDJP8GLy5eG4BFmg9vxfHLWFN6JGbpAYS5hYWwEmN7ZEoDC0ic3Y4V9sTWKsJkHSDozUoK3_MV7_pb9137wgY_8eQ2KgP_btVA_fGjXcC_dE5dnnW3XbkS8519hjzCVx1JbZiKwFxjhXTgKh9icAA"><script type="text/plain">
 use encoding;
 
 main() {
@@ -184,7 +184,7 @@ main() {
 
       <p>Но иногда хочется не падать, а посмотреть, во что превратятся битые данные — например, чтобы понять, какой кодировкой был записан загадочный файл. Для этого у <code>encode()</code> и <code>decode()</code> есть параметр <code>safe</code>. По умолчанию он равен <code>true</code> — страховка включена. Написав <code>safe=false</code>, вы буквально говорите: «Мне не нужна безопасность, я хочу увидеть, что произойдёт»:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=QxJBTo1SXUrDQBC-yrBPLbSRFpRSf949gxGJZqML6Ua6KTWUgkbEB0XwACLiAWyrgbS18QqzN3J2WwutPpiHZXay8_3MTI8FIuSKNQ967NyLz1iTtTwhHeEnIauwmF_ElOooDieRVFHIt11pblyeRL6Qp3R1pakolaHnSqDPT-SR1257yY6Q8R4cJzFXsLuscGzASy7DJyz0JX7iAKf6Hmf6DsegU8xwoq906rIKuKwrpB91VbVW36y5rGz5DMvGBuCLTql-oG-wwBFOcAAEmFIw1Q_6lnBmOGgCnRm-05MPS5EBDolxTLV3YHjoMtPXOgXCKkjNEHODRVE-p1o4d7ptEfNQlpZOfG6dWIdGaycOqg0jW3kB3w28UPHyquJn4siB4I2a3BKODD9R5nOhX5TM8GMhbEQ_Pq1ofWVCShTkbk24zZrCwr5aEb82jTBSKvl7Gm_GO5AO00-rYvxrBPU1d9v_65Bl_Q1lm9N3JesfVpj0WpxWDR_JwRCndBbzXaCx_uDRMI1N04hMX0KDNjRoRy1T9moHPrStnMA-rW8oOi16IH7CJqs5W84m638D"><script type="text/plain">
 use console;
 use encoding;
 
@@ -207,7 +207,7 @@ main() {
 
       <p>Наконец, имя кодировки тоже проверяется:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=IBh5jz1OTQqCQBS-yvBWCiKIVDStWnaGpoXoWAM6SioUIkib1p2hC-RCCPu7wvNGPQN7i8fH98dXQqgimQFfl5B6-Q44xJ7StgqOEViQy0NOVJFJJrWfBEpvF0ILPXgMk5VCM7pRsn9AGgKWAiwmwE8d150JMClUCQ3VxgLtxZIq8YJ3bPBB_92fsMUOb_8izvDT1yQ9se1rNqcl4T6Jh9i1P5O5wRepHVvRzEgVMRnUCDk49tSeQPUF"><script type="text/plain">
 use encoding;
 
 main() {
@@ -222,7 +222,7 @@ main() {
       <h2>Проверить, перекодировать, угадать</h2>
       <p>Три помощника на случаи, когда байты пришли неизвестно откуда. <code>encoding.is_valid(байты, кодировка)</code> отвечает, прочитаются ли байты без ошибки, — проверка перед <code>decode()</code>, как <code>is_int()</code> перед <code>to_int()</code>. <code>encoding.convert(байты, откуда, куда)</code> перекодирует за один шаг. А <code>encoding.guess(байты)</code> пробует угадать, в какой кодировке записан русский текст, — и честно отдаёт пустую строку, когда уверенности нет:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=RGU_h52Sz04CMRDGX6WZ024CGzloyPrn7jNYQzZswcbdrmm7KCEkyMWDXnwAT74AHEgQBF5h-kbO7gISD5rYQ9Np5zff104H0JGJMBBeDeAusjcQQhpJFci4n0ANrHiwtJUbwdqZMlkiTrkqIqHaWSxVl0KuCsLz2YArRiPuq1akddQ_k8peMCPaWlh2vkeCciE8DviGazfCT5zg0r3gyj3jB3NjnOHCPboxhxrjcJvJZl1z8EupQmDrJLjX0opEefvC0rR6USJjr9Is6Nx26k2CC_pXtpsLY7ag_6314zIpGdfq8DJUsCe0PZDcGT6U_0s9FuWTVOX_4bsCy-whVzC8roGKUkGtw1ec4xSXNK-rp8XJ3n3IcEMNmFMLZm7EGkfU8o7O0oJ7d0-UPcUVHS_YJf2HROYpJcjdMoRGcBIcw_AL"><script type="text/plain">
 use console;
 use encoding;
 
@@ -261,7 +261,7 @@ utf-8</idyl-output-block>
         </tbody>
       </table>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=MfbcX42SzWrbQBDHX2XYk4xdETnYwVKcc_oEPUQhCGtlL6x2g7QmLcaQlIb02lN77ws4pQaTz1cYvVFmJa-xgw_Zw37N_OY_OzszlgnJSxaezdhlYiYsZHkilC_Sb5J1mOFfDV1NSw4jrUoteRQre-JqpFOhxnSMlSW8FsxiBTRKU5ABcl6WyZjDEGJ2yqXU8EUXMo1Z1LgJZaCciMyQx2G0gxa8nEpTk7V7Y8x0AZ6lBFkOIlqOnYgvuRqbSVSbBLQh2GTjpChdm4vL2x9NkuLC6At7f6nJw1vHOhPnrWiLzcCr2ZMh9HuQqLQJdTyEwcGOih1rlVynDfTJMu3mnR3o9lt06Pe2ws_3Kw2OdpSCbvcDUgS9kxoc7ZfaFHi9aW_VxdWjLg4VqY7uKjJ3n7HuBv-qEIZL5cUM_1Q31S2-4H98pnkZ0u913Ac5fg_2GxfVT1xVP6prwv7hgvCtAE2GlidtNj_vMJXknHoSf-EK7_GR5pfqOy7xARebZ4SArxRvhU-4rK4hCKiXs0Lnlvtb3ZH3PYms8AE-U6NLMc3JQbhtyAK_7_fY_A0"><script type="text/plain">
 use console;
 use encoding;
 

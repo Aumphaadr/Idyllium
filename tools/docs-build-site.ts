@@ -8,6 +8,7 @@ import { iconSvg, isIconName } from '../src/icons';
 import { GuiDemoFile, bakeLessonGuiDemos } from './lesson-gui-demos';
 import { compileIdyllium, createMemoryRuntimeFileSystem, runIdyllium } from '../src';
 import { encodeProjectLink } from '../src/share/project-link';
+import { parseBlocks, blockCode, moduleFileName } from './lesson-blocks';
 
 /** Версия сайта — из package.json (единственный источник версии). Уходит в шапку каждой страницы. */
 const SITE_VERSION = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version);
@@ -974,6 +975,7 @@ async function main(): Promise<void> {
     sections: orderedSections(await withManualLessons(convertedSections, bookRoot, demoFiles)),
   };
   console.log(`gui demos baked: ${bakedGuiDemos}`);
+  console.log(`ide links baked: ${bakedIdeLinks}`);
 
   // «Задачник» строится по той же карте, что и учебник: одинаковые разделы,
   // одинаковые перечни тем. Заодно проставляет hasTasks в манифест учебника —
@@ -1655,11 +1657,20 @@ function tokenizeIdylliumForBake(source: string): HlToken[] {
 // (конверсия методистского wiki-idyllium.md). Страница самодостаточна:
 // общая шкура сайта (../book/app.css, топбар, тема), но без app.js —
 // сайдбар и манифест статье не нужны. Раздел задуман расширяемым: новые
-// статьи добавляются в ABOUT_PAGES парой «файл → заголовок».
+// статьи добавляются в ABOUT_PAGES («файл → страница, заголовок, описание»).
+// Статья об авторе (2026-09-27) открывается только из статьи «О проекте»:
+// в меню её нет (вердикт владельца 2026-09-25).
 const ABOUT_SOURCE_ROOT = 'packages/docs/manual-content/about';
 
-const ABOUT_PAGES: ReadonlyArray<{ file: string; out: string; title: string }> = [
-  { file: 'wiki-idyllium.html', out: 'index.html', title: 'Idyllium — О проекте' },
+const ABOUT_PAGES: ReadonlyArray<{ file: string; out: string; title: string; description: string }> = [
+  {
+    file: 'wiki-idyllium.html', out: 'index.html', title: 'Idyllium — О проекте',
+    description: 'Idyllium — учебный язык программирования: философия, синтаксис, среда разработки, учебные материалы.',
+  },
+  {
+    file: 'wiki-author.html', out: 'author.html', title: 'Nathaniel Larsson — автор Idyllium',
+    description: 'Nathaniel Larsson — преподаватель программирования, автор учебного языка Idyllium: преподавание, подход к обучению, другие проекты.',
+  },
 ];
 
 interface AboutBuildFacts {
@@ -1821,6 +1832,8 @@ interface RecipeSpec {
   /** Снимки результата рецептов «только Web IDE»: файлы packages/docs/recipes/previews/, сделанные этой же
    *  программой в браузере на файлах-образцах (как — в кухне, e2e recipes-previews). */
   readonly previews?: ReadonlyArray<{ readonly file: string; readonly caption: string }>;
+  /** Текстовые файлы образцов, которые едут в Web IDE вместе с программой (ссылка #p1= несёт только текст). */
+  readonly projectFiles?: readonly string[];
 }
 
 interface RecipesManifest {
@@ -1930,7 +1943,14 @@ async function buildRecipesSection(outputRoot: string, version: string): Promise
       from: 'Рецепты Idyllium',
       idyllium: version,
       current: 'main.idyl',
-      files: [{ path: 'main.idyl', text: `${code}\n` }],
+      files: [
+        { path: 'main.idyl', text: `${code}\n` },
+        ...(recipe.projectFiles ?? []).map((file) => {
+          const source = path.join(sourceRoot, 'samples', file);
+          if (!fs.existsSync(source)) throw new Error(`recipes: у рецепта «${recipe.title}» нет файла проекта samples/${file}`);
+          return { path: file, text: fs.readFileSync(source, 'utf8') as string };
+        }),
+      ],
       assets: [],
     });
     const badge = recipe.webOnly
@@ -2054,7 +2074,7 @@ function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(page.title)}</title>
-  <meta name="description" content="Idyllium — учебный язык программирования: философия, синтаксис, среда разработки, учебные материалы.">
+  <meta name="description" content="${escapeHtml(page.description)}">
   <link rel="icon" type="image/png" href="../book/favicon.png">
   ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../assets/about.css">
@@ -2293,7 +2313,7 @@ async function convertSection(
       || (replacement !== undefined && fs.existsSync(path.resolve(process.cwd(), replacement)));
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, hasSource
-      ? await bakeGuiDemos(lessonFragment(sourceFile, lessonSource(sourceFile, sourcePath)), replacement ?? `${normalizePath(path.relative(process.cwd(), sourcePath))}`, demoFiles)
+      ? addIdeLinks(await bakeGuiDemos(lessonFragment(sourceFile, lessonSource(sourceFile, sourcePath)), replacement ?? `${normalizePath(path.relative(process.cwd(), sourcePath))}`, demoFiles), lessonRef.title, outputRoot)
       : missingLessonFragment(oldSection.title, lessonRef.title), 'utf8');
 
     lessons.push({
@@ -2381,7 +2401,7 @@ async function withManualLessons(sections: readonly SiteSection[], outputRoot: s
     const outputPath = path.join(outputRoot, outputFile);
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, fs.existsSync(sourcePath)
-      ? await bakeGuiDemos(fs.readFileSync(sourcePath, 'utf8'), manual.sourceFile, demoFiles)
+      ? addIdeLinks(await bakeGuiDemos(fs.readFileSync(sourcePath, 'utf8'), manual.sourceFile, demoFiles), manual.title, outputRoot)
       : missingLessonFragment(section.title, manual.title), 'utf8');
 
     const lesson: SiteLesson = {
@@ -2607,6 +2627,43 @@ function guiDemoFiles(): GuiDemoFiles {
 }
 
 let bakedGuiDemos = 0;
+
+const IDE_LINK_SOURCES: Record<string, string> = { book: 'Учебник Idyllium', tasks: 'Задачник Idyllium', projects: 'Проекты Idyllium' };
+let bakedIdeLinks = 0;
+
+/**
+ * Ссылки «В Web IDE» у примеров уроков (1.6.5): каждому блоку-программе (есть main(), сам не модуль)
+ * сборка приписывает data-ide — проект в ссылке (#p1=…): main.idyl и модули урока, которые он
+ * подключает через use. Кнопку по этой ссылке рисует книга (packages/docs-book/app.js), и только
+ * если её включили в Web IDE, «Внешний вид»: по умолчанию примеры переносят руками.
+ */
+function addIdeLinks(html: string, lessonTitle: string, outputRoot: string): string {
+  const blocks = parseBlocks(html).filter((block) => block.kind === 'code');
+  const modules = new Map<string, string>();
+  for (const block of blocks) {
+    const name = moduleFileName(block);
+    if (name !== null) modules.set(name, `${blockCode(block)}\n`);
+  }
+  const from = IDE_LINK_SOURCES[path.basename(outputRoot)] ?? 'Idyllium';
+  let result = '';
+  let cursor = 0;
+  let index = 0;
+  for (const block of blocks) {
+    const code = blockCode(block);
+    if (moduleFileName(block) !== null || !/^main\s*\(\s*\)/mu.test(code)) continue;
+    index += 1;
+    const used = new Set([...code.matchAll(/^use\s+([\p{L}_][\p{L}\p{N}_]*)\s*;/gmu)].map((match) => `${match[1]}.idyl`));
+    const files = [
+      { path: 'main.idyl', text: `${code}\n` },
+      ...[...modules].filter(([name]) => used.has(name)).map(([name, text]) => ({ path: name, text })),
+    ];
+    const link = encodeProjectLink({ name: `${lessonTitle}: пример ${index}`, from, idyllium: SITE_VERSION, current: 'main.idyl', files, assets: [] });
+    result += `${html.slice(cursor, block.start)}<idyl-code-block data-ide="${link}">`;
+    cursor = block.start + '<idyl-code-block>'.length;
+    bakedIdeLinks += 1;
+  }
+  return result + html.slice(cursor);
+}
 
 async function bakeGuiDemos(html: string, lessonLabel: string, demoFiles: GuiDemoFiles): Promise<string> {
   const baked = await bakeLessonGuiDemos(html, { lessonLabel, files: demoFiles.files, resolveFile: demoFiles.resolveFile });

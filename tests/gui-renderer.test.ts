@@ -1560,6 +1560,67 @@ test('state stickers build the same transform as the base sticker', () => {
   assert(rules.includes('background-color'), `other declarations must stay: ${rules}`);
 });
 
+// Красная кнопка обязана быть красной (находка 2026-09-27): у тем «idyllium» и «oxygen» кнопка залита
+// градиентом — это картинка фона, и явный цвет под ней не был виден ни от background_color, ни от
+// наклейки. Явный сплошной цвет снимает картинку; свой градиент наклейки картинку не трогает.
+test('an explicit background color replaces the theme fill of a button', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { x: 0, y: 0, width: 400, height: 300, title: 'T', theme: 'idyllium' },
+      children: [{
+        id: 2,
+        type: 'gui.Button',
+        properties: { x: 0, y: 0, width: 100, height: 40, text: 'свойство', background_color: '#ff0000', __explicit_properties: ['background_color'] },
+      }, {
+        id: 3,
+        type: 'gui.Button',
+        properties: {
+          x: 0, y: 50, width: 100, height: 40, text: 'наклейка',
+          style_declarations: [{ property: 'background-color', value: '#ff0000' }],
+          style_hover_declarations: [{ property: 'background-color', value: '#00ff00' }],
+        },
+      }, {
+        id: 4,
+        type: 'gui.Button',
+        properties: {
+          x: 0, y: 100, width: 100, height: 40, text: 'градиент',
+          style_declarations: [
+            { property: 'background-color', value: '#ff0000' },
+            { property: 'background', value: 'linear-gradient(to right, #ff8800, #800080)' },
+          ],
+        },
+      }, {
+        id: 5,
+        type: 'gui.Button',
+        properties: { x: 0, y: 150, width: 100, height: 40, text: 'как у темы' },
+      }],
+    }],
+    canvases: [],
+    modals: [],
+    audio: [],
+  });
+
+  const byProperty = findElement(harness.stage, (element) => element.dataset.widgetId === '2');
+  const bySticker = findElement(harness.stage, (element) => element.dataset.widgetId === '3');
+  const withGradient = findElement(harness.stage, (element) => element.dataset.widgetId === '4');
+  const plain = findElement(harness.stage, (element) => element.dataset.widgetId === '5');
+  assert(byProperty?.style.backgroundColor === '#ff0000' && byProperty?.style.backgroundImage === 'none',
+    `background_color must drop the theme image: ${JSON.stringify(byProperty?.style)}`);
+  assert(bySticker?.style['background-color'] === '#ff0000' && bySticker?.style['background-image'] === 'none',
+    `a sticker color must drop the theme image: ${JSON.stringify(bySticker?.style)}`);
+  assert(withGradient?.style['background-image'] === undefined && String(withGradient?.style.background).includes('linear-gradient'),
+    `a sticker with its own gradient keeps it: ${JSON.stringify(withGradient?.style)}`);
+  assert(plain?.style.backgroundImage === undefined && plain?.style['background-image'] === undefined,
+    `a button without colors keeps the theme fill: ${JSON.stringify(plain?.style)}`);
+  const rules = harness.stateRulesText();
+  assert(/:hover \{[^}]*background-image: none !important;[^}]*background-color: #00ff00 !important;/u.test(rules),
+    `the hover rule must drop the image too: ${rules}`);
+});
+
 // События виджетов (спека some_widget_events/01): слушатели общей семьи вешаются только по
 // списку snapshot.events; Enter в поле даёт enter_pressed → editing_finished; клавиши окна
 // идут окну, когда фокус не в текстовом поле; правая кнопка — mouse_pressed с "RIGHT" и ctrl.

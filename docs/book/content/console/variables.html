@@ -19,7 +19,7 @@
   <h2>Создание переменных</h2>
   <p>Рассмотрим простейший пример — учёт жизней и очков в игре:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=36oENKWRX0rDQBDGrzLMS1oIaUOpDykewDN0fQh1iwvJpiSpfwiBKogPPYQPXqCCwSimvcLsjTrZtKKgT-6ysMw33zc_dgucq0hmGEwLXIT5JQYYh0p76uI2QhdzeZNzaTCAr6rQy0zCLNFZEsmJ0EK3Uq8PhdDAS-kcInUlMziF0QTYau5oS2_0ShtqqKYKaEeVWVFFn3wa3lt65y5gsauwAo4NcbgIbG5oYx6tVnfqyOnGHUC861Tlsmc9LjhCaKdv4Y5I2SxJJSP54-HwP1Q250-qNv1XMGv7BlYKjeW5izqMJT8wPf2cbdYtUA3mnpN3Zg0HThbMQ8Co3GyxzAp8_qd5msRtzLPFebFAH3DG3xWpZcwN6ngN0PdOvDGWew"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -46,7 +46,7 @@ main() {
   <p>Имя переменной вы придумываете сами — но не любое слово свободно. Часть слов язык держит за собой: из них он строит саму программу (<code>int</code>, <code>if</code>, <code>return</code>) или называет свои библиотеки и встроенные функции (<code>console</code>, <code>math</code>, <code>to_string</code>).</p>
   <p>Попробуйте назвать переменную именем библиотеки:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=MRMvLTVPQQrCQAz8SshFhVJQqIeKD_ANroeiKy60qdgVlVIognjwER78gIKFIopfyP7IFDUQSGYmkyTHuYl1huE4x2VkFxhiEhnyzWwXo4dWb61A60zDNKUsjfVAkaJG0u5ArggkDNk_C0MIBl_0h_iblbG6_es8aClFrY5oCkVYTDykKNGygs9cuZIrfkq--OVOXAHX4PZc89udgO98_RLuEIJApRDPZgh6cul8lSaNzcUdxeAmypofMJI3YrNORGD-ZYhdv-8HWHwA"><script type="text/plain">
 use console;
 
 main() {
@@ -81,7 +81,7 @@ main.idyl:5:19: compile error: module 'console' cannot be used as a value</idyl-
 
   <p>Пример объявления переменных разных типов:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=GnAwP32QwUrDQBCGX2WcS1sIKbXaQ4IP4DO4HoLZ6kJ2tyRbVEohKCLSg1dvHnwBKwZqafUVZt_ISdqKB3GXheX7_5n5mQkOVSYLjE4mOErcBUaoE2VClV5nGKCTV45Rtws_VJhxIeHMmsJmMhZGmFpqd2AiDPBRxkGqEm1NWsARHOzHGz7MbOKgGEmZMu4Nwv5WKFyuzDlo65xlRSA9Ab3RJ9-5f6AqAP8ItPSlv_U3DD_2BDZz6-JtjvAyV062d3MDaAlhWp34L1MT4V9HE-WXYyoMTk8DNImWvA16psqXVNGK35rWfkYV0AI43YK-_AzonV43gr-LgFHJwqougj4vdZhbXbd58ffcYM7OBS3hmHebqbFmg9p9I-yFg_AQp98"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -110,7 +110,7 @@ main() {
     типу</strong>. Сначала посмотрим на то, что компилятор разрешает:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=gmg-DX2SzUrDQBDHX2XYSy2U-EHbQ4J49hlcD6Fu60K6qckWlVKoBfVQxIuePXjrqYrR-NH6CrOv4JM4m6SlQu1Cwn789zez858ea8pAxMw96LGOr4-Zy9q-VI48Og9YhWlxpmlrcxMWu1x1YwGNUMVhIDyuuLJHG2XocQU0pNLgdzoEhV3Y8WAxCGKuMMFPnGEC-JwpfwZ3gF-084pTnOWEZhD6GjqRbAhCVJ36nEIEfDEDUj9ZdUbBWaH_n3QqZOtYE6rmLecyzLTJ0iV3OcEa4DfFSvCZ_hNSp2ZoLsytzbzmbOUBYh1J1YKTroi1DBXF4AzHeI9jwJRAKdDqEcd7nHmLsAl-EGhoQcX9VbkXR5HI4Dn5BSf4bglQrwLNP-nSBN9wYvG2OimYG_uwP7ScVzjmnEZSi43coQqUOFelsrdKkhmwVpEXdq1kXpm1ouKNS5o-V6x_WGHKbwvqP3zAJPPii74pTs3I-pbaYqbk0giyymQH5tLNjUut2AygSm3cjMK2xTyaawLY5knxA_apmwPZbZNAzqcu23bqTo31fwE"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -144,7 +144,7 @@ main() {
   </p>
   <p>А теперь попробуем провернуть обратный трюк — положить дробное число в <code>int</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=9alxcj2OQQrCQAxFrxKyUpCKCxUqHsAzOC6KjjgwTcW2opRCEcRFD-HCCyhYKKJ4hcyNTBENBML_P4-f4dJYHaM_zXAdJCv0MQwMeWaxt9jBRO8Skbpd-KuK0ljDPKI4snqkSFFjtdqQKQIZQwlYs9UxjKHnDSWRK8J81kEKQi0wPnPlCq74Kfvilyu5Aq7BHbjmtyuB73z9Gu7og0iFGM_mCfrSabmJwgZzcScB3CRZ8wMmUs2aNJSA-Z0-9ryB18f8Aw"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -161,7 +161,7 @@ main() {
     И правда: что такое 1.7 жизни? Число в <code>string</code> тоже не спрячешь:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=UCBjRD2OQQrCQAxFrxKyUpCKggUrHsAzOC5KHXWwTcVWUEqhCOLCQ7jwAgoWiiheIXMjU0QDgfD-z-dnODOhTtAbZ7jy0wV6GPmGHDPdhdjCVG9TQe02_KmiTaIhiCmJQz1QpKiWGk3IFIFMkq4NzYFMsCQ_0jCEnuv2u-LMFWE-aWGNJZTPXNqCS37KvvhlT1wCV2D3XPHbnoDvfP0K9uCBoEKEZ_0ErnSbreOojrnYowTcxFnxA0ZSMTSbSAzmd3rYcVynh_kH"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -187,7 +187,7 @@ main() {
     <li><strong>Присваивание</strong> — изменение значения уже созданной переменной.</li>
   </ul>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=g4BiOnWRX0rDQBDGrzLMS1sIqX9QIcEDeAbXh6JbXUi20qSolEJtUR8Kgu-CiBeIpaGhtukVZm_kbNKqFBtImMzs95tvZrvYVIGM0Dvt4nUjvkIPw4bSrrq4C9DBWN7GnKrX4ScrdCeScN7SUSuQvtBC21K1Bl2hgR-lY64qHfkArDP3lNOUJpSYF5oDLSk1fUppzu-CFmZonh3gKLelnGaU2L8UOPqihCalasq5xDwVmozSslPRBY5hb8e3nWjJ4Iz7jVmXFd_0X-2vz0sZWsB-Cdi0mnGGkQlNzXALfQ1brcO9aatYVgXSK6N4DDPwQKBTWnWgIoSu1Pwtmndmzik3j0xnJRPGpdra_CPuCY29Mwd1I5R8OfS2sdKRXR-bH7DPpRmBnagsmAdvNYg9bPpwxHfcbLdCi_kodvRZbGkGJ3zVgeqEfECtQw933UP3AHvf"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -212,7 +212,7 @@ main() {
   <h2>Встраивание переменных в текст</h2>
   <p>Функция <code>console.write()</code> не ставит пробелы автоматически между аргументами. Сравните:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=FA5erT2PwUrDQBCGX2WcS1sIKR4qkuID-AxdD8FucCGZlWZLlRCoBfHQN_DiwReoaCTUNr7C7Bs5W6t7WGbm-_-fmQozk-sSk0mFt6m7wQSL1FBspvc5Ruj0nZPRcAj_U0XzUsO1pdLmeqxIUUD9AVSKQJ4hB5m10_FvG0q4gNGxPfrixcw43VfIz9z5FfgH7vjTL3nDXwqjgysCwVt-B_k6QTvenATWU4p6A8mrFWF9FSGlhZYl-YUbkTUibHjPe7_mBrgFv-KWv_0a-EPiD8A_JiCjpYBdMMG53JrNbBFiXv2TBLyJsuUtXMrJuZkXIjB_ZYKn8Vk8wvoH"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -229,7 +229,7 @@ main() {
 
   <p>Число «прилипло» к словам. Чтобы этого избежать — добавьте пробелы в строки:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=dUHgED2PwUrDQBCGX2WcS1sIKR4qmOID9BlcD8FucCGZLc0WlRCoBfHQN_DiwReoaCTUNr7C7Bs5W7VzGIb_--ffnQozk-sSk8sKZ6m7wQSL1FBspvc5Ruj0nRNpOISjqmhRari2VNpcjxUpCqg_gEoRSBlykFk7hQsYjX-lP3N8OzdO9xXyM3d-Bf6BO_70S97wFyiMDmuRTMBbfg-tE7jjzUmAPaWoN5DEWhHWVxFSWmj5G79wI7ZGjA3vee_X3AC34Ffc8rdfA3_IAwfgHxMQaSlgF5bgXE7M5rYIMa_-SQLexNnyFiZyaW4WhRjM_5jgaXwWj7D-AQ"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -250,7 +250,7 @@ main() {
   <h2>Изменение значения переменной</h2>
   <p>Переменная может менять своё значение в процессе работы программы:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=-FB0TK2QX2rCQBDGrzLMk0KIWrAPEQ_QM3T7EOxKF7ITMSsqIWCF0gcP0QcvYP8EQlF6hdkbddZYT9CBheGb7_sNOyVOTaYLTO5LnKXuCRO0qaHYPK4zjNDplROp14OrqmhRaJjkVOSZHilSFEadLpSKQMqQA5uTXsMYbvpSo1a_JOLl3DjdUch74A8--GdQGLWJSFrgL675JO9TCRy75xUBcIUO_wVaKcLqIUJKrZYv8hvXfiOO49l58juugRvwW274x-8C4tAO_EsCIm1kcAwhGPTlVNN5bgNn71-F8C7Whr_hTi6WmYUVg_lrExzEt_EQq18"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -275,7 +275,7 @@ main() {
   <h2>Порядок строк имеет значение</h2>
   <p>В Idyllium <strong>переменную можно использовать только после её объявления</strong>. Попытка обратиться к переменной до того, как она создана, вызовет ошибку компиляции:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=A-PwXD2PQUoDUQyGrxKyaQvDlAHt4hUP4BkaF4N9xQfzMtJ5RWUYKIK46MYbuPACKg4O2uoV8m5kpmqzCt-f_Mlf48IVtkIzq_EyDxdo0OeOUze_KTDBYK-DovEYDpR4VVk4L7kqCzslJu6l4QhqYtD6U9KrpQt2SCgP8ilbeZZ3-ZJXA4QJzF3uExgQ8WA0_V1zHPYYTmBypKwhxuYsQc691Q_kUdq4lladWtnJLm6kBekg3kon33ED8qYn9kK8M6BorcK2X4Is0ySLZel7n6d4rw4vOtrJB5xqoMKtvA64_9Zglk7SY2x-AA"><script type="text/plain">
 // main.idyl
 use console;
 
@@ -293,7 +293,7 @@ main() {
     Поменяем строки местами:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=0W68lD2PQUoDQRBFr1LUJgkMEyKaRQcPkDNYLgbTwYbpmpDpoDIMBEFcZOMNXHgBFQcHTfQK1TeyJmpqVfz_36eqwrnLbYnmrMJFFi7RoM8cp252k2OCwV4HlYZDOKjEq9LCRcFlkdsJMXFn9QdQEYOO4wAzl3k4hfHx5Ff7S6dXSxdsn1Ae5FO28izv8iWvBgiTPZNAj4h7A8VqYqzPE-TMW71AHqWJa2mUamQnu7iRBqSFeCutfMcNyJvW7Y14Z0CltRrbDoLRkX4yXxa-63mK99rwotFWPmCqD-Vu5TXg_leDo3ScnmD9Aw"><script type="text/plain">
 // main.idyl
 use console;
 

@@ -13,7 +13,7 @@
   <h2>Лишняя точка с запятой после класса</h2>
   <p>В Idyllium после закрывающей фигурной скобки класса точка с запятой <strong>не нужна</strong>. Привычка ставить её приходит из других языков — например, в C++ без неё класс не скомпилируется.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=MYLW8TWPQW7CMBBFrzKaVSuhIBZlEZasOEPdhUUDtZSYihipVRSJtlKpVCE4Q3uBdBGaogauML4CJ-F7gRej7--Z_8YFT0ya5BzfFvyo3QPHnGljI3P_nHKHXfLkYI1Tnec01I4KZQknd3Njp2R1lgyULQewul06vW_Jr_2rVIRy8CvZB_lC8iuVHP0muPJH0kqN4t9kB1kpq2yAXl1f4gNpHIKV5fKuw4GDNeRLGjlKg-DWf4aMg_-A9QNOExMIS9z-pfZL6mH7yXyWhbFvDNToavG6pxG-lppFhgZzkTH3on50w-UZ"><script type="text/plain">
 class Cat {
     string name;
 };   // ← эта точка с запятой не нужна
@@ -25,7 +25,7 @@ main() {
 
   <p>Одну случайную точку с запятой сразу после класса компилятор молча прощает — эта программа скомпилируется. Но не стоит полагаться на его доброту: в любом другом месте между классами и функциями «висячая» точка с запятой — уже ошибка. Например, после <code>main()</code>:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=4Jg8yzWPO24CMRCGrzKaikhoUZCSYimpOENMYZEFLO0axDoSaLUSSRGQUpAzhAtAscqG5xXGV-Ak-V3gyv_jm7ELHpo0yTl-KXiq3ZhjzrSxkXldpNxkl8wdrEGq85y62lGhLOHkbmbsiKzOko6ypbLKBqzxcC-E7iBEHYhWi26f3yRHqf1azn7jN-Q_5OJXcpAd-XeSX9nJFQFc-VOWy36Tw3Qslx-p5Qp0BfRLKgK4hrUHXMcEbAl1ksovqY03D2eTLGBbABVaZ6QH6uFDqXnLUDD3a8yP0XP0xOU_"><script type="text/plain">
 class Cat {
     string name;
 }
@@ -44,7 +44,7 @@ main() {
   <h2>this в статическом методе</h2>
   <p>Статический метод принадлежит классу, а не объекту, поэтому <code>this</code> и нестатические свойства ему недоступны.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=xo4zDjWQsU7DMBCGX-W4qZWqVAjBkI5MPANhsFKHWnLOKHYoKIrUDSQW2BADAyysDJGiitJXuLwRZ4XeZP_3f_-d3WBhrPaYXjZ4o8IKUyyVocQs7y3OMOi7IFLtNeSOvLN6kVFGuVXew7kK0GQEUj5Uhq6BVDkaRk0Fk8OtM0soasqDcQSlduvJ9IDF-s9N1pUJ2tIkrIxPYtB0Id35HPidv_iVX_iNn49Grs2ojWPiqjEtCthezTBysi9_cM977ocH3g1P3AH_Do8iffOW-xR4P2zk9sPdsIETeWZRuTJinwJ04tpJdwsX8gfW1KUYzOGY4nFylpxi-wc"><script type="text/plain">
 use console;
 
 class Cat {
@@ -68,7 +68,7 @@ main() { }
   <h2>Обращение к приватному свойству извне</h2>
   <p>Свойства, объявленные как <code>private</code>, доступны только внутри методов класса. Из <code>main()</code> или других классов к ним обратиться нельзя.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=I6Auq01PsUoDQRD9lclUBsLlAmqxh4V2foNnMa4bXNzbhNxGlOMgnYE02omFhTa2FgdHMMkvzP6RE2PAqea9ee8xr8KhdaZEdVHhmMINKizI-sRePzjsYTD3QSjtqCzhjPztqdajqQ9Q5R5kxhN7R8GoHbJyuCJHXpss93Xuc78NO-ju5f8TSOtsx8qW_NngBAZpmmbC9vvAb_zJL_zMr_zU-Q3E-rKHngojT_E7t7zhNj7yKi64AV7HuVBfvORWAW_iTNA3N3EGh9JlOBkVW9uHGBpRreS6hHMp6uy0EIHdrwoHyXFyhPUP"><script type="text/plain">
 class BankAccount {
     private:
     int balance;
@@ -89,7 +89,7 @@ main() {
   <h2>Печать объекта целиком</h2>
   <p>Объект — это не текст, и Idyllium не берётся угадывать, как показать его на экране. Попытка отправить объект в <code>console.writeln()</code> — ошибка компиляции.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=dldoCjWQsU7DMBCGX-W4qZUqVwxlSMTExDNgBiu4YMlxUOwKUBQpTCCxwIYYGGBhhCFSVFH6Cuc34pyqnu5-ff9_d25waaz2mJ01eK3CFWZYKuOEubizOMOgbwNLK6-hqJyvrM6lk66wyns4UQEa6YCfD7Vxl-BUmYA2MSlmMt0DiS1UyHcdVyKxcAwS6YW-YxfvaaC1xDF_ZHbzxE1tgrZuwp5pzvp8DvROX_TKvjd6PhjHYXs-w5TIy9IHJ21piA-0iU_UA_3FR5Z-aE1DBrSNHXe_1McOFnzjsq7KZPtkQ8_UJi0Cp_wB1qxKBsy-zPBQHIkFtv8"><script type="text/plain">
 use console;
 
 class Cat {
@@ -113,7 +113,7 @@ main() {
   <h2>parent() и ответственность</h2>
   <p>Эта запись — особенная: сообщения об ошибке здесь не будет. Если в конструкторе потомка забыть вызвать <code>parent()</code>, программа скомпилируется и запустится:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=rEgDJ32Sz2rCQBCHX2XYkwWJSqmHiIfSU5-h6WGJ0Swkm5CstEUC1ksLFQq92HP7AioVg_XPK8y-UWetEhqKC4Fk8vtmv0x2wLoi8FJm3wxYzJXPbBZyIS3ReQhYlSnvXlGpn3rgRjKNAq_lSEe6AU9TuJQi5AEMHAm0UpUI2QPJQ5MxFSEV-PEeMI-mgUr6roqSA1o5O8JmKV-klsGhDQ7DCc5xoYd67LBWKeTHFGnU64d65sissLriCsjak52yofHhPe9fIaL-2tRqgEuc4ky_4DfmgHO6WZLTVI_0GGKeeJKQkhm1J7XzkpiZaNHdCLp0tX83bRUyNF7rLhHKC2SFJvCOa_1q0yyqJr8fzYn0BL9wq4e4JdMxLgrOj09Qb5RfEjXVj3pUMPQdBiJ7lt1WmdmajgF-YI47zPUTbmgaC6ANn6k0wxXmNuCOGuW4Nr8NmnR6ukkUGuyTgAWlNvR2Bdd0tALRDykgjrc2a1hN64JlPw"><script type="text/plain">
 use console;
 
 class Animal {
@@ -158,7 +158,7 @@ main() {
   <h2>Класс не найден (забыли подключить файл)</h2>
   <p>Если класс объявлен в другом файле, его нужно подключить через <code>use</code>.</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=KTH6HzWOQUrDUBCGrzLMSiGkuNBCunTlGYyLR03xQfIU-wQlBLoQKhZaeoV6AVsMxMYXr_DPjTopOqt_Zv7vnyl5YvNsysl1yQ_G33HChbEutrcvOUfss2f_Nzo5pTJ1pHVpPI1HKgaDo0aHrbzLCju0qBEIOxobf8yICAEdySs-8Y2272rCryJf2KOVpcxljZC6KnVc3UTsTJHpRWzQqK2ROYIseqaTNx1tlWoSTZCZdj-oZUZDfXTyeF_02IcCtbqCbvd0pR_k9qlQg_2XCZ_FF_E5Vwc"><script type="text/plain">
 main() {
     Cat c;   // Cat объявлен в cat.idyl, но файл не подключён
 }
@@ -175,7 +175,7 @@ class Cat {
 }
 </script></idyl-code-block>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=t9MnEFVNSwrCMBC9yjArhVJxoUhduvIMxkWorQbaKCaCUgrdKXgLPYGLQhE_V5jcyAlYwVnN-xeYqiwxGM0K3Ei7wghzqXSoFocMA7TJ3jK1MwnE0o6FFtrLnS4UQgMfs-FEWohZK4XGMvj1eOm_pteDlhQ6zqQx4LPfKmO3Si9Byzxpy-YBeshRulBDb2rckZ7uTDXQy52YutGdmgjo7SpGD6pdBSNeTLfr3MeuHKjZ9WT1DlNeztQuZ4Nq3wj74TAcYPkB"><script type="text/plain">
 use cat;
 
 main() {
@@ -217,7 +217,7 @@ class Helper {
   <p>Статические методы вызываются через класс, обычные — через объект. Перепутать стороны легко, но компилятор в обоих случаях подскажет, как надо.</p>
   <p>Статический метод через объект:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=8AVIVkWQsU7DMBCGX-W4qUVVKoYikYoH6MDIRBis4AhLtktjR0oVReoGEgtsiIEBFlaGSFFF6Suc34gztHC6wf7vu_98brBQWjpMLxq8Ef4aUzRC2URdLTWO0Mvas5Rr4Ryccf3cK-2gySxwOC-8ykFZD0Vlc6_mFtyiEqUcRK0e7sEYpfRVaaGGQ6inv3KbWc7MxomDP_h_jNlx0WwJp2CSnftkOGV5PAZ6oXd6okd6poeDHzdsL0dohZH8bHqlnrbUh1vahHvqgL7CHUsftKY-BdqGFd8-qQsrOOFti3JuYtsbN3RMbbi6hhl_hVaVYUDtjykeJcfJBNtv"><script type="text/plain">
 class MathUtils {
     static int function square(int x) {
         return x * x;
@@ -234,7 +234,7 @@ main() {
 
   <p>И зеркальная ситуация — обычный метод через класс:</p>
 
-  <idyl-code-block><script type="text/plain">
+  <idyl-code-block data-ide="p1=cUgrj0VQzUrDQBB-lXFOLZTUHvSQHD35DK6HkG5wYbMrzcYqIZDqQcGDCh5ExINePOqhUIuxrzD7Cj6Jk9TiwMLON98PMyWmSsscw4MSj2N3hCFmsTKBGp9pHKCTp46hIpeQWJNbLSNhhEl0nOewFzsohQGuE6vGkBYmccoayKSd9vqbWVt_4mA6UU5q0xNIT_7GXwjsR2tWJUzVWrfp_1qOCNZuEXfDIdAzvdED3dEj3YZdEPzU90ANzcHP_Dm981v4S5r7GS1pQZ9bnTFWhwM0cSZ5G3phfNWxGn_NQvr2Vwx9tIIQaOVr7r7YoobRNl8hndis1b22vkxreLyEfT6RVkXGBLX5hjgKdoMdrH4B"><script type="text/plain">
 use console;
 
 class Cat {

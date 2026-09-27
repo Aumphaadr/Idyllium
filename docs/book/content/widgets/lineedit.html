@@ -9,7 +9,7 @@
 
       <p>Вот простейший LineEdit:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=xBncFFWQwUrDQBRFf2WYVQtlSCp2keLSheDehREJzrTzIJkUMyEtIVC7ce_GD_AHVKyUUttfePkjX9JGk1k9zr1c7tycTyBUCfducz4LrOYejwIwAuQi5ANu1dwSShPFpimMfeObSu71We4bRo-ouAEj44xlYMZHSJewWkWKXTCfV1EhpJHPW3IG0mqSzxynRbWCqbaE3Q62YMNjFr7iD77jFve4K5_KFX7ivs79b3MNRl1KsAzMLLWnlPoWc8oYOh20qDt0UFNtOHL-gqsWgZT3DxpC2at9_VbBRMdZrwKFb3hxN-AmiBTthi-4wS_8xnW5Yk0xj-GhXJKwI7xkLs08eYyjyv5WPuMaP-iPG9yyq9NwZGg2JJMrRuKcF78"><script type="text/plain">
 use gui;
 
 main() {
@@ -42,7 +42,7 @@ main() {
       <h2>Свойство <code>text</code> — получение введённого текста</h2>
       <p>Чтобы прочитать то, что ввёл пользователь, используется свойство <code>text</code> (тип <code>string</code>). Спросим имя по-настоящему — и поздороваемся:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=BCLFqoVTwWrbQBD9lcmeHGKElZIWbHop9FDIPYeoBMVaW0PXqxCv4gRjSHPpoYVAfqCH_kAT4tS0qfsLoz_qjNZWpNaQPZjxm9GbN293pmqARo9V93CqTmKXqq4axWgDTC6Maiunzx1D-VjDMMdeZCMr6dY2TCMLfBgNDtAm2QQmaHse5ChwqR5peA2REiqD-ShStfQEE5dy-sVep4amGoepYzhswA6d8Vz0tbikBd3RvLgqPhZXHC1oXjI_6dlHq98m6ADtSe5WPGUcnDPLbqcBXfwPVeLCToP4Te5cZuHYrQflKBCLVtpoST_onpasccnKvrPGL6zyuppc6hsSBBABr-rAur03oTZXfKwNGPldVZdxk9FDwhmGTawSWrNL2mX2qG-w_4FzZxkmMMht32FWu2Q5Y3eKdgg2Lm_V-ySMvacSHEDL532XxvcbdNBN8RnoN82BzeIrpV-0AL7Px-J6q7JMzgy04Rf4DFvtabT5P-x4sTsc_0Pnw1nlgryxOEmO-imapFXOtt3blGK7NidKLfXUOM0mLQG4mZq9byvRwptEN6zxnh5EJawfahfoTyn-keFL2OXFG5xmIyn_VnxiY27ZpQX9hHerVeKC9VZxURi8DPbU7C8"><script type="text/plain">
 use gui;
 
 main() {
@@ -97,7 +97,7 @@ main() {
       <h2>Событие <code>on_change</code></h2>
       <p>Событие <code>on_change</code> срабатывает при каждом изменении текста в поле (при вводе, удалении, вставке):</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=g21C_oVSzUrDQBB-lWFPKZbQWqqQ4NGD4N2DkRKbbTKQbEq7MS0lUHvpWd9AfAKLFfH3FTZv5GyStikKBpIdvvn2m28yM2MDDPmYWZczNnRlwCwWuShM9KYhazLJJ5KgZMzBT9B2hCN02mjAzBFAD6HmBQovTiFFYZcgRaYMeMThBBympUJMIofV0il6MqB0p9uqoQFHP5AEtw_rsEQZllrqIV_md_kiX6pX9Qb5LR0faqW-1Du9q6LEztg5Cn7qoQQUw0RWgkVsTkhuW6OEpr-hrct2a1_YveYhhPpb8Yt4X7WEtOrxPqR_atXNvn0LWrUOSgux6PUDV_i6_5sYPRgkoi8xrs2gJEsIuSBSeU3XMAnwZWDvWP_WdxgcgIx7YzlC4Rsk0KiuZ1tfeiKu55EtDD2jKNew_0oV1eqpcRCnhgYyR7DsqsmEG3FaL3VPPp7Vi1rnC9gMzQL1nc8Lg-t8Dh3axsEojjT9kca_Vk_qs1iCs2q_iLBZNSK1zSOzy7If"><script type="text/plain">
 use gui;
 
 main() {
@@ -142,7 +142,7 @@ main() {
       <p>Кнопка «Поздороваться» рядом с полем нужна не всегда: человек набрал имя и нажал Enter — этого достаточно.
       Событие <code>on_enter_pressed</code> срабатывает ровно в этот момент; текст к этому времени уже лежит в <code>text</code>:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=ii-f8oVTzU7bQBB-lemegoisphSQEnHkUIl7D3UVmewEr7ReR_aGEEWRgEsPrVSJE7ce-gIEEWpRfl5h_EbMrkNwAIm5ePab2W--nRlPRF9pzEX720QMIhuLtkgiZQIlx1o0hcUjy9AwRzgYqk5oQuPCjTWYhAbYGA2-KiPTEYyU6VQge4GNMUHYgVA4Kq2GSShq4ZGSNubwxubHGhqjOogtw61Pddgqqysu-lMeU0GXNC9Py5PylL2C5kAzmtM_oBu6o3t64G_hqz1r3FMGd6WyYKIEF9TODY6Yd1nMI-NXyFJsawUe6KiHcaolZpW4c7otfwMVsGssZi8VRPuoIcOBHi9IvL8qoIKcgu1VyA3CF6mxehGp6aKr1h1kmOcoOekwVRL6Q9OzKq2NypnqQ8Nfq_gqwpWMN0rSWfkTuLPc5wdu_5yufOsvfPP_U8GnXx-W03U2BdS8Mu_Q1mbZ5DOsw7O0dQZecFbudPl8txmRlN1erLT0r1rrvBXxZeuhPE5HDQcwpZh-bwp3l7eczljOFV07QfC0MO3q0QXdMnwMn_mn6Gdp4tL_lj-4GTPuTEE38GWx5pzwtPGc1Aq2gk0xfQQ"><script type="text/plain">
 use gui;
 
 main() {
@@ -199,7 +199,7 @@ main() {
         <li><code>placeholder</code> — подсказка, которая отображается, пока поле пустое</li>
       </ul>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=ak-7VWWRz04CMRDGX6XpCRLSgAYPEI8eTLx7cA3Z0EIn6XYJ282ChAS5ePHk3ZMvoEZ0Jf55hdk3cso_l9DDZvL7pl-_nZnwHhiV8NbVhA9Cp3mLRyFYAXJseI07NXKE0kSxfgrtwAbWy5UqmwSW0SEqLsHKOGMZ2PYaUiWcVpFipyzg3spAGgW8JGcgnSb5uFkvUa2grx3hxh524MzaCx_xubgt5sUMf_ATl5izC7DqTIJb2f-H2mIGdpC6jdmqFiOyOqrvofEh2iVs7PNebF0ngRt1eGVgwq7SsZFquE77gK-4wDfMizkumP_g0sdn-EF0QeW9EKKU3P9tKGWnq8HIysq1WhpEouOs4sE0sHx6XeM2jBTthx7KyfCdLOe7gbQY_tKccvwiPGNNWmdvGEe-_am4oygv-E3qkp1vFkQN211RU0OciCaf_gE"><script type="text/plain">
 use gui;
 
 main() {
@@ -233,7 +233,7 @@ main() {
         самому — свойством <code>placeholder_color</code>:
       </p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=96tpFGWRzWoCMRDHXyXNSUHC-lEPSm_1UOiplx66RRYTTSCbFTeyigjipZdCoQ_QS1-gQrcV7ccrzL5RJ-rKts0lk9_8J_M1o32lRUxbNzM6DKykLRoGyjDFp5pWqBUTi2gcC9KLdDSK275xj8FYoeUbpy2Vycw3BA9Sdq0MjxKSKNPeQ7SYlSIU5Iz41P2r1Tj0acGdKG4luhueV6BSqIG0iKs1b5csT3GpjOhwZYkJQnEIcCaboLjmFcn0H8lz1au_8DFZvVHEQx30hIw0F6Nd-fAEq-wB3uElW0IK2-wePuELUgLfeG0hPTk29je-uxsg_rIfJLvqnB-7cu0GnHd7UmlecpHlwiBiGSUlB-a-ofPbCnUC3Ao8whpe4Q3SbEnyobSwlGyBjg_EC9LEJfZHUejkz9kd1rzCitewIReHTaAgXwqKqqzJTun8Bw"><script type="text/plain">
 use colors;
 use gui;
 
@@ -273,7 +273,7 @@ main() {
         <li><code>"no_echo"</code> — вводимые символы не отображаются совсем (поле остаётся пустым)</li>
       </ul>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=4h33CX1UQW_TMBj9K5ZPnVRFKxCmteLIAYk7B4KqUHuLpcSpmlTZVFWaxqFIPcGFEwiJP8DGOspEy1_4_I_47DSN07ltL-17z5_9PT9_E3omYp7R7tsJHYZ5RLs0CYX0BLuMaZvm_CJHaJxxcj4WvUAGUtOtIzIJJMEPot4bIVlakELIXgniLy-PeMLJCxJQXSoW4ySgFl0IlkdIP_WPLTTi4jzKEX7SgHORx2Ut-A4LuIcl_FVzArf4XcMd_DSl6wO9Dt_zmMh0lIRxP9Z_NsVsyNO9lUW_wY2aqxms1Bz-EHVV7dHdHrmx8EIf8NjFXFaMdRYh-Usm8koo5HCcN9cayFm1ZHTVZ76L2brYcS7kgyjtJykrvSup3ZZK5TAOBzxKY8ZHpSWfsf87WMG6TdRMXcOawD9Yqo_qg9PrYZhlDadrwPJ5e3mGLtIRqx22FjScsHDtw6nvdtfIbG9rwFGv9rXjIh7bapFNU6tGmn3sMfUL3KpP8BuNXWPaHmC5J7dmi2Zua8jpp0z7WmEH1lqxEy2LMRac7E2sUTYTW0POspazp76LckXWoncja9ra7WqPvV8xoDO05JdO6woWekBsUmwZrQdKyFh_EImYtezne9Q7oDB7uhV1RA_wB9bbN3JQ8ahGFqVFSwPTQNLpuzaVYcJxXm-e7z0s1DWp7rOLTxhnG8YF4StyguP9bJQmWv7D-HaDTi3hgbzaDGwUVLMbRR3vuefT6X8"><script type="text/plain">
 use gui;
 
 main() {
@@ -342,7 +342,7 @@ main() {
       <h2>Типичная ошибка: число в <code>text</code></h2>
       <p>Свойство <code>text</code> — всегда строка, даже если внутри написаны одни цифры. Попытка записать в него число закончится знакомой ошибкой:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=Al5CpjWOsWoCURBFf2UylYI8UUyQXVJaCP6Bz2LBpw7sjqJvQVkWJE1aYyUpbGzSBqKIGPILs3_krMGpLvfcmbkZjih2Cwz6Gc4iP8EAk4jY0HAVYw29W3q10oWDcUqhZcslrlQhsww66poesesMyQPxLPXhP7hrU-7DK7SaIUC9DrKXL9nJh3zK5slybhnzQQ05Spx-ka2c5UdOcize4HE0APkr1gquaq-hraVG82lSxg_FuxzlW36VXqCrjWNKEw3QQwbYMC_mGfMb"><script type="text/plain">
 use gui;
 
 main() {
@@ -364,7 +364,7 @@ main() {
 
       <p>Вот простейший TextEdit:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=juG_N22Rz2oCMRDGXyXkpCBBKxaq9NhDocdCD91SgokmkM2KRlYRwXrpobe-Qp-gf7ZspdpXmLxRJ-rapW0uSX7fZOabzIz2tJEj2r6e0QF3irZpzLVlWkwNrVEnJw7ReCRJf6w7kY1skCtVMosswYWUXWkrkpSk2nZ2EE_MKRlLckoiGlIZPY4jWpJTLZxCudmql6iSuq8c4qN6GTvtzC7XJfo5E9ptc_04KDAJfvlQ8v3j4som25y_6fRferDW-CMd_DWaf7SB4V2pEiPkcGsVHuEFMniD3C8hI_AJa9jAK2z8nV_6Be73sPYP8EGCDquAGWOlzkLrXIjbrtJGVIpC1dLHjFSSVgKYR5bOb2rU8ljivLB2jpXfIfNLcqGtDJ_TJvCFdXN0kvkFOcHx9oZJHMKf0EsGz-gwhxU53w8MA4rZYVCDHbMWnX8D"><script type="text/plain">
 use gui;
 
 main() {
@@ -405,7 +405,7 @@ main() {
 
       <p>Пример с кнопкой, которая читает текст из TextEdit:</p>
 
-      <idyl-code-block><script type="text/plain">
+      <idyl-code-block data-ide="p1=RAwSEoVUwW7TQBD9lWFPiSiruFBUJeKCxAGpRyQOGEWuvYlXrNdVsiatokglPZRDT6hXxIFDr6nU0ChA-wu7f8SMHTtOG4mV7KzfjN-8N57NmPWkEkPW_jBmR4GJWZslgdRcRieK7TAjjg1C2VBAP5MdX_uawo0mjH0NuBDl76WO0hGMpO4UIO64iUUi4BX4jKiUzBKf1cIjGZkYw8_3WjU0FrIfG4R3d-uwkUYVXPbKTe3c_rULOwe83cI7VPgmkiZnX2sqYSAHwUAEK7rykR9TldZD9GQrWon1HoUqxV7rUexIBaGIUxWJQSH-u53Ze7twX_FCG-DO8efuWW7n2p3ZG3fBOX_g5HVmTKrh0JTdxR2nGgXnD3tnl8h7a2du6i4g78_SfXHTqt_0woZdAsip96KOlC69_JOsBRwEh0KBovsqO99vUhZQTrq_iVVSa76oXKq7oZLhJ4x9TmUEvUyHRqa12aI1NAOp-xCm2ghNPFV3adNZJ8oeNKqsotwG0RZBee9-0yDduzPqGD7On1RtozUBoXD2_8NziSwL_IqzWvftrI0heAom7RYmSnlcCd03cbNepthOqgbR1AdR1A1jqaJG6bnZ2RbFZm4P5DLroWGcjhoEYD02-bjDdJAIPN72G8q_sb_s3E3hQGpBJ6dNbTnFwB-ET3G-8e-gN0gTyv_pztHndT64S3i7OuCYUJ51TPL4S77HJv8A"><script type="text/plain">
 use gui;
 
 main() {

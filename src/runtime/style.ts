@@ -65,12 +65,47 @@ function colorValue(raw: string): string | null {
   return null;
 }
 
-function pixelValue(min: number, max: number): (raw: string) => string | null {
+// Единицы (1.6.5). Длина — пиксели («12px» или просто «12») либо пункты («12pt», «10.5pt»): пункт равен
+// 4/3 пикселя, как в CSS. Границы словаря заданы в пикселях и проверяются ПОСЛЕ пересчёта, в снимок
+// уходят пиксели. Проценты («50%») принимают только свойства-доли: border-radius, font-size,
+// line-height, opacity и scale — у каждого свои границы.
+const LENGTH_RE = /^(-?)(\d{1,4}(?:\.\d{1,2})?)(px|pt)?$/u;
+const PERCENT_RE = /^(\d{1,4}(?:\.\d{1,2})?)%$/u;
+const PIXELS_PER_POINT = 4 / 3;
+
+interface PercentRange { readonly min: number; readonly max: number }
+
+function roundTo2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/** Длина в пикселях или null. Дробные пиксели не принимаются (как и раньше), дробные пункты — да. */
+function lengthInPixels(raw: string, signed: boolean): number | null {
+  const match = LENGTH_RE.exec(raw.toLowerCase());
+  if (!match) return null;
+  if (match[1] === '-' && !signed) return null;
+  if (match[3] !== 'pt' && match[2].includes('.')) return null;
+  const amount = Number(match[2]) * (match[3] === 'pt' ? PIXELS_PER_POINT : 1);
+  if (!Number.isFinite(amount)) return null;
+  return roundTo2(match[1] === '-' ? -amount : amount);
+}
+
+function percentAmount(raw: string, range: PercentRange): number | null {
+  const match = PERCENT_RE.exec(raw);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount) || amount < range.min || amount > range.max) return null;
+  return amount;
+}
+
+function pixelValue(min: number, max: number, percent?: PercentRange): (raw: string) => string | null {
   return (raw: string) => {
-    const match = /^(\d{1,4})(px)?$/u.exec(raw);
-    if (!match) return null;
-    const amount = Number(match[1]);
-    if (amount < min || amount > max) return null;
+    if (percent) {
+      const share = percentAmount(raw, percent);
+      if (share !== null) return `${share}%`;
+    }
+    const amount = lengthInPixels(raw, false);
+    if (amount === null || amount < min || amount > max) return null;
     return `${amount}px`;
   };
 }
@@ -161,6 +196,8 @@ function gradientValue(raw: string): string | null {
 }
 
 function opacityValue(raw: string): string | null {
+  const share = percentAmount(raw, { min: 0, max: 100 });
+  if (share !== null) return String(roundTo2(share / 100));
   if (!/^(0|1|0?\.\d+|1\.0+)$/u.test(raw)) return null;
   const amount = Number(raw);
   if (!Number.isFinite(amount) || amount < 0 || amount > 1) return null;
@@ -176,9 +213,9 @@ const STYLE_PROPERTIES: Readonly<Record<string, (raw: string) => string | null>>
   background: gradientValue,
   'border-color': colorValue,
   'border-width': pixelValue(0, 20),
-  'border-radius': pixelValue(0, 100),
+  'border-radius': pixelValue(0, 100, { min: 0, max: 100 }),
   'border-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
-  'font-size': pixelValue(6, 96),
+  'font-size': pixelValue(6, 96, { min: 50, max: 400 }),
   'font-weight': keywordValue('normal', 'bold'),
   'font-style': keywordValue('normal', 'italic'),
   'text-align': keywordValue('left', 'center', 'right'),
@@ -194,7 +231,7 @@ const STYLE_PROPERTIES: Readonly<Record<string, (raw: string) => string | null>>
   'text-decoration': keywordValue('none', 'underline', 'line-through'),
   'text-transform': keywordValue('none', 'uppercase', 'lowercase', 'capitalize'),
   'letter-spacing': signedPixelValue(-5, 20),
-  'line-height': ratioValue(0.8, 3),
+  'line-height': ratioValue(0.8, 3, { min: 80, max: 300 }),
   'font-family': fontFamilyValue,
   // Курсор — то, что дети замечают в «настоящих» программах первым.
   cursor: keywordValue('default', 'pointer', 'text', 'wait', 'not-allowed', 'help'),
@@ -229,23 +266,25 @@ const STYLE_PROPERTIES: Readonly<Record<string, (raw: string) => string | null>>
   // исходному прямоугольнику — это сказано в справочнике прямым текстом
   // (вердикт владельца: берём, но предупреждаем честно).
   rotate: angleValue(-360, 360),
-  scale: ratioValue(0.1, 5),
+  scale: ratioValue(0.1, 5, { min: 10, max: 500 }),
 };
 
 // Пиксели со знаком: letter-spacing бывает отрицательным (буквы теснее).
 function signedPixelValue(min: number, max: number): (raw: string) => string | null {
   return (raw: string) => {
-    const match = /^(-?\d{1,4})(px)?$/u.exec(raw);
-    if (!match) return null;
-    const amount = Number(match[1]);
-    if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+    const amount = lengthInPixels(raw, true);
+    if (amount === null || amount < min || amount > max) return null;
     return `${amount}px`;
   };
 }
 
-// Безразмерная доля: line-height (0.8…3) и scale (0.1…5).
-function ratioValue(min: number, max: number): (raw: string) => string | null {
+// Безразмерная доля: line-height (0.8…3) и scale (0.1…5); та же доля процентами — «150%» = 1.5.
+function ratioValue(min: number, max: number, percent?: PercentRange): (raw: string) => string | null {
   return (raw: string) => {
+    if (percent) {
+      const share = percentAmount(raw, percent);
+      if (share !== null) return String(roundTo2(share / 100));
+    }
     if (!/^\d+(\.\d+)?$/u.test(raw)) return null;
     const amount = Number(raw);
     if (!Number.isFinite(amount) || amount < min || amount > max) return null;
