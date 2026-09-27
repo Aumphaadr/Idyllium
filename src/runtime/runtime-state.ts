@@ -155,6 +155,10 @@ export interface RuntimeObjectState {
   readonly canvases: RuntimeObject[];
   readonly fileSystem: RuntimeFileSystem;
   readonly fontMetricsService: RuntimeFontMetricsService;
+  /** Шрифты, загруженные fonts.Font.load_from_file: путь → байты и формат. Нужны снимкам холста
+   *  (save_svg, to_static, export_to_file): SVG-картинка внешних ресурсов не грузит, поэтому шрифт
+   *  текста встраивается в снимок data-URI — иначе файл расходился бы с экраном (1.6.4). */
+  readonly loadedFonts: Map<string, { readonly bytes: Uint8Array; readonly format: 'ttf' | 'otf' | 'woff' | 'woff2' }>;
   readonly imageService?: RuntimeImageService;
   readonly sqliteService?: RuntimeSqliteService;
   readonly modals: RuntimeObject[];

@@ -1,0 +1,43 @@
+use console;
+use file;
+use image;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string FRAMES_FOLDER = "кадры";        // папка с кадрами-картинками
+const string RESULT_FILE = "анимация.gif";   // имя готовой анимации
+const float FRAME_SECONDS = 0.05;            // секунд на кадр: 0.05 — 20 кадров в секунду
+const int TARGET_WIDTH = 251;                // ширина готовой анимации в пикселях
+const int TARGET_HEIGHT = 251;               // высота: кадры подгоняются под этот размер
+const string TIMEZONE = "Europe/Moscow";     // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- В панели «Файлы» слева создайте папку «кадры» и положите в неё картинки.
+//      Назовите их по порядку с нулями впереди: кадр01.png, кадр02.png, …, кадр24.png
+//      (без нулей кадр10 встанет раньше кадр2). Годятся PNG, JPEG и WebP.
+// <--- Нажмите «Запустить» в правом верхнем углу. Готовый GIF появится в «Файлах».
+
+main() {
+    console.clear();
+    dyn_array<string> names = file.list_directory(FRAMES_FOLDER);
+    console.writeln("Кадров в папке «", FRAMES_FOLDER, "»: ", names.length,
+        ". Собираю анимацию ", TARGET_WIDTH, "×", TARGET_HEIGHT, "…");
+
+    dyn_array<image.Static> frames;
+    for (int i = 0; i < names.length; i = i + 1) {
+        image.Static frame;
+        frame.load_from_file(FRAMES_FOLDER + "/" + names[i]);
+        float scale_x = to_float(TARGET_WIDTH) / frame.width;
+        float scale_y = to_float(TARGET_HEIGHT) / frame.height;
+        frames.add(frame.scale(scale_x, scale_y));
+        console.writeln("  кадр ", i + 1, ": ", names[i], ", ", frame.width, "×",
+            frame.height);
+    }
+
+    image.Animation animation;
+    animation.create_from_frames(frames, FRAME_SECONDS);
+    animation.export_to_file(RESULT_FILE);
+
+    console.writeln("Готово: ", RESULT_FILE, ", кадров: ", frames.length, ", ",
+        time.now(TIMEZONE).to_string());
+}

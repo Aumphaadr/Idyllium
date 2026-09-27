@@ -4991,14 +4991,14 @@
       "folder-open": "folder-open",
       "zoom-in": "zoom-in",
       "zoom-out": "zoom-out",
-      fit: "fit",
-      menu: "more"
+      fit: "scan",
+      menu: "dots-vertical"
     };
     const icons = window.IdylliumIcons;
     const iconName = ICON_NAMES[name] || name;
     if (icons && icons.has(iconName)) return icons.element(iconName, { size: 16 });
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 20 20");
+    svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("aria-hidden", "true");
     return svg;
   }
@@ -7018,7 +7018,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       closeButton.title = "Закрыть";
       closeButton.setAttribute("aria-label", "Закрыть генератор цвета");
       const icons = typeof window !== "undefined" ? window.IdylliumIcons : null;
-      if (icons && icons.has("close")) closeButton.appendChild(icons.element("close", { size: 14 }));
+      if (icons && icons.has("x")) closeButton.appendChild(icons.element("x", { size: 14 }));
       else closeButton.textContent = "×";
       closeButton.addEventListener("click", () => close());
       head.append(pinButton, closeButton);
@@ -7061,7 +7061,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     eyedropper.type = "button";
     eyedropper.title = "Пипетка: кликните по нужному пикселю страницы (Esc — отмена)";
     const iconsApi = typeof window !== "undefined" ? window.IdylliumIcons : null;
-    if (iconsApi && iconsApi.has("eyedropper")) eyedropper.appendChild(iconsApi.element("eyedropper", { size: 16 }));
+    if (iconsApi && iconsApi.has("pipette")) eyedropper.appendChild(iconsApi.element("pipette", { size: 16 }));
     const eyedropperLabel = document.createElement("span");
     eyedropperLabel.textContent = "Пипетка";
     eyedropper.appendChild(eyedropperLabel);
@@ -7333,10 +7333,24 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     span2.textContent = text;
     output.appendChild(span2);
   }
+  var STATUS_TTL_MS = 6e3;
+  var STATUS_ERROR_TTL_MS = 12e3;
+  var statusTimer = null;
   function setStatus(text, isError = false) {
     if (!status) return;
     status.textContent = text;
     status.classList.toggle("error", isError);
+    status.title = text;
+    if (statusTimer !== null) window.clearTimeout(statusTimer);
+    statusTimer = null;
+    if (!text) return;
+    statusTimer = window.setTimeout(() => {
+      statusTimer = null;
+      if (status.textContent !== text) return;
+      status.textContent = "";
+      status.title = "";
+      status.classList.remove("error");
+    }, isError ? STATUS_ERROR_TTL_MS : STATUS_TTL_MS);
   }
 
   // packages/web-ide/src/share.js
@@ -8609,6 +8623,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
         files: browserFiles(),
         abortSignal: controller.signal,
         networkListen: browserNetworkListen,
+        // Шрифт холста по умолчанию — для снимков холста (to_static): тот же файл, что грузит рендерер.
+        defaultCanvasFontUrl: "gui-renderer/fonts/SourceCodePro-Regular.woff2",
         console: {
           clear() {
             consoleInputEchoes = [];
@@ -10602,15 +10618,15 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       ["Удалить", () => openDeleteConfirm(node.path, "file", left, top)]
     ];
     const CONTEXT_ICONS = {
-      "Новый файл": "file-new",
-      "Новая папка": "folder-new",
-      "Вставить картинку": "image-paste",
-      "Переименовать": "rename",
-      "Дублировать": "duplicate",
+      "Новый файл": "file-plus",
+      "Новая папка": "folder-plus",
+      "Вставить картинку": "clipboard-image",
+      "Переименовать": "pencil-line",
+      "Дублировать": "files",
       "Скачать": "download",
       "Копировать имя": "copy",
       "Копировать путь": "link",
-      "Свойства": "properties",
+      "Свойства": "file-info",
       "Удалить": "trash"
     };
     for (const [label, action] of actions) {

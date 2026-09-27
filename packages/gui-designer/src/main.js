@@ -5,7 +5,7 @@
 // галочками на каждое событие каждого виджета; сетка 5 px с выключателем; панели тянутся
 // сплиттерами; в инспекторе всегда видно имя свойства, перевод — при наведении.
 // Модель хранит только явно выставленные свойства; код — идиома учебника (src/codegen.js).
-import { WIDGETS, WINDOW_PROPS, PALETTE_GROUPS, PROPERTY_GROUPS, TAB_PAGE_TYPE, ICON_NAMES, widgetDefinition, propertyOf, eventsOf, nameProblem, freeName } from './widgets.js';
+import { WIDGETS, WINDOW_PROPS, PALETTE_GROUPS, PROPERTY_GROUPS, TAB_PAGE_TYPE, ICON_NAMES, widgetDefinition, propertyOf, eventsOf, nameProblem, freeName, reconcileRange } from './widgets.js';
 import { MODEL_VERSION, generateCode, normalizeHex, stripModel, extractEmbeddedModel, stripEmbeddedModel, codeDifference, childrenOf, fontsOf, withoutMissingFonts } from './codegen.js';
 import { ALIGN_MODES, moveSubtree, selectionRoots, alignBoxes } from './model-ops.js';
 import { importProgram } from './import.js';
@@ -1022,7 +1022,7 @@ function treeRow({ item, depth, id, name, type }) {
   if (widgetId === selectedId) row.classList.add('is-primary');
   if (item && item.props.visible === false) row.classList.add('is-hidden');
   if (window.IdylliumIcons) {
-    const iconName = item ? WIDGETS[item.type].icon : 'section-designer';
+    const iconName = item ? WIDGETS[item.type].icon : 'window-pointer';
     row.appendChild(window.IdylliumIcons.element(iconName, { size: 14, className: 'tree-icon' }));
   }
   const nameEl = document.createElement('span');
@@ -1506,7 +1506,7 @@ function fontsEditor() {
     remove.type = 'button';
     remove.className = 'ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset';
     remove.title = 'Убрать шрифт из макета (виджеты вернутся к шрифту по умолчанию)';
-    if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else remove.textContent = '×';
+    if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('x', { size: 12 })); else remove.textContent = '×';
     remove.style.visibility = 'visible';
     remove.addEventListener('click', () => removeFont(font.name));
     row.append(name, file, remove);
@@ -1790,7 +1790,7 @@ function propertyField(prop, props, onChange, item) {
   reset.type = 'button';
   reset.className = 'ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset';
   reset.title = 'Вернуть значение по умолчанию (строка уйдёт из кода)';
-  if (window.IdylliumIcons) reset.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else reset.textContent = '×';
+  if (window.IdylliumIcons) reset.appendChild(window.IdylliumIcons.element('x', { size: 12 })); else reset.textContent = '×';
   reset.addEventListener('click', () => onChange(null));
   field.append(label, control, reset);
   return field;
@@ -1816,6 +1816,8 @@ function setProperty(item, prop, value) {
     if (prop.kind === 'bool') value = Boolean(value);
     if (prop.kind === 'color') value = normalizeHex(value);
     target.props[prop.name] = value;
+    // min/max/value виджетов с диапазоном не должны разъезжаться: сцена и код падали бы словами.
+    if (item) reconcileRange(target.props, widgetDefinition(item.type), prop.name);
   });
 }
 
@@ -1917,7 +1919,7 @@ function dataEditor(item, def) {
       remove.type = 'button';
       remove.className = 'ui-button ui-button--sm ui-button--icon data-remove';
       remove.title = 'Убрать';
-      if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else remove.textContent = '×';
+      if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('x', { size: 12 })); else remove.textContent = '×';
       remove.addEventListener('click', () => onCommit(list.filter((_, other) => other !== index)));
       row.append(input, remove);
       wrap.appendChild(row);
@@ -1979,7 +1981,7 @@ function dataEditor(item, def) {
       remove.type = 'button';
       remove.className = 'ui-button ui-button--sm ui-button--icon data-remove';
       remove.title = 'Убрать';
-      if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('close', { size: 12 })); else remove.textContent = '×';
+      if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element('x', { size: 12 })); else remove.textContent = '×';
       remove.addEventListener('click', () => commit({ entries: entries.filter((_, other) => other !== index) }));
       row.append(label, value, remove);
       wrap.appendChild(row);

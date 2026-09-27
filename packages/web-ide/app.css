@@ -376,6 +376,30 @@
 
 /* Значки кнопок панели — тем же приглушённым цветом, что значки в меню шапки: один и тот же
    SVG ярко-белым читался как «более жирный» (находка владельца 2026-09-26); ярче — при наведении. */
+/* Строка статуса внизу панели файлов: «Файл создан», «Проект скачан», ошибки операций с файлами.
+   Элемента не было с самого начала — setStatus() писал в никуда (находка 2026-09-25); вернулась
+   по решению владельца 2026-09-28. Текст гаснет сам через несколько секунд (console-output.js). */
+.status-line {
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding: 4px 12px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-line.error {
+  color: var(--color-danger);
+}
+
+.status-line:empty {
+  color: transparent;
+}
+
 .file-list {
   flex: 1;
   min-height: 0;

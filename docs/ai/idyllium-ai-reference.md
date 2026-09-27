@@ -1535,7 +1535,10 @@ Widget inheritance has its own contract:
   `gui.TextEdit`, `gui.ProgressBar`, `gui.Slider`, `gui.SpinBox`,
   `gui.ComboBox`, `gui.ImageBox`, `gui.Icon` (since 1.6.3: an icon from the
   site's own set — `icon = "play"`, `"star"`, `"folder"`…, fitted to the smaller
-  side, coloured by `text_color`; the full list of names is in the reference).
+  side, coloured by `text_color`; the full list of names is in the reference. Since
+  1.6.4 the set is the "precise icons" pack — 236 names, given by what they depict:
+  `x`, `circle-info`, `file-plus`, `window-terminal`…; the 1.6.3 names are gone, no
+  aliases).
   `gui.Window`, `gui.Canvas`, `gui.Timer`,
   dialogs and non-gui library types (`json.Value`, `time.stamp`, …) are a
   compile error.
@@ -2267,6 +2270,8 @@ url.query_value(address, "v");          // "dQw4w9WgXcQ"
 url.encode("идиллия");                  // percent-encoded text
 url.decode("%D0%B8...");                // back to readable text
 url.is_valid("просто текст");           // false
+url.is_valid("https://example.org/a");  // true — a complete web address: http/https scheme, two slashes, a host name
+url.is_valid("www.example.org");        // false — no scheme; also false for localhost:8080, ftp://…, javascript:…
 ```
 
 `url.open()` works the same in all three hosts: a new tab in Web IDE, the
@@ -4185,8 +4190,10 @@ runtime error. The snapshot captures what has been drawn up to that line.
 `to_static()` and `export_to_file()` need the host rasterizer (Web IDE);
 in console runs they raise a readable error that suggests `save_svg()`.
 `save_svg()` serializes the display list and works on every platform — the
-right tool for long headless simulations that autosave frames. Limitation:
-custom fonts inside SVG snapshots fall back to sans-serif.
+right tool for long headless simulations that autosave frames. Fonts travel
+with the snapshot (since 1.6.4): a font loaded from a file is embedded as a data
+URI, the default canvas font is attached by the Web IDE when it rasterises, so
+`to_static()` shows the same glyphs as the screen.
 
 ## 27. Audio
 

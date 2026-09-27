@@ -58,8 +58,25 @@ export function appendOutput(text, className = '', options = {}) {
   output.appendChild(span);
 }
 
+// Строка статуса внизу панели файлов (#status в index.html): короткое подтверждение действия
+// («Файл создан», «Проект скачан») или отказ словами. Сообщение гаснет само, ошибка — позже.
+const STATUS_TTL_MS = 6000;
+const STATUS_ERROR_TTL_MS = 12000;
+let statusTimer = null;
+
 export function setStatus(text, isError = false) {
   if (!status) return;
   status.textContent = text;
   status.classList.toggle('error', isError);
+  status.title = text;
+  if (statusTimer !== null) window.clearTimeout(statusTimer);
+  statusTimer = null;
+  if (!text) return;
+  statusTimer = window.setTimeout(() => {
+    statusTimer = null;
+    if (status.textContent !== text) return;
+    status.textContent = '';
+    status.title = '';
+    status.classList.remove('error');
+  }, isError ? STATUS_ERROR_TTL_MS : STATUS_TTL_MS);
 }

@@ -11,9 +11,48 @@ import {
   encodeGif,
   encodePng,
   imageMimeType,
+  bytesToDataUri,
 } from './image-service';
 
-export function createBrowserImageService(): RuntimeImageService {
+export interface BrowserImageServiceOptions {
+  /**
+   * Адрес шрифта холста по умолчанию (Source Code Pro рендерера). Снимок холста to_static/export_to_file —
+   * SVG-картинка, внешних шрифтов она не грузит; текст, рисованный шрифтом по умолчанию, хост встраивает
+   * в снимок data-URI, иначе он ушёл бы в sans-serif и расходился с экраном (1.6.4).
+   */
+  readonly defaultCanvasFontUrl?: string;
+}
+
+const DEFAULT_CANVAS_FONT_FAMILY = 'IdylliumCanvasDefault';
+
+function fontFormatByUrl(url: string): { mime: string; format: string } {
+  const lower = url.toLowerCase().split(/[?#]/u)[0];
+  if (lower.endsWith('.ttf')) return { mime: 'font/ttf', format: 'truetype' };
+  if (lower.endsWith('.otf')) return { mime: 'font/otf', format: 'opentype' };
+  if (lower.endsWith('.woff')) return { mime: 'font/woff', format: 'woff' };
+  return { mime: 'font/woff2', format: 'woff2' };
+}
+
+export function createBrowserImageService(options: BrowserImageServiceOptions = {}): RuntimeImageService {
+  let defaultFontStyle: Promise<string> | null = null;
+  const defaultCanvasFontStyle = (): Promise<string> => {
+    const url = options.defaultCanvasFontUrl;
+    if (!url) return Promise.resolve('');
+    if (!defaultFontStyle) {
+      defaultFontStyle = (async () => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) return '';
+          const { mime, format } = fontFormatByUrl(url);
+          const uri = bytesToDataUri(new Uint8Array(await response.arrayBuffer()), mime);
+          return `<defs><style>@font-face{font-family:'${DEFAULT_CANVAS_FONT_FAMILY}';src:url(${uri}) format('${format}');}</style></defs>`;
+        } catch {
+          return ''; // шрифт не достался — текст пойдёт запасным семейством, как и раньше
+        }
+      })();
+    }
+    return defaultFontStyle;
+  };
   return {
     async decodeStatic(bytes: Uint8Array, format: RuntimeImageFormat): Promise<RuntimeDecodedImage> {
       if (format === 'png' || format === 'apng') {
@@ -64,8 +103,14 @@ export function createBrowserImageService(): RuntimeImageService {
         throw new Error('SVG rasterization needs a browser host');
       }
       // Режим «SVG как <img>»: браузер не исполняет скрипты и не грузит
-      // внешние ресурсы из такого SVG — безопасность by design.
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      // внешние ресурсы из такого SVG — безопасность by design. Шрифт холста по
+      // умолчанию поэтому встраивается data-URI, если текст им рисован.
+      let svg = svgText;
+      if (svgText.includes(DEFAULT_CANVAS_FONT_FAMILY)) {
+        const style = await defaultCanvasFontStyle();
+        if (style !== '') svg = svg.replace(/<svg\b[^>]*>/u, (tag) => tag + style);
+      }
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
       const uri = URL.createObjectURL(blob);
       try {
         const image = new Image();

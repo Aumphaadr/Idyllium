@@ -213,7 +213,7 @@ export function createColorPicker(options) {
     closeButton.title = 'Закрыть';
     closeButton.setAttribute('aria-label', 'Закрыть генератор цвета');
     const icons = typeof window !== 'undefined' ? window.IdylliumIcons : null;
-    if (icons && icons.has('close')) closeButton.appendChild(icons.element('close', { size: 14 })); else closeButton.textContent = '×';
+    if (icons && icons.has('x')) closeButton.appendChild(icons.element('x', { size: 14 })); else closeButton.textContent = '×';
     closeButton.addEventListener('click', () => close());
     head.append(pinButton, closeButton);
     host.classList.toggle('is-pinned', pinned);
@@ -258,7 +258,7 @@ export function createColorPicker(options) {
   eyedropper.type = 'button';
   eyedropper.title = 'Пипетка: кликните по нужному пикселю страницы (Esc — отмена)';
   const iconsApi = typeof window !== 'undefined' ? window.IdylliumIcons : null;
-  if (iconsApi && iconsApi.has('eyedropper')) eyedropper.appendChild(iconsApi.element('eyedropper', { size: 16 }));
+  if (iconsApi && iconsApi.has('pipette')) eyedropper.appendChild(iconsApi.element('pipette', { size: 16 }));
   const eyedropperLabel = document.createElement('span');
   eyedropperLabel.textContent = 'Пипетка';
   eyedropper.appendChild(eyedropperLabel);

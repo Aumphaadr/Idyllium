@@ -1,4 +1,4 @@
-/* Idyllium 1.6.3 — Конструктор GUI; собрано tools/build-gui-designer.js из packages/gui-designer/; править источники. */
+/* Idyllium 1.6.4 — Конструктор GUI; собрано tools/build-gui-designer.js из packages/gui-designer/; править источники. */
 "use strict";
 (() => {
   var __create = Object.create;
@@ -35,125 +35,240 @@
   var require_icon_names = __commonJS({
     "packages/icons/icon-names.json"(exports, module) {
       module.exports = [
+        "activity",
+        "align-center",
+        "align-justify",
+        "align-left",
+        "align-right",
         "anchor",
         "archive",
         "arrow-down",
+        "arrow-down-to-line",
         "arrow-left",
+        "arrow-left-right",
         "arrow-right",
         "arrow-up",
-        "autocomplete",
+        "arrow-up-down",
+        "ban",
         "bell",
+        "bell-off",
+        "blend",
+        "book",
+        "book-open",
+        "books",
+        "braces",
         "brush",
         "bulb",
+        "button",
+        "calendar",
+        "canvas",
+        "chart-bar",
+        "chart-line",
+        "chart-pie",
         "check",
-        "check-circle",
+        "chef-hat",
         "chevron-down",
         "chevron-left",
         "chevron-right",
         "chevron-up",
+        "circle-alert",
+        "circle-check",
+        "circle-dot",
+        "circle-info",
+        "circle-minus",
+        "circle-plus",
+        "circle-question",
+        "circle-x",
+        "clapperboard",
+        "clipboard",
+        "clipboard-image",
+        "clipboard-list",
+        "clipboard-paste",
         "clock",
-        "close",
-        "comment",
         "copy",
-        "cross",
-        "cut",
+        "crosshair",
+        "crown",
+        "database",
+        "dice",
+        "dots",
+        "dots-vertical",
         "download",
-        "duplicate",
-        "external",
+        "eraser",
+        "expand",
+        "external-link",
         "eye",
         "eye-off",
-        "eyedropper",
+        "fast-forward",
+        "fast-forward-fill",
+        "fieldset",
         "file",
         "file-archive",
-        "file-audio",
         "file-code",
         "file-database",
         "file-font",
         "file-image",
+        "file-info",
         "file-json",
-        "file-new",
+        "file-music",
+        "file-plus",
+        "file-spreadsheet",
         "file-text",
-        "find",
-        "fit",
+        "file-x",
+        "files",
+        "film",
+        "flask-conical",
         "folder",
-        "folder-new",
+        "folder-down",
         "folder-open",
+        "folder-plus",
         "font-size",
-        "format",
-        "grip",
-        "image-paste",
-        "info",
+        "funnel",
+        "funnel-x",
+        "gear-6",
+        "gear-8",
+        "gem",
+        "gift",
+        "globe",
+        "grip-vertical",
+        "heart",
+        "heart-fill",
+        "heart-half",
+        "history",
+        "hourglass",
+        "house",
+        "image",
+        "inbox",
+        "input",
+        "input-decimal",
+        "input-number",
+        "key",
+        "layers",
+        "letter-case",
+        "life-buoy",
+        "lightning",
         "link",
+        "list-ordered",
+        "list-ordered-lightning",
+        "list-ordered-x",
+        "loader",
         "lock",
-        "loop",
+        "lock-key",
+        "lock-open",
+        "log-in",
+        "log-out",
+        "magnet",
+        "media",
+        "megaphone",
         "menu",
+        "message",
+        "message-circle",
+        "message-circle-question",
+        "message-dots",
+        "message-reply",
         "minus",
+        "monitor",
         "moon",
-        "more",
-        "note",
-        "open-file",
+        "move",
+        "music",
+        "package",
         "palette",
-        "paste",
+        "panel-left",
+        "panel-right",
+        "party-popper",
         "pause",
+        "pause-fill",
+        "pencil",
+        "pencil-line",
+        "pin",
+        "pipette",
         "play",
-        "play-window",
+        "play-fill",
+        "plug",
         "plus",
-        "properties",
-        "qr",
-        "question",
+        "pointer",
+        "power",
+        "progress",
+        "puzzle",
+        "qr-code",
+        "radio",
+        "radio-off",
+        "radio-tower",
+        "record",
+        "record-fill",
         "redo",
         "refresh",
-        "rename",
-        "replace",
-        "reset",
+        "repeat",
+        "rewind",
+        "rewind-fill",
+        "robot",
+        "rocket",
+        "rotate-ccw",
+        "rotate-cw",
         "save",
+        "scan",
+        "scissors",
         "search",
-        "section-authors",
-        "section-canvas",
-        "section-console",
-        "section-designer",
-        "section-handouts",
-        "section-json",
-        "section-network",
-        "section-oop",
-        "section-projects",
-        "section-recipes",
-        "section-reference",
-        "section-sqlite",
-        "section-tasks",
-        "section-turtle",
-        "section-why",
-        "section-widgets",
-        "settings",
+        "select",
+        "send",
+        "server",
         "share",
+        "shield-star",
+        "shopping-bag",
+        "shuffle",
+        "sitemap",
+        "skip-back",
+        "skip-back-fill",
+        "skip-forward",
+        "skip-forward-fill",
+        "slashes",
+        "slashes-off",
+        "sleep",
+        "slider",
+        "space",
+        "sparkle",
+        "sparkle-fill",
+        "square-check",
+        "square-pen",
         "star",
-        "star-outline",
+        "star-fill",
+        "star-half",
+        "star-repeat",
+        "sticky-note",
         "stop",
+        "stop-fill",
+        "stopwatch",
         "sun",
+        "sword",
+        "table",
+        "tabs",
+        "target",
+        "text",
+        "text-cursor-sparkle",
+        "text-search",
+        "text-search-replace",
+        "textarea",
+        "toggle-off",
+        "toggle-on",
         "trash",
-        "uncomment",
+        "triangle-alert",
+        "turtle",
+        "tv",
         "undo",
         "upload",
-        "warning",
-        "widget-BarChart",
-        "widget-Button",
-        "widget-Canvas",
-        "widget-CheckBox",
-        "widget-ComboBox",
-        "widget-FloatSpinBox",
-        "widget-Frame",
-        "widget-ImageBox",
-        "widget-Label",
-        "widget-LineChart",
-        "widget-LineEdit",
-        "widget-PieChart",
-        "widget-ProgressBar",
-        "widget-RadioButton",
-        "widget-Slider",
-        "widget-SpinBox",
-        "widget-TabWidget",
-        "widget-Table",
-        "widget-TextEdit",
+        "user",
+        "user-plus",
+        "user-x",
+        "users",
+        "video-camera",
+        "volume",
+        "volume-x",
+        "wand-sparkles",
+        "widgets",
+        "window",
+        "window-play",
+        "window-pointer",
+        "window-terminal",
+        "x",
         "zoom-in",
         "zoom-out"
       ];
@@ -272,6 +387,27 @@
         // LineChart: числа по порядку.
         points: { title: "\u0422\u043E\u0447\u043A\u0438", method: "add_value", field: "points", shape: "numbers" }
       };
+      var PALETTE_ICONS = {
+        Label: "text",
+        Button: "button",
+        CheckBox: "square-check",
+        RadioButton: "circle-dot",
+        LineEdit: "input",
+        TextEdit: "textarea",
+        SpinBox: "input-number",
+        FloatSpinBox: "input-decimal",
+        Slider: "slider",
+        ProgressBar: "progress",
+        ComboBox: "select",
+        Table: "table",
+        ImageBox: "image",
+        Frame: "fieldset",
+        TabWidget: "tabs",
+        Canvas: "canvas",
+        LineChart: "chart-line",
+        BarChart: "chart-bar",
+        PieChart: "chart-pie"
+      };
       function widget(type, label, defaultName, group, size, own, options = {}) {
         return {
           type,
@@ -279,7 +415,7 @@
           defaultName,
           group,
           size,
-          icon: options.icon || `widget-${type}`,
+          icon: options.icon || PALETTE_ICONS[type] || "widgets",
           props: [...GEOMETRY, ...own, ...COMMON_TAIL],
           events: [
             ...options.events || [],
@@ -479,6 +615,27 @@
         while (takenNames2.includes(`${base}${index}`)) index++;
         return `${base}${index}`;
       }
+      function reconcileRange2(props, def, changedName) {
+        const names = ["min", "max", "value"];
+        if (!def || !names.includes(changedName)) return;
+        const byName = {};
+        for (const prop of def.props) if (names.includes(prop.name)) byName[prop.name] = prop;
+        if (!byName.min || !byName.max || !byName.value) return;
+        const effective = (name) => props[name] !== void 0 && props[name] !== null ? Number(props[name]) : Number(byName[name].default);
+        let min = effective("min");
+        let max = effective("max");
+        if (changedName === "min" && min > max) {
+          props.max = min;
+          max = min;
+        }
+        if (changedName === "max" && max < min) {
+          props.min = max;
+          min = max;
+        }
+        const value = effective("value");
+        const clamped = Math.min(max, Math.max(min, value));
+        if (clamped !== value) props.value = clamped;
+      }
       module.exports = {
         FONT,
         ICON_NAMES: ICON_NAMES2,
@@ -497,7 +654,8 @@
         propertyOf: propertyOf2,
         eventsOf: eventsOf2,
         nameProblem: nameProblem2,
-        freeName: freeName2
+        freeName: freeName2,
+        reconcileRange: reconcileRange2
       };
     }
   });
@@ -1903,7 +2061,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       closeButton.title = "\u0417\u0430\u043A\u0440\u044B\u0442\u044C";
       closeButton.setAttribute("aria-label", "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u0433\u0435\u043D\u0435\u0440\u0430\u0442\u043E\u0440 \u0446\u0432\u0435\u0442\u0430");
       const icons = typeof window !== "undefined" ? window.IdylliumIcons : null;
-      if (icons && icons.has("close")) closeButton.appendChild(icons.element("close", { size: 14 }));
+      if (icons && icons.has("x")) closeButton.appendChild(icons.element("x", { size: 14 }));
       else closeButton.textContent = "\xD7";
       closeButton.addEventListener("click", () => close());
       head.append(pinButton, closeButton);
@@ -1946,7 +2104,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     eyedropper.type = "button";
     eyedropper.title = "\u041F\u0438\u043F\u0435\u0442\u043A\u0430: \u043A\u043B\u0438\u043A\u043D\u0438\u0442\u0435 \u043F\u043E \u043D\u0443\u0436\u043D\u043E\u043C\u0443 \u043F\u0438\u043A\u0441\u0435\u043B\u044E \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u044B (Esc \u2014 \u043E\u0442\u043C\u0435\u043D\u0430)";
     const iconsApi = typeof window !== "undefined" ? window.IdylliumIcons : null;
-    if (iconsApi && iconsApi.has("eyedropper")) eyedropper.appendChild(iconsApi.element("eyedropper", { size: 16 }));
+    if (iconsApi && iconsApi.has("pipette")) eyedropper.appendChild(iconsApi.element("pipette", { size: 16 }));
     const eyedropperLabel = document.createElement("span");
     eyedropperLabel.textContent = "\u041F\u0438\u043F\u0435\u0442\u043A\u0430";
     eyedropper.appendChild(eyedropperLabel);
@@ -3246,7 +3404,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     if (widgetId === selectedId) row.classList.add("is-primary");
     if (item && item.props.visible === false) row.classList.add("is-hidden");
     if (window.IdylliumIcons) {
-      const iconName = item ? import_widgets.WIDGETS[item.type].icon : "section-designer";
+      const iconName = item ? import_widgets.WIDGETS[item.type].icon : "window-pointer";
       row.appendChild(window.IdylliumIcons.element(iconName, { size: 14, className: "tree-icon" }));
     }
     const nameEl = document.createElement("span");
@@ -3725,7 +3883,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       remove.type = "button";
       remove.className = "ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset";
       remove.title = "\u0423\u0431\u0440\u0430\u0442\u044C \u0448\u0440\u0438\u0444\u0442 \u0438\u0437 \u043C\u0430\u043A\u0435\u0442\u0430 (\u0432\u0438\u0434\u0436\u0435\u0442\u044B \u0432\u0435\u0440\u043D\u0443\u0442\u0441\u044F \u043A \u0448\u0440\u0438\u0444\u0442\u0443 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E)";
-      if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
+      if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("x", { size: 12 }));
       else remove.textContent = "\xD7";
       remove.style.visibility = "visible";
       remove.addEventListener("click", () => removeFont(font.name));
@@ -4035,7 +4193,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     reset.type = "button";
     reset.className = "ui-button ui-button--sm ui-button--icon ui-button--quiet field-reset";
     reset.title = "\u0412\u0435\u0440\u043D\u0443\u0442\u044C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E (\u0441\u0442\u0440\u043E\u043A\u0430 \u0443\u0439\u0434\u0451\u0442 \u0438\u0437 \u043A\u043E\u0434\u0430)";
-    if (window.IdylliumIcons) reset.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
+    if (window.IdylliumIcons) reset.appendChild(window.IdylliumIcons.element("x", { size: 12 }));
     else reset.textContent = "\xD7";
     reset.addEventListener("click", () => onChange(null));
     field.append(label, control, reset);
@@ -4059,6 +4217,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       if (prop.kind === "bool") value = Boolean(value);
       if (prop.kind === "color") value = (0, import_codegen.normalizeHex)(value);
       target.props[prop.name] = value;
+      if (item) (0, import_widgets.reconcileRange)(target.props, (0, import_widgets.widgetDefinition)(item.type), prop.name);
     });
   }
   function ensureColorPanel() {
@@ -4166,7 +4325,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         remove.type = "button";
         remove.className = "ui-button ui-button--sm ui-button--icon data-remove";
         remove.title = "\u0423\u0431\u0440\u0430\u0442\u044C";
-        if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
+        if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("x", { size: 12 }));
         else remove.textContent = "\xD7";
         remove.addEventListener("click", () => onCommit(list.filter((_, other) => other !== index)));
         row.append(input, remove);
@@ -4237,7 +4396,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         remove.type = "button";
         remove.className = "ui-button ui-button--sm ui-button--icon data-remove";
         remove.title = "\u0423\u0431\u0440\u0430\u0442\u044C";
-        if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("close", { size: 12 }));
+        if (window.IdylliumIcons) remove.appendChild(window.IdylliumIcons.element("x", { size: 12 }));
         else remove.textContent = "\xD7";
         remove.addEventListener("click", () => commit({ entries: entries.filter((_, other) => other !== index) }));
         row.append(label, value, remove);

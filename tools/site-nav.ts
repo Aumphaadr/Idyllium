@@ -64,16 +64,16 @@ export interface SiteNavOptions {
 /** Разделы сайта. `path` — от корня сайта; `group` — дропдаун; `sidebar` — у страницы есть боковая колонка (кнопка-гамбургер). */
 export const SITE_SECTIONS: readonly SiteSection[] = [
   { id: 'ide', density: 'app', badge: 'Web IDE', path: '', title: 'Web IDE' },
-  { id: 'reference', icon: 'properties', badge: 'Документация', path: 'reference/', title: 'Документация', group: 'materials', sidebar: true, leading: true },
-  { id: 'book', icon: 'section-reference', badge: 'Учебник', path: 'book/', title: 'Учебник', group: 'materials', sidebar: true },
-  { id: 'tasks', icon: 'section-tasks', badge: 'Задачник', path: 'tasks/', title: 'Задачник', group: 'materials', sidebar: true },
-  { id: 'projects', icon: 'section-projects', badge: 'Проекты', path: 'projects/', title: 'Проекты', group: 'materials', sidebar: true },
-  { id: 'handouts', icon: 'section-handouts', badge: 'Раздатка', path: 'handouts/', title: 'Файлы для заданий', group: 'materials' },
-  { id: 'gui-designer', density: 'app', icon: 'section-designer', badge: 'Конструктор GUI', path: 'gui-designer/', title: 'Конструктор GUI', group: 'tools', hint: 'Собрать окно мышью — получить .idyl' },
-  { id: 'recipes', icon: 'section-recipes', badge: 'Рецепты', path: 'recipes/', title: 'Рецепты', group: 'tools', stub: true },
-  { id: 'authors', density: 'app', icon: 'section-authors', badge: 'Авторам', path: 'authors/', title: 'Генератор юнитов', hint: 'Встраиваемые задачи для вашего сайта', group: 'tools' },
-  { id: 'about', icon: 'info', badge: 'О проекте', path: 'about/', title: 'О проекте', group: 'about' },
-  { id: 'why', icon: 'section-why', badge: 'Почему Idyllium', path: 'why/', title: 'Почему Idyllium', group: 'about', stub: true },
+  { id: 'reference', icon: 'books', badge: 'Документация', path: 'reference/', title: 'Документация', group: 'materials', sidebar: true, leading: true },
+  { id: 'book', icon: 'book-open', badge: 'Учебник', path: 'book/', title: 'Учебник', group: 'materials', sidebar: true },
+  { id: 'tasks', icon: 'square-check', badge: 'Задачник', path: 'tasks/', title: 'Задачник', group: 'materials', sidebar: true },
+  { id: 'projects', icon: 'package', badge: 'Проекты', path: 'projects/', title: 'Проекты', group: 'materials', sidebar: true },
+  { id: 'handouts', icon: 'folder-down', badge: 'Раздатка', path: 'handouts/', title: 'Файлы для заданий', group: 'materials' },
+  { id: 'gui-designer', density: 'app', icon: 'window-pointer', badge: 'Конструктор GUI', path: 'gui-designer/', title: 'Конструктор GUI', group: 'tools', hint: 'Собрать окно мышью — получить .idyl' },
+  { id: 'recipes', icon: 'chef-hat', badge: 'Рецепты', path: 'recipes/', title: 'Рецепты', group: 'tools' },
+  { id: 'authors', density: 'app', icon: 'puzzle', badge: 'Авторам', path: 'authors/', title: 'Генератор юнитов', hint: 'Встраиваемые задачи для вашего сайта', group: 'tools' },
+  { id: 'about', icon: 'circle-info', badge: 'О проекте', path: 'about/', title: 'О проекте', group: 'about' },
+  { id: 'why', icon: 'message-circle-question', badge: 'Почему Idyllium', path: 'why/', title: 'Почему Idyllium', group: 'about', stub: true },
   // Страница 404 — обычная страница сайта с общей шапкой (стилевая база 1.6.4); в меню её нет.
   { id: 'not-found', badge: 'Страница не найдена', path: '404.html', title: 'Страница не найдена', hidden: true },
 ];
@@ -148,7 +148,7 @@ function menuItem(section: SiteSection, currentId: string, prefix: string, host:
 }
 
 function externalItem(item: ExternalItem): string {
-  const arrow = `<span class="ui-menu-ext" aria-hidden="true">${iconSvg('external', { size: 12 })}</span>`;
+  const arrow = `<span class="ui-menu-ext" aria-hidden="true">${iconSvg('external-link', { size: 12 })}</span>`;
   return `<a class="ui-menu-item is-external" role="menuitem" href="${escapeHtml(item.href)}" target="_blank" rel="noopener">`
     + `${itemBody(item.icon, escapeHtml(item.title), item.hint, ` ${arrow}`)}</a>`;
 }

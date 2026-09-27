@@ -1,0 +1,126 @@
+use colors;
+use console;
+use drawable;
+use file;
+use fonts;
+use gui;
+use image;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string BACKGROUND_FILE = "фон.png";   // фон: грамота станет размером с картинку
+const string FONT_FILE = "шрифт.ttf";       // шрифт надписей; нет файла — обычный
+const int SHEET_WIDTH = 900;                // размер грамоты, когда фоновой картинки нет
+const int SHEET_HEIGHT = 636;
+const string TITLE = "ГРАМОТА";             // надписи
+const string REASON = "за победу в олимпиаде по информатике";
+const int TITLE_SIZE = 72;                  // кегли надписей в пикселях
+const int NAME_SIZE = 56;
+const int REASON_SIZE = 28;
+const string BACKGROUND_COLOR = "#fff8e7";  // цвета: фон и рамка без картинки, надписи
+const string FRAME_COLOR = "#b8860b";
+const string TITLE_COLOR = "#8b5a00";
+const string NAME_COLOR = "#222222";
+const string REASON_COLOR = "#444444";
+const string TIMEZONE = "Europe/Moscow";    // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- Впишите имена в список в начале main(): по одному в кавычках.
+// <--- По желанию положите в панель «Файлы» фоновую картинку «фон.png» и файл шрифта
+//      «шрифт.ttf»:
+//      грамота станет размером с картинку, а надписи будут этим шрифтом.
+// <--- Нажмите «Запустить». Файлы грамота-Имя.png появятся в «Файлах», любой можно
+//      скачать.
+//      Снимок холста делает браузер, поэтому этот рецепт работает в Web IDE.
+
+// Надпись по центру строки y: ширину текста даёт сам шрифт; без файла — обычный.
+void function write_centered(gui.Canvas sheet, string text, float y,
+                             int size, string color, fonts.Font font) {
+    drawable.Text label;
+    label.text = text;
+    label.font_size = size;
+    label.text_color = colors.HEX(color);
+    if (font.is_loaded) {
+        label.font = font;
+    }
+    label.x = (sheet.width - label.get_width()) / 2;
+    label.y = y;
+    sheet.draw(label);
+}
+
+main() {
+    console.clear();
+
+    dyn_array<string> names;      // ← список имён
+    names.add("Мира");
+    names.add("Кай");
+    names.add("Ника");
+
+    // Фон: картинка задаёт размер грамоты; без картинки — цвет и размер из настроек.
+    bool has_background = file.exists(BACKGROUND_FILE);
+    image.Static background;
+    int width = SHEET_WIDTH;
+    int height = SHEET_HEIGHT;
+    if (has_background) {
+        background.load_from_file(BACKGROUND_FILE);
+        width = background.width;
+        height = background.height;
+        console.writeln("Фон «", BACKGROUND_FILE, "»: грамота ", width, "×", height);
+    } else {
+        console.writeln("Файла «", BACKGROUND_FILE, "» нет: фон заливаю цветом ",
+            BACKGROUND_COLOR, ", размер ", width, "×", height);
+    }
+
+    // Шрифт: из файла, если он есть.
+    bool has_font = file.exists(FONT_FILE);
+    fonts.Font font;
+    if (has_font) {
+        font.load_from_file(FONT_FILE);
+        console.writeln("Шрифт: «", FONT_FILE, "»");
+    } else {
+        console.writeln("Файла «", FONT_FILE, "» нет: шрифт по умолчанию");
+    }
+
+    gui.Window win;
+    win.title = "Грамоты";
+    win.width = width + 40;
+    win.height = height + 60;
+
+    gui.Canvas sheet;
+    sheet.width = width;
+    sheet.height = height;
+    win.add_child(sheet);
+    win.show();
+
+    for (int i = 0; i < names.length; i = i + 1) {
+        if (has_background) {
+            drawable.Sprite picture;
+            picture.set_image(background);
+            picture.x = 0;
+            picture.y = 0;
+            sheet.draw(picture);
+        } else {
+            sheet.fill(colors.HEX(BACKGROUND_COLOR));
+            drawable.Rectangle border;
+            border.x = 20;
+            border.y = 20;
+            border.width = width - 40;
+            border.height = height - 40;
+            border.fill_color = colors.TRANSPARENT;
+            border.border_color = colors.HEX(FRAME_COLOR);
+            border.border_width = 6;
+            sheet.draw(border);
+        }
+
+        write_centered(sheet, TITLE, height * 0.22, TITLE_SIZE, TITLE_COLOR, font);
+        write_centered(sheet, names[i], height * 0.48, NAME_SIZE, NAME_COLOR, font);
+        write_centered(sheet, REASON, height * 0.70, REASON_SIZE, REASON_COLOR, font);
+
+        image.Static result = sheet.to_static();
+        result.export_to_file("грамота-" + names[i] + ".png");
+        console.writeln("  грамота-", names[i], ".png");
+    }
+
+    console.writeln("Готово: грамот сделано: ", names.length, ", ",
+        time.now(TIMEZONE).to_string());
+}

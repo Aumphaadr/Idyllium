@@ -222,6 +222,8 @@ export async function runProgram() {
       files: browserFiles(),
       abortSignal: controller.signal,
       networkListen: browserNetworkListen,
+      // Шрифт холста по умолчанию — для снимков холста (to_static): тот же файл, что грузит рендерер.
+      defaultCanvasFontUrl: 'gui-renderer/fonts/SourceCodePro-Regular.woff2',
       console: {
         clear() {
           consoleInputEchoes = [];

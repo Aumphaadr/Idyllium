@@ -361,8 +361,17 @@ function createSqliteStatement(
   file: string,
   line: number,
 ): RuntimeObject {
-  assertSqliteDatabaseOpen(database, file, line);
+  const engine = assertSqliteDatabaseOpen(database, file, line);
   const sql = stringArgument(sqlValue, 'sqlite.Database.prepare() sql', file, line);
+  // Как в SQLite: prepare компилирует команду — опечатка в SQL или чужая колонка отказывают здесь,
+  // а не при первом execute() (сигнал методкоманды 2026-09-17).
+  if (typeof engine.validate === 'function') {
+    try {
+      engine.validate(sql);
+    } catch (error) {
+      throw new IdylliumRuntimeError(file, line, `sqlite prepare failed: ${errorMessage(error)}`);
+    }
+  }
   const parameterNames = scanSqliteParameters(sql, file, line);
   const state: SqliteRuntimeStatementState = {
     database,

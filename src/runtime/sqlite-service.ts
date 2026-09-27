@@ -19,6 +19,9 @@ export interface RuntimeSqliteDatabase {
     sql: string,
     bindings?: Readonly<Record<string, RuntimeSqliteBindable>>,
   ): RuntimeSqliteExecution;
+  /** Компилирует одну команду, не выполняя её: синтаксис и имена таблиц/колонок проверяются здесь,
+   *  как у sqlite3_prepare. Ошибка — обычное исключение с текстом SQLite. */
+  validate?(sql: string): void;
   executeScript(sql: string): void;
   export(): Uint8Array;
   close(): void;
@@ -117,6 +120,13 @@ function createDatabaseAdapter(database: SqlJsDatabase): RuntimeSqliteDatabase {
       }
     },
 
+    validate(sql: string): void {
+      assertOpen();
+      // Как у sqlite3_prepare: компиляция без выполнения. Пустой текст и несколько команд — тоже отказ.
+      const statement = singleStatement(database, sql, 'prepare()');
+      statement.free();
+    },
+
     executeScript(sql: string): void {
       assertOpen();
       database.exec(sql);
@@ -148,7 +158,7 @@ function createDatabaseAdapter(database: SqlJsDatabase): RuntimeSqliteDatabase {
   }
 }
 
-function singleStatement(database: SqlJsDatabase, sql: string): SqlJsStatement {
+function singleStatement(database: SqlJsDatabase, sql: string, caller = 'execute()'): SqlJsStatement {
   const iterator = database.iterateStatements(sql);
   let count = 0;
   let item = iterator.next();
@@ -157,10 +167,10 @@ function singleStatement(database: SqlJsDatabase, sql: string): SqlJsStatement {
     item = iterator.next();
   }
   if (count === 0) {
-    throw new Error('execute() expects exactly one SQL statement, got 0');
+    throw new Error(`${caller} expects exactly one SQL statement, got 0`);
   }
   if (count > 1) {
-    throw new Error('execute() expects exactly one SQL statement, got more than 1');
+    throw new Error(`${caller} expects exactly one SQL statement, got more than 1`);
   }
   return database.prepare(sql);
 }

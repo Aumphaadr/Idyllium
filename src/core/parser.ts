@@ -982,9 +982,21 @@ export class Parser {
     };
   }
 
-  private parseForStatement(): ForStatement {
+  private parseForStatement(): ForStatement | BlockStatement {
     const forToken = this.consume(TokenKind.KwFor, "expected 'for'");
     this.consume(TokenKind.LeftParen, "expected '(' after for");
+
+    // «for (string name in names)» / «for (name of names)» — привычка из Python и JS. Цикла по
+    // коллекции в языке нет; раньше это давало каскад ошибок про точки с запятой и кавычки
+    // без слова о причине (находка 2026-09-18). Говорим одной строкой и съедаем заголовок
+    // с телом целиком: тело без объявленной переменной дало бы ещё каскад «not declared».
+    const forIn = this.detectForInHeader();
+    if (forIn) {
+      this.error(forIn.keyword.range, forIn.message);
+      this.skipForInHeader();
+      const body = this.parseStatement();
+      return { kind: 'BlockStatement', statements: [], range: { start: forToken.range.start, end: body.range.end } };
+    }
 
     const initializer = this.parseForInitializer();
 
@@ -1010,6 +1022,52 @@ export class Parser {
       body,
       range: { start: forToken.range.start, end: body.range.end },
     };
+  }
+
+  /** Заголовок for с `in`/`of` вместо трёх частей: до закрывающей скобки нет ни одной точки с
+   *  запятой, а перед `in`/`of` стоит имя переменной. Возвращает токен-виновник и текст подсказки. */
+  private detectForInHeader(): { keyword: Token; message: string } | null {
+    let depth = 0;
+    for (let offset = 0; this.current + offset < this.tokens.length; offset += 1) {
+      const token = this.tokens[this.current + offset];
+      if (token.kind === TokenKind.EndOfFile || token.kind === TokenKind.LeftBrace) return null;
+      if (token.kind === TokenKind.Semicolon && depth === 0) return null;
+      if (token.kind === TokenKind.LeftParen || token.kind === TokenKind.LeftBracket) depth += 1;
+      if (token.kind === TokenKind.RightParen || token.kind === TokenKind.RightBracket) {
+        if (depth === 0) return null;
+        depth -= 1;
+        continue;
+      }
+      if (depth !== 0 || token.kind !== TokenKind.Identifier || (token.lexeme !== 'in' && token.lexeme !== 'of')) continue;
+      const before = offset > 0 ? this.tokens[this.current + offset - 1] : null;
+      if (!before || before.kind !== TokenKind.Identifier) return null;
+      const after = this.tokens[this.current + offset + 1];
+      const items = after && after.kind === TokenKind.Identifier ? after.lexeme : 'items';
+      const name = before.lexeme;
+      return {
+        keyword: token,
+        message: `there is no loop over a collection in Idyllium ('for (${name} ${token.lexeme} ${items})') — count with an index instead: for (int i = 0; i < ${items}.length; i = i + 1) { … ${items}[i] … }`,
+      };
+    }
+    return null;
+  }
+
+  /** Съедает остаток заголовка for до парной закрывающей скобки. */
+  private skipForInHeader(): void {
+    let depth = 0;
+    while (!this.isAtEnd()) {
+      const token = this.peek();
+      if (token.kind === TokenKind.LeftParen) depth += 1;
+      if (token.kind === TokenKind.RightParen) {
+        if (depth === 0) {
+          this.advance();
+          return;
+        }
+        depth -= 1;
+      }
+      if (token.kind === TokenKind.LeftBrace) return;
+      this.advance();
+    }
   }
 
   private parseForInitializer(): ForClauseStatement | null {

@@ -179,7 +179,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.6.3';
+export const IDYLLIUM_VERSION = '1.6.4';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -450,6 +450,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     canvases: [],
     fileSystem,
     fontMetricsService: options.fontMetricsService ?? createRuntimeFontMetricsService(),
+    loadedFonts: new Map(),
     imageService: options.imageService ?? defaultRuntimeImageService(),
     sqliteService: options.sqliteService ?? defaultRuntimeSqliteService(),
     modals: [],
@@ -1746,7 +1747,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         }),
         is_valid: contextFunction((address: unknown, file: string, line: number) => {
           const value = stringArgument(address, 'url.is_valid() address', file, line);
-          return parseUrlOrNull(value) !== null;
+          return isWebAddress(value);
         }),
       },
       hash: {
@@ -2844,6 +2845,16 @@ function splitString(value: string, separator: string): IdylliumArray {
   return IdylliumArray.from(parts, true, null, () => '');
 }
 
+
+/** Полный веб-адрес: http:// или https://, две косые и имя сайта. `localhost:8080`, `javascript:…`,
+ *  `https:/один-слэш` и `www.example.org` без схемы — не адреса (сигнал методкоманды 2026-09-17:
+ *  прежняя проверка «разбирается ли строка как URL» пропускала их). */
+function isWebAddress(value: string): boolean {
+  const trimmed = value.trim();
+  if (!/^https?:\/\//iu.test(trimmed)) return false;
+  const url = parseUrlOrNull(trimmed);
+  return url !== null && (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname !== '';
+}
 
 function parseUrlOrNull(value: string): URL | null {
   try {

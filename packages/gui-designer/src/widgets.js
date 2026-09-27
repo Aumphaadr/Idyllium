@@ -99,6 +99,14 @@ const DATA_KINDS = {
   points: { title: 'Точки', method: 'add_value', field: 'points', shape: 'numbers' },
 };
 
+// Значки палитры — имена единого набора («точные иконки», 1.6.4): у виджетов — как у элементов HTML.
+const PALETTE_ICONS = {
+  Label: 'text', Button: 'button', CheckBox: 'square-check', RadioButton: 'circle-dot', LineEdit: 'input',
+  TextEdit: 'textarea', SpinBox: 'input-number', FloatSpinBox: 'input-decimal', Slider: 'slider', ProgressBar: 'progress',
+  ComboBox: 'select', Table: 'table', ImageBox: 'image', Frame: 'fieldset', TabWidget: 'tabs', Canvas: 'canvas',
+  LineChart: 'chart-line', BarChart: 'chart-bar', PieChart: 'chart-pie',
+};
+
 function widget(type, label, defaultName, group, size, own, options = {}) {
   return {
     type,
@@ -106,7 +114,7 @@ function widget(type, label, defaultName, group, size, own, options = {}) {
     defaultName,
     group,
     size,
-    icon: options.icon || `widget-${type}`,
+    icon: options.icon || PALETTE_ICONS[type] || 'widgets',
     props: [...GEOMETRY, ...own, ...COMMON_TAIL],
     events: [
       ...(options.events || []),
@@ -324,6 +332,26 @@ function freeName(base, takenNames) {
   return `${base}${index}`;
 }
 
+/** После правки min/max/value у виджета с диапазоном (SpinBox, FloatSpinBox, Slider, ProgressBar)
+ *  тройка приводится к согласию, как у QSpinBox: min выше max поднимает max (и наоборот), а value
+ *  за границами обрезается до границы. Рантайм иначе отказал бы словами «value must be between…» —
+ *  сцена конструктора и запуск не должны спотыкаться о порядок правок (находка 2026-09-26). */
+function reconcileRange(props, def, changedName) {
+  const names = ['min', 'max', 'value'];
+  if (!def || !names.includes(changedName)) return;
+  const byName = {};
+  for (const prop of def.props) if (names.includes(prop.name)) byName[prop.name] = prop;
+  if (!byName.min || !byName.max || !byName.value) return;
+  const effective = (name) => (props[name] !== undefined && props[name] !== null ? Number(props[name]) : Number(byName[name].default));
+  let min = effective('min');
+  let max = effective('max');
+  if (changedName === 'min' && min > max) { props.max = min; max = min; }
+  if (changedName === 'max' && max < min) { props.min = max; min = max; }
+  const value = effective('value');
+  const clamped = Math.min(max, Math.max(min, value));
+  if (clamped !== value) props.value = clamped;
+}
+
 module.exports = {
   FONT,
   ICON_NAMES,
@@ -343,4 +371,5 @@ module.exports = {
   eventsOf,
   nameProblem,
   freeName,
+  reconcileRange,
 };

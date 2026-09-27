@@ -2537,6 +2537,11 @@ void function status_after(web.Request req, web.Response res) {
     res.status = 302;
 }
 
+void function status_after_send(web.Request req, web.Response res) {
+    res.send("готово");
+    res.status = 201;
+}
+
 void function deep(web.Request req, web.Response res) {
     json.Object values;
     values.add("flag", json.Value(true));
@@ -2558,6 +2563,7 @@ main() {
     app.on_post("/done", done);
     app.on_get("/cyr", cyr);
     app.on_get("/status-after", status_after);
+    app.on_get("/status-after-send", status_after_send);
     app.on_get("/deep", deep);
     app.on_get("/badtoken", badtoken);
     app.port = 0;
@@ -2647,6 +2653,12 @@ main() {
   assert(
     statusAfter.status === 500 && (await statusAfter.text()).includes('web.Response.status cannot be changed after redirect() — redirect always answers 303'),
     'status after redirect must be a readable error',
+  );
+  // Статус после send() — тоже ошибка словами, а не тихое «ничего не изменилось» (сигнал методкоманды 2026-09-17).
+  const statusAfterSend = await fetch(`${base}/status-after-send`);
+  assert(
+    statusAfterSend.status === 500 && (await statusAfterSend.text()).includes('web.Response.status cannot be changed after the response was sent — set status before send()'),
+    'status after send must be a readable error',
   );
   const doubleSlash = await fetch(`${base.replace(/\/$/, '')}//post/3`);
   const doubleSlashText = await doubleSlash.text();
@@ -3021,6 +3033,37 @@ main() {
 });
 
 void runTests();
+
+// Сигналы методкоманды 2026-09-17, разобранные 2026-09-27 (кухня: some_method_signals_0918/05):
+// prepare компилирует SQL сразу, как sqlite3_prepare; url.is_valid — только полный веб-адрес;
+// статус ответа после отправки — ошибка словами, а не тихое «ничего».
+test('sqlite prepare() refuses a bad statement on the prepare line, not at execute()', async () => {
+  const fileSystem = createMemoryRuntimeFileSystem({}, '/w');
+  const result = await runIdyllium(`use console;
+use sqlite;
+main() {
+    sqlite.Database db = sqlite.open("t.db");
+    db.execute("CREATE TABLE a(x INTEGER)");
+    sqlite.Statement st = db.prepare("SELECT nope FROM a");
+    console.writeln("prepared");
+}
+`, { fileSystem }, { file: 'main.idyl' });
+  assert(!result.success && result.runtimeError !== null, 'prepare must fail');
+  assert(result.runtimeError!.includes('main.idyl:6') && result.runtimeError!.includes('sqlite prepare failed: no such column: nope'), result.runtimeError!);
+  assert(!result.output.includes('prepared'), 'nothing runs after the refused prepare');
+});
+
+test('url.is_valid accepts only complete web addresses', async () => {
+  const result = await runIdyllium(`use console;
+use url;
+main() {
+    console.writeln(url.is_valid("https://example.org/a?b=1"), url.is_valid("http://localhost:8080/x"), url.is_valid("HTTPS://Example.org"));
+    console.writeln(url.is_valid("localhost:8080"), url.is_valid("javascript:alert(1)"), url.is_valid("https:/one-slash"), url.is_valid("www.example.org"), url.is_valid("ftp://example.org"), url.is_valid("https://"));
+}
+`, {}, { file: 'main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'truetruetrue\nfalsefalsefalsefalsefalsefalse\n', `unexpected verdicts: ${JSON.stringify(result.output)}`);
+});
 
 test('sqlite enforces foreign keys from open and honors a manual OFF across writes', async () => {
   // Вердикт владельца 2026-08-29 (вопрос методистов): PRAGMA foreign_keys

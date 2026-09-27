@@ -21,7 +21,7 @@ databases, GUI applications and networking without installing anything and
 without leaving the site; a teacher can build a lesson plan from the same
 pages.
 
-Current language target: Idyllium 1.6.3 (machine-readable at
+Current language target: Idyllium 1.6.4 (machine-readable at
 https://aumphaadr.github.io/Idyllium/version.json).
 
 Important rule for AI assistants: do not invent site features. If a feature is
@@ -42,7 +42,7 @@ Idyllium language syntax use the companion file `idyllium-ai-reference.md`
 | `/handouts/` | «Файлы для заданий» | Downloadable handout files used by tasks and projects |
 | `/authors/` | «Авторам» | For teachers and site owners: embeddable units and the unit builder |
 | `/about/` | «О проекте» | What Idyllium is, who it is for, philosophy, links |
-| `/recipes/` | «Рецепты» | Placeholder (since 1.6.3, marked «скоро» in the menu): ready-made programs for non-programmers; no recipes published yet |
+| `/recipes/` | «Рецепты» | Ready-made programs for everyday tasks (since 1.6.4): a grid of square cards, one page per recipe with the code, real results and an «Открыть в Web IDE» button — see 7c |
 | `/why/` | «Почему Idyllium» | Placeholder (since 1.6.3): the case for the language vs. industrial languages; for now links to the contrast references in `/ai/ru/` |
 | `/gui-designer/` | «Конструктор GUI» | Visual window designer (since 1.6.3): drag widgets onto a window, tune properties, get `main.idyl` in textbook style — see 7b |
 | `/embed/` | — | Technical files of embeddable units (loader script and frame); not a page to visit |
@@ -445,6 +445,59 @@ companion file `idyllium-embed-units-ai-reference.md` (same folder, since
 1.6.1): the full configuration format, the formula language, rules for choosing
 tests, and three verified examples. The assistant produces a `.idyunit` file,
 the builder opens it and self-checks it.
+
+## 7c. Recipes — «Рецепты» (`/recipes/`), since 1.6.4
+
+A section of ready-made programs for everyday tasks, written for people who do
+not program: open a recipe in the Web IDE, change a few words and numbers in the
+settings at the top of the program, put your files next to it, press
+«Запустить». Reached from the «Инструменты» menu. The index (`/recipes/`) is a
+grid of square cards with large titles; each card leads to its own page,
+`/recipes/<id>.html`. Ten recipes, in this order: a series of pictures → a GIF
+animation (`frames-to-gif`); a GIF → PNG frames (`gif-to-frames`); a QR code
+from text or a link (`qr-make`); reading a QR code from a picture (`qr-read`);
+shrinking a series of pictures (`batch-resize`); fixing the encoding of a text
+file (`fix-encoding`); a report over a CSV table (`csv-report`); a checksum of a
+text file (`checksum`); certificates from a list of names (`certificates`); a
+watermark on a series of pictures (`watermark`).
+
+A recipe page has: who it is for («кому») and what the program does; the results
+(real pictures or files, e.g. the GIF built from the sample frames); the
+**«Открыть в Web IDE»** button right above the code — a share link (`#p1=…`)
+that opens the program in the IDE as a guest project («Работа по ссылке»); the
+full program with syntax highlighting and a «Копировать» button; the block
+«Вывод на образцах» (the same component as «Вывод» in the textbook); and a
+collapsed `<details>` «Что менять и что положить рядом». The programs share one
+shape: a **settings block** at the top (`const` declarations with a comment on
+each — folders, file names, sizes, colours, the time zone), then **comments
+addressed to the user** («<--- В панели «Файлы» слева создайте папку…», «Нажмите
+«Запустить»»), then `main()`, which starts with `console.clear()`, reports every
+step and ends with «Готово: …» plus the current time from `time.now(TIMEZONE)`,
+so a second run is visibly different from the first. Adapting a recipe means
+editing the settings block only.
+
+The results are not illustrations: when the site is built, eight of the ten
+programs are executed in order on sample files shipped with the source
+(`packages/docs/recipes/samples/`; a recipe may read what the previous one
+produced), and the files they create land in `/recipes/results/`; a recipe that
+fails stops the build. The GIF sample is the site author's Twitch emote: 24
+AI-drawn frames, reduced from 1254 to 314 px, assembled into a 251×251 GIF at
+20 frames per second. Two canvas recipes (certificates, watermark) carry the
+badge **«только Web IDE»**: they rasterise a canvas with `Canvas.to_static()`,
+which exists only in the browser host, so at build time they are compiled but
+not run. The certificates recipe takes an optional background picture (the
+sheet becomes its size) and an optional font file (`fonts.Font`) for the text,
+and centres each line with `drawable.Text.get_width()`. The checksum recipe is
+limited to text files — the `file` library has no byte reading.
+
+Source of truth: `packages/docs/recipes/recipes.json` (the intro and the cards),
+one `<id>.idyl` per recipe and `samples/`; the builder is `buildRecipesSection`
+in `tools/docs-build-site.ts`. For AI assistants: the recipes are written in
+the textbook idiom (full form `x = x + 1`, `evt` for event parameters, comments
+in Russian) and are a good template when a user asks for "a program that does X
+with my files" — point them at the page, or copy the shape: settings first,
+instructions in comments, `console.clear()` at the start, a time stamp at the
+end.
 
 ## 8. Notes For AI Assistants
 

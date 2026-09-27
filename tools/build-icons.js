@@ -1,13 +1,15 @@
 'use strict';
 
-// Единый набор иконок Idyllium (1.6.3; ТЗ — Idyllium-backstage/tech/spec/some_gui_designer/02).
-// Источник — packages/icons/svg/<имя>.svg (набор владельца, обводка Пантографом). Отсюда
+// Единый набор иконок Idyllium (1.6.3; ТЗ — Idyllium-backstage/tech/spec/some_gui_designer/02;
+// с 1.6.4 — «точные иконки» владельца: построены из отрезков и дуг окружностей на сетке 24×24,
+// линия 2, вариант fill/ пака WebProjects/Icons/pack; имена — набора, старые не сохраняются).
+// Источник — packages/icons/svg/<имя>.svg. Отсюда
 // собираются четыре вещи, все генерируемые (в git ради tsc и CI, править — только источник):
 //   src/icon-names.ts             — имена (реестр и рантайм gui.Icon: без разметки, чтобы ядро не толстело);
 //   src/icons.ts                  — имена + разметка + iconSvg() (сборщики сайта, VS Code);
 //   packages/gui-renderer/icons.js — window.IdylliumIcons для рендерера, Web IDE, страниц сайта, конструктора;
 //   packages/icons/icons.json     — то же для CommonJS (каталог конструктора, тесты).
-// Нормализация: только <path> (и <g transform>), viewBox приводится к 0 0 20 20, цвет — только
+// Нормализация: только <path> (и <g transform>), viewBox приводится к 0 0 24 24, цвет — только
 // currentColor; текст, картинки, скрипты и чужие цвета — отказ сборки словами.
 // Запуск: node tools/build-icons.js (стоит первым в npm run build). Модуль экспортирует generate()
 // для стража tests/icons.test.ts — он сверяет файлы в репозитории со свежей генерацией.
@@ -17,7 +19,7 @@ const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
 const sourceDir = path.join(rootDir, 'packages', 'icons', 'svg');
-const VIEWBOX = '0 0 20 20';
+const VIEWBOX = '0 0 24 24';
 const NAME_PATTERN = /^(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|widget-[A-Z][A-Za-z]*)$/u;
 
 function fail(name, message) {
@@ -29,7 +31,7 @@ function attribute(tag, name) {
   return match ? match[1] : null;
 }
 
-/** Внутренняя разметка значка на сетке 20×20: только пути с currentColor. */
+/** Внутренняя разметка значка на сетке 24×24: только пути с currentColor. */
 function normalizeSvg(name, text) {
   if (!NAME_PATTERN.test(name)) fail(name, 'имя — строчные латинские буквы, цифры и дефис (или widget-<Тип>)');
   for (const forbidden of ['<text', '<image', '<script', '<style', '<use', '<foreignObject', 'xlink:href']) {
@@ -90,10 +92,10 @@ function normalizeSvg(name, text) {
   const drawn = parts.filter((part) => part.startsWith('<path')).length;
   if (drawn === 0) fail(name, 'нет ни одного <path>');
   let markup = parts.join('');
-  // Чужая сетка (сырой экспорт Inkscape) — приводим к 20×20 масштабом и сдвигом.
+  // Чужая сетка (сырой экспорт Inkscape) — приводим к 24×24 масштабом и сдвигом.
   const [minX, minY, width, height] = box;
   if (viewBox.trim() !== VIEWBOX) {
-    const scale = 20 / Math.max(width, height);
+    const scale = 24 / Math.max(width, height);
     const offsetX = (Math.max(width, height) - width) / 2 - minX;
     const offsetY = (Math.max(width, height) - height) / 2 - minY;
     const round = (value) => Number(value.toFixed(6));

@@ -1106,7 +1106,7 @@ var Idyllium = (() => {
             documentation: "Обратное преобразование процентного кодирования."
           }),
           functionSpec("is_valid", [{ name: "address", type: types_1.STRING }], types_1.BOOL, {
-            documentation: "Проверяет, можно ли разобрать строку как адрес."
+            documentation: "Проверяет, что строка — полный веб-адрес: http:// или https://, две косые и имя сайта. Без схемы (www.example.org), с одной косой (https:/site), localhost:8080 или javascript:… — false. Это не обещание, что адрес существует и ответит."
           })
         ]));
         registry.registerModule(moduleSpec("encoding", [
@@ -1746,7 +1746,7 @@ var Idyllium = (() => {
               { name: "height", type: types_1.INT, defaultValue: "0" }
             ], types_1.VOID, {
               minArguments: 1,
-              documentation: "Сохраняет текущую картинку холста в SVG-файл. Работает на всех платформах, включая консольный запуск (жанр turtle.save_svg) — путь для длинных симуляций с автосейвом кадров. Область — как у to_static(). Ограничение: кастомные шрифты в SVG-снимке заменяются на sans-serif."
+              documentation: "Сохраняет текущую картинку холста в SVG-файл. Работает на всех платформах, включая консольный запуск (жанр turtle.save_svg) — путь для длинных симуляций с автосейвом кадров. Область — как у to_static(). Шрифты текста едут вместе со снимком: шрифт из файла встраивается data-URI, шрифт по умолчанию подставляет Web IDE при растеризации."
             })
           ], guiWidget),
           typeSpec("Label", [
@@ -5254,6 +5254,13 @@ var Idyllium = (() => {
         parseForStatement() {
           const forToken = this.consume(tokens_1.TokenKind.KwFor, "expected 'for'");
           this.consume(tokens_1.TokenKind.LeftParen, "expected '(' after for");
+          const forIn = this.detectForInHeader();
+          if (forIn) {
+            this.error(forIn.keyword.range, forIn.message);
+            this.skipForInHeader();
+            const body2 = this.parseStatement();
+            return { kind: "BlockStatement", statements: [], range: { start: forToken.range.start, end: body2.range.end } };
+          }
           const initializer = this.parseForInitializer();
           let condition = null;
           if (!this.check(tokens_1.TokenKind.Semicolon)) {
@@ -5275,6 +5282,58 @@ var Idyllium = (() => {
             body,
             range: { start: forToken.range.start, end: body.range.end }
           };
+        }
+        /** Заголовок for с `in`/`of` вместо трёх частей: до закрывающей скобки нет ни одной точки с
+         *  запятой, а перед `in`/`of` стоит имя переменной. Возвращает токен-виновник и текст подсказки. */
+        detectForInHeader() {
+          let depth = 0;
+          for (let offset = 0; this.current + offset < this.tokens.length; offset += 1) {
+            const token = this.tokens[this.current + offset];
+            if (token.kind === tokens_1.TokenKind.EndOfFile || token.kind === tokens_1.TokenKind.LeftBrace)
+              return null;
+            if (token.kind === tokens_1.TokenKind.Semicolon && depth === 0)
+              return null;
+            if (token.kind === tokens_1.TokenKind.LeftParen || token.kind === tokens_1.TokenKind.LeftBracket)
+              depth += 1;
+            if (token.kind === tokens_1.TokenKind.RightParen || token.kind === tokens_1.TokenKind.RightBracket) {
+              if (depth === 0)
+                return null;
+              depth -= 1;
+              continue;
+            }
+            if (depth !== 0 || token.kind !== tokens_1.TokenKind.Identifier || token.lexeme !== "in" && token.lexeme !== "of")
+              continue;
+            const before = offset > 0 ? this.tokens[this.current + offset - 1] : null;
+            if (!before || before.kind !== tokens_1.TokenKind.Identifier)
+              return null;
+            const after = this.tokens[this.current + offset + 1];
+            const items = after && after.kind === tokens_1.TokenKind.Identifier ? after.lexeme : "items";
+            const name = before.lexeme;
+            return {
+              keyword: token,
+              message: `there is no loop over a collection in Idyllium ('for (${name} ${token.lexeme} ${items})') — count with an index instead: for (int i = 0; i < ${items}.length; i = i + 1) { … ${items}[i] … }`
+            };
+          }
+          return null;
+        }
+        /** Съедает остаток заголовка for до парной закрывающей скобки. */
+        skipForInHeader() {
+          let depth = 0;
+          while (!this.isAtEnd()) {
+            const token = this.peek();
+            if (token.kind === tokens_1.TokenKind.LeftParen)
+              depth += 1;
+            if (token.kind === tokens_1.TokenKind.RightParen) {
+              if (depth === 0) {
+                this.advance();
+                return;
+              }
+              depth -= 1;
+            }
+            if (token.kind === tokens_1.TokenKind.LeftBrace)
+              return;
+            this.advance();
+          }
         }
         parseForInitializer() {
           if (this.match(tokens_1.TokenKind.Semicolon)) {
@@ -13227,8 +13286,15 @@ ${outerPadding}${close}`;
         }
       }
       function createSqliteStatement(database, sqlValue, file, line) {
-        assertSqliteDatabaseOpen(database, file, line);
+        const engine = assertSqliteDatabaseOpen(database, file, line);
         const sql = (0, runtime_shared_12.stringArgument)(sqlValue, "sqlite.Database.prepare() sql", file, line);
+        if (typeof engine.validate === "function") {
+          try {
+            engine.validate(sql);
+          } catch (error) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `sqlite prepare failed: ${(0, runtime_shared_12.errorMessage)(error)}`);
+          }
+        }
         const parameterNames = scanSqliteParameters(sql, file, line);
         const state = {
           database,
@@ -15347,6 +15413,9 @@ ${outerPadding}${close}`;
           if (redirectLocation !== null) {
             throw new runtime_errors_12.IdylliumRuntimeError(file, line, "web.Response.status cannot be changed after redirect() — redirect always answers 303");
           }
+          if (sent) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, "web.Response.status cannot be changed after the response was sent — set status before send()");
+          }
           if (typeof value !== "number" || !Number.isInteger(value) || value < 100 || value > 599) {
             throw new runtime_errors_12.IdylliumRuntimeError(file, line, `web.Response.status must be an integer from 100 to 599, got '${String(value)}'`);
           }
@@ -15415,8 +15484,8 @@ ${outerPadding}${close}`;
           if (destination.trim() === "") {
             throw new runtime_errors_12.IdylliumRuntimeError(file, line, "web.Response.redirect() path must not be empty");
           }
-          sent = true;
           obj.status = 303;
+          sent = true;
           try {
             redirectLocation = encodeURI(destination);
           } catch {
@@ -36037,6 +36106,7 @@ ${outerPadding}${close}`;
           const existingResourceUri = state.fileSystem.resourceUri?.(resolvedPath) || "";
           obj.resource_uri = existingResourceUri && !existingResourceUri.startsWith("data:") ? existingResourceUri : (0, image_service_1.bytesToDataUri)(bytes, fontMimeType(format));
           obj.__fontBytes = bytes;
+          state.loadedFonts.set(resolvedPath, { bytes, format });
           obj.format = format;
           obj.is_builtin = false;
           obj.is_loaded = true;
@@ -36192,8 +36262,8 @@ ${outerPadding}${close}`;
       Object.defineProperty(exports2, "__esModule", { value: true });
       exports2.ICON_NAMES = exports2.ICON_VIEWBOX = void 0;
       exports2.isIconName = isIconName;
-      exports2.ICON_VIEWBOX = "0 0 20 20";
-      exports2.ICON_NAMES = ["anchor", "archive", "arrow-down", "arrow-left", "arrow-right", "arrow-up", "autocomplete", "bell", "brush", "bulb", "check", "check-circle", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "clock", "close", "comment", "copy", "cross", "cut", "download", "duplicate", "external", "eye", "eye-off", "eyedropper", "file", "file-archive", "file-audio", "file-code", "file-database", "file-font", "file-image", "file-json", "file-new", "file-text", "find", "fit", "folder", "folder-new", "folder-open", "font-size", "format", "grip", "image-paste", "info", "link", "lock", "loop", "menu", "minus", "moon", "more", "note", "open-file", "palette", "paste", "pause", "play", "play-window", "plus", "properties", "qr", "question", "redo", "refresh", "rename", "replace", "reset", "save", "search", "section-authors", "section-canvas", "section-console", "section-designer", "section-handouts", "section-json", "section-network", "section-oop", "section-projects", "section-recipes", "section-reference", "section-sqlite", "section-tasks", "section-turtle", "section-why", "section-widgets", "settings", "share", "star", "star-outline", "stop", "sun", "trash", "uncomment", "undo", "upload", "warning", "widget-BarChart", "widget-Button", "widget-Canvas", "widget-CheckBox", "widget-ComboBox", "widget-FloatSpinBox", "widget-Frame", "widget-ImageBox", "widget-Label", "widget-LineChart", "widget-LineEdit", "widget-PieChart", "widget-ProgressBar", "widget-RadioButton", "widget-Slider", "widget-SpinBox", "widget-TabWidget", "widget-Table", "widget-TextEdit", "zoom-in", "zoom-out"];
+      exports2.ICON_VIEWBOX = "0 0 24 24";
+      exports2.ICON_NAMES = ["activity", "align-center", "align-justify", "align-left", "align-right", "anchor", "archive", "arrow-down", "arrow-down-to-line", "arrow-left", "arrow-left-right", "arrow-right", "arrow-up", "arrow-up-down", "ban", "bell", "bell-off", "blend", "book", "book-open", "books", "braces", "brush", "bulb", "button", "calendar", "canvas", "chart-bar", "chart-line", "chart-pie", "check", "chef-hat", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "circle-alert", "circle-check", "circle-dot", "circle-info", "circle-minus", "circle-plus", "circle-question", "circle-x", "clapperboard", "clipboard", "clipboard-image", "clipboard-list", "clipboard-paste", "clock", "copy", "crosshair", "crown", "database", "dice", "dots", "dots-vertical", "download", "eraser", "expand", "external-link", "eye", "eye-off", "fast-forward", "fast-forward-fill", "fieldset", "file", "file-archive", "file-code", "file-database", "file-font", "file-image", "file-info", "file-json", "file-music", "file-plus", "file-spreadsheet", "file-text", "file-x", "files", "film", "flask-conical", "folder", "folder-down", "folder-open", "folder-plus", "font-size", "funnel", "funnel-x", "gear-6", "gear-8", "gem", "gift", "globe", "grip-vertical", "heart", "heart-fill", "heart-half", "history", "hourglass", "house", "image", "inbox", "input", "input-decimal", "input-number", "key", "layers", "letter-case", "life-buoy", "lightning", "link", "list-ordered", "list-ordered-lightning", "list-ordered-x", "loader", "lock", "lock-key", "lock-open", "log-in", "log-out", "magnet", "media", "megaphone", "menu", "message", "message-circle", "message-circle-question", "message-dots", "message-reply", "minus", "monitor", "moon", "move", "music", "package", "palette", "panel-left", "panel-right", "party-popper", "pause", "pause-fill", "pencil", "pencil-line", "pin", "pipette", "play", "play-fill", "plug", "plus", "pointer", "power", "progress", "puzzle", "qr-code", "radio", "radio-off", "radio-tower", "record", "record-fill", "redo", "refresh", "repeat", "rewind", "rewind-fill", "robot", "rocket", "rotate-ccw", "rotate-cw", "save", "scan", "scissors", "search", "select", "send", "server", "share", "shield-star", "shopping-bag", "shuffle", "sitemap", "skip-back", "skip-back-fill", "skip-forward", "skip-forward-fill", "slashes", "slashes-off", "sleep", "slider", "space", "sparkle", "sparkle-fill", "square-check", "square-pen", "star", "star-fill", "star-half", "star-repeat", "sticky-note", "stop", "stop-fill", "stopwatch", "sun", "sword", "table", "tabs", "target", "text", "text-cursor-sparkle", "text-search", "text-search-replace", "textarea", "toggle-off", "toggle-on", "trash", "triangle-alert", "turtle", "tv", "undo", "upload", "user", "user-plus", "user-x", "users", "video-camera", "volume", "volume-x", "wand-sparkles", "widgets", "window", "window-play", "window-pointer", "window-terminal", "x", "zoom-in", "zoom-out"];
       function isIconName(value) {
         return typeof value === "string" && exports2.ICON_NAMES.includes(value);
       }
@@ -36559,6 +36629,7 @@ ${outerPadding}${close}`;
       var runtime_shared_12 = require_runtime_shared();
       var runtime_values_12 = require_runtime_values();
       var runtime_state_12 = require_runtime_state();
+      var runtime_drawable_12 = require_runtime_drawable();
       var runtime_gui_12 = require_runtime_gui();
       var runtime_audio_12 = require_runtime_audio();
       var image_service_1 = require_image_service();
@@ -36670,7 +36741,32 @@ ${outerPadding}${close}`;
           return null;
         }
       }
-      function canvasDrawableToSvg(object, state) {
+      var SVG_FONT_FORMATS = { ttf: "truetype", otf: "opentype", woff: "woff", woff2: "woff2" };
+      function canvasSvgFontFamily(font, state, fonts) {
+        const props = font && typeof font === "object" && "properties" in font ? font.properties : (0, runtime_shared_12.isRuntimeObject)(font) ? font : null;
+        if (!props || props.is_loaded !== true)
+          return "sans-serif";
+        if (props.is_builtin === true) {
+          if (fonts)
+            fonts.usesDefault = true;
+          return "IdylliumCanvasDefault, 'Source Code Pro', monospace";
+        }
+        const key = typeof props.resolved_path === "string" ? props.resolved_path : "";
+        const loaded = key === "" ? void 0 : state.loadedFonts.get(key);
+        if (!loaded || !fonts)
+          return "sans-serif";
+        let face = fonts.faces.get(key);
+        if (!face) {
+          face = {
+            family: `IdylliumCanvasFont${fonts.faces.size + 1}`,
+            dataUri: (0, image_service_1.bytesToDataUri)(loaded.bytes, (0, runtime_drawable_12.fontMimeType)(loaded.format)),
+            format: SVG_FONT_FORMATS[loaded.format] ?? loaded.format
+          };
+          fonts.faces.set(key, face);
+        }
+        return `${face.family}, sans-serif`;
+      }
+      function canvasDrawableToSvg(object, state, fonts) {
         const props = object.properties ?? {};
         const n = canvasSvgNumber;
         const transform = (scaleX = 1, scaleY = 1) => {
@@ -36714,7 +36810,8 @@ ${outerPadding}${close}`;
         if (object.type === "drawable.Text") {
           const fontSize = Math.max(1, n(props.font_size, 16));
           const text = typeof props.text === "string" ? props.text : String(props.text ?? "");
-          return `<g transform="${transform()}"><text x="${-originX}" y="${-originY}" font-size="${fontSize}" font-family="sans-serif" dominant-baseline="text-before-edge" fill="${canvasSvgColor(props.text_color, "#ffffff")}">${canvasSvgEscape(text)}</text></g>`;
+          const family = canvasSvgFontFamily(props.font, state, fonts);
+          return `<g transform="${transform()}"><text x="${-originX}" y="${-originY}" font-size="${fontSize}" font-family="${family}" dominant-baseline="text-before-edge" fill="${canvasSvgColor(props.text_color, "#ffffff")}">${canvasSvgEscape(text)}</text></g>`;
         }
         if (object.type === "turtle.Path") {
           const raw = Array.isArray(props.points) ? props.points : [];
@@ -36751,16 +36848,21 @@ ${outerPadding}${close}`;
         const base = background instanceof runtime_values_12.IdylliumColor && background.alpha > 0 ? background.toCss() : "#000000";
         const wholeCanvas = (fill) => `<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="${fill}"/>`;
         parts.push(wholeCanvas(canvasSvgColor(base, "#000000")));
+        const fonts = { faces: /* @__PURE__ */ new Map(), usesDefault: false };
         for (const command of (0, runtime_state_12.canvasCommands)(canvas)) {
           if (command.kind === "clear")
             parts.push(wholeCanvas(canvasSvgColor(base, "#000000")));
           if (command.kind === "fill")
             parts.push(wholeCanvas(canvasSvgColor(command.color, "#000000")));
           if (command.kind === "draw" && command.object) {
-            const svg = canvasDrawableToSvg(command.object, state);
+            const svg = canvasDrawableToSvg(command.object, state, fonts);
             if (svg !== "")
               parts.push(svg);
           }
+        }
+        if (fonts.faces.size > 0) {
+          const rules = [...fonts.faces.values()].map((face) => `@font-face{font-family:'${face.family}';src:url(${face.dataUri}) format('${face.format}');}`).join("");
+          parts.splice(1, 0, `<defs><style>${rules}</style></defs>`);
         }
         parts.push("</svg>");
         return parts.join("\n");
@@ -56823,7 +56925,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.6.3";
+      exports.IDYLLIUM_VERSION = "1.6.4";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";
@@ -56896,6 +56998,7 @@ ${outerPadding}${close}`;
           canvases: [],
           fileSystem,
           fontMetricsService: options.fontMetricsService ?? (0, font_metrics_service_1.createRuntimeFontMetricsService)(),
+          loadedFonts: /* @__PURE__ */ new Map(),
           imageService: options.imageService ?? defaultRuntimeImageService(),
           sqliteService: options.sqliteService ?? defaultRuntimeSqliteService(),
           modals: [],
@@ -58060,7 +58163,7 @@ ${outerPadding}${close}`;
               }),
               is_valid: (0, runtime_shared_1.contextFunction)((address, file, line) => {
                 const value = (0, runtime_shared_1.stringArgument)(address, "url.is_valid() address", file, line);
-                return parseUrlOrNull(value) !== null;
+                return isWebAddress(value);
               })
             },
             hash: {
@@ -58972,6 +59075,13 @@ ${outerPadding}${close}`;
       function splitString(value, separator) {
         const parts = separator.length === 0 ? Array.from(value) : value.split(separator);
         return runtime_values_2.IdylliumArray.from(parts, true, null, () => "");
+      }
+      function isWebAddress(value) {
+        const trimmed = value.trim();
+        if (!/^https?:\/\//iu.test(trimmed))
+          return false;
+        const url = parseUrlOrNull(trimmed);
+        return url !== null && (url.protocol === "http:" || url.protocol === "https:") && url.hostname !== "";
       }
       function parseUrlOrNull(value) {
         try {
@@ -62768,7 +62878,39 @@ ${outerPadding}${close}`;
       Object.defineProperty(exports2, "__esModule", { value: true });
       exports2.createBrowserImageService = createBrowserImageService;
       var image_service_1 = require_image_service();
-      function createBrowserImageService() {
+      var DEFAULT_CANVAS_FONT_FAMILY = "IdylliumCanvasDefault";
+      function fontFormatByUrl(url) {
+        const lower = url.toLowerCase().split(/[?#]/u)[0];
+        if (lower.endsWith(".ttf"))
+          return { mime: "font/ttf", format: "truetype" };
+        if (lower.endsWith(".otf"))
+          return { mime: "font/otf", format: "opentype" };
+        if (lower.endsWith(".woff"))
+          return { mime: "font/woff", format: "woff" };
+        return { mime: "font/woff2", format: "woff2" };
+      }
+      function createBrowserImageService(options = {}) {
+        let defaultFontStyle = null;
+        const defaultCanvasFontStyle = () => {
+          const url = options.defaultCanvasFontUrl;
+          if (!url)
+            return Promise.resolve("");
+          if (!defaultFontStyle) {
+            defaultFontStyle = (async () => {
+              try {
+                const response = await fetch(url);
+                if (!response.ok)
+                  return "";
+                const { mime, format } = fontFormatByUrl(url);
+                const uri = (0, image_service_1.bytesToDataUri)(new Uint8Array(await response.arrayBuffer()), mime);
+                return `<defs><style>@font-face{font-family:'${DEFAULT_CANVAS_FONT_FAMILY}';src:url(${uri}) format('${format}');}</style></defs>`;
+              } catch {
+                return "";
+              }
+            })();
+          }
+          return defaultFontStyle;
+        };
         return {
           async decodeStatic(bytes, format) {
             if (format === "png" || format === "apng") {
@@ -62818,7 +62960,13 @@ ${outerPadding}${close}`;
             if (typeof document === "undefined" || typeof Image === "undefined") {
               throw new Error("SVG rasterization needs a browser host");
             }
-            const blob = new Blob([svgText], { type: "image/svg+xml" });
+            let svg = svgText;
+            if (svgText.includes(DEFAULT_CANVAS_FONT_FAMILY)) {
+              const style = await defaultCanvasFontStyle();
+              if (style !== "")
+                svg = svg.replace(/<svg\b[^>]*>/u, (tag) => tag + style);
+            }
+            const blob = new Blob([svg], { type: "image/svg+xml" });
             const uri = URL.createObjectURL(blob);
             try {
               const image = new Image();
@@ -62983,6 +63131,11 @@ ${outerPadding}${close}`;
               statement.free();
             }
           },
+          validate(sql) {
+            assertOpen();
+            const statement = singleStatement(database, sql, "prepare()");
+            statement.free();
+          },
           executeScript(sql) {
             assertOpen();
             database.exec(sql);
@@ -63007,7 +63160,7 @@ ${outerPadding}${close}`;
             throw new Error("SQLite database is already closed");
         }
       }
-      function singleStatement(database, sql) {
+      function singleStatement(database, sql, caller = "execute()") {
         const iterator = database.iterateStatements(sql);
         let count = 0;
         let item = iterator.next();
@@ -63016,10 +63169,10 @@ ${outerPadding}${close}`;
           item = iterator.next();
         }
         if (count === 0) {
-          throw new Error("execute() expects exactly one SQL statement, got 0");
+          throw new Error(`${caller} expects exactly one SQL statement, got 0`);
         }
         if (count > 1) {
-          throw new Error("execute() expects exactly one SQL statement, got more than 1");
+          throw new Error(`${caller} expects exactly one SQL statement, got more than 1`);
         }
         return database.prepare(sql);
       }
@@ -65838,7 +65991,7 @@ ${outerPadding}${close}`;
           // услышать abort и закрыть транспорт (снять порт репетиции).
           abortSignal: options.abortSignal,
           fileSystem,
-          imageService: (0, browser_image_service_1.createBrowserImageService)(),
+          imageService: (0, browser_image_service_1.createBrowserImageService)({ defaultCanvasFontUrl: options.defaultCanvasFontUrl }),
           networkService: buildBrowserNetworkService(options.networkListen),
           channelService: (0, channel_service_1.createBroadcastChannelService)(),
           sqliteService: browserSqliteService,

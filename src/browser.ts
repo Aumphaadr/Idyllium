@@ -54,6 +54,11 @@ export interface BrowserRunOptions {
    * отказывает, как раньше.
    */
   readonly networkListen?: import('./runtime/network-service').RuntimeNetworkService['listen'];
+  /**
+   * Адрес шрифта холста по умолчанию (Source Code Pro рендерера) для снимков холста
+   * to_static/export_to_file: без него текст шрифтом по умолчанию в снимке пойдёт запасным семейством.
+   */
+  readonly defaultCanvasFontUrl?: string;
 }
 
 export interface BrowserRunResult {
@@ -271,7 +276,7 @@ function createMemoryRuntime(options: BrowserRunOptions, fileSystem: RuntimeFile
     // услышать abort и закрыть транспорт (снять порт репетиции).
     abortSignal: options.abortSignal,
     fileSystem,
-    imageService: createBrowserImageService(),
+    imageService: createBrowserImageService({ defaultCanvasFontUrl: options.defaultCanvasFontUrl }),
     networkService: buildBrowserNetworkService(options.networkListen),
     channelService: createBroadcastChannelService(),
     sqliteService: browserSqliteService,

@@ -1,0 +1,48 @@
+use console;
+use csv;
+use time;
+
+// ─── Настройки: всё, что стоит менять под себя, собрано здесь ──────────────────
+const string TABLE_FILE = "продажи.csv";    // таблица с заголовком в первой строке
+const string NAME_COLUMN = "товар";         // колонка с названием
+const string PRICE_COLUMN = "цена";         // колонка с ценой
+const string COUNT_COLUMN = "количество";   // колонка с количеством
+const string TIMEZONE = "Europe/Moscow";    // часовой пояс отметки времени в конце
+// ───────────────────────────────────────────────────────────────────────────────
+
+// <--- Сохраните таблицу из Excel или Google Sheets как CSV, перетащите в «Файлы» и
+//      впишите имя выше.
+//      Имена колонок — как в первой строке файла. Разделитель (запятая или точка с
+//      запятой) программа угадает сама.
+// <--- Нажмите «Запустить». Отчёт появится здесь, в консоли.
+
+main() {
+    console.clear();
+    csv.Table sales = csv.read(TABLE_FILE);
+    console.writeln("Строк в таблице «", TABLE_FILE, "»: ", sales.row_count,
+        ". Считаю выручку…");
+
+    int total = 0;
+    int best_row = 0;
+    int best_sum = 0;
+
+    for (int i = 0; i < sales.row_count; i = i + 1) {
+        int price = to_int(sales.get(i, PRICE_COLUMN));
+        int count = to_int(sales.get(i, COUNT_COLUMN));
+        int revenue = price * count;
+
+        total = total + revenue;
+        if (revenue > best_sum) {
+            best_sum = revenue;
+            best_row = i;
+        }
+        console.writeln("  ", sales.get(i, NAME_COLUMN), ": ", revenue, " руб.");
+    }
+
+    console.set_precision(2);
+    console.writeln("Всего: ", total, " руб.");
+    console.writeln("В среднем на товар: ", total / sales.row_count, " руб.");
+    console.writeln("Лидер: ", sales.get(best_row, NAME_COLUMN), " (", best_sum,
+        " руб.)");
+    console.writeln("Готово: ", time.now(TIMEZONE).to_string());
+}

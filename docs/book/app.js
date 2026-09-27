@@ -159,9 +159,9 @@
       document.body.classList.toggle('sidebar-open');
     });
 
-    // Крестик очистки — свой значок «close» из набора; виден, пока в поле что-то есть.
+    // Крестик очистки — значок «x» из набора; виден, пока в поле что-то есть.
     els.searchClear = document.getElementById('lesson-search-clear');
-    if (els.searchClear && window.IdylliumIcons) els.searchClear.innerHTML = window.IdylliumIcons.svg('close', { size: 14 });
+    if (els.searchClear && window.IdylliumIcons) els.searchClear.innerHTML = window.IdylliumIcons.svg('x', { size: 14 });
     const syncSearchClear = () => { if (els.searchClear) els.searchClear.hidden = els.search.value === ''; };
     els.search.addEventListener('input', () => {
       state.search = els.search.value.trim().toLowerCase();
@@ -584,13 +584,13 @@
   function sectionIcon(icon) {
     // Единый набор иконок сайта (gui-renderer/icons.js); ключи — из lessons.json.
     const names = {
-      terminal: 'section-console', widgets: 'section-widgets', classes: 'section-oop', canvas: 'section-canvas',
-      json: 'section-json', turtle: 'section-turtle', network: 'section-network', database: 'section-sqlite', examples: 'section-projects',
+      terminal: 'window-terminal', widgets: 'widgets', classes: 'sitemap', canvas: 'canvas',
+      json: 'braces', turtle: 'turtle', network: 'globe', database: 'database', examples: 'package',
     };
     const icons = window.IdylliumIcons;
     if (!icons) return '';
-    // Имя из набора проходит как есть (manifest уже несёт section-console и т. п.), старые ключи — по таблице.
-    const name = icons.has(icon) ? icon : names[icon] || 'section-projects';
+    // Имя из набора проходит как есть (manifest несёт window-terminal и т. п.), старые ключи — по таблице.
+    const name = icons.has(icon) ? icon : names[icon] || 'package';
     return icons.svg(name, { size: 18 });
   }
 

@@ -660,11 +660,14 @@ runtime error: url.scheme() got an address it cannot understand: "just text"
 ```
 
 `url.is_valid()` is the way to ask without risking the error — probed:
-`is_valid("just text")` is false. Note one honest wrinkle: `is_valid` answers
-*is this a well-formed URL*, so `ftp://example.org` is **true**, while
-`url.open` on it refuses (`url.open() supports only http and https addresses,
-got 'file'` for the `file:` case, probed). Validity and openability are
-different questions; the names could say so more clearly. See §21.
+`is_valid("just text")` is false. Since 1.6.4 the check is strict: true only
+for a complete web address — `http://` or `https://`, two slashes and a host
+name. `localhost:8080`, `www.example.org` without a scheme, `ftp://…` and
+`javascript:…` are all false — exactly the set that `url.open` refuses. (Before
+1.6.4 `is_valid` accepted any well-formed URL, so `ftp://example.org` was true
+while `open` refused it; a methodists' signal of 2026-09-17.) `is_valid` still
+does not promise that the address exists or answers — it only says the text is
+a web address. See §21.
 
 `url.open()` is restricted to `http` and `https` on every host: `file:`,
 `javascript:` and `data:` are refused with the message above. For a language
@@ -808,10 +811,11 @@ This section is the price of the file's credibility. Everything here was probed.
    holds the program for 5.37 s, GUI included. The design is deliberate and this
    file defends it in §2, but the honest statement is that a program which needs
    to stay responsive during a request currently cannot.
-4. **`url.is_valid` and `url.open` disagree by design.** `is_valid` asks whether
-   the text is a well-formed URL, so `ftp://example.org` is true; `open` accepts
-   only `http`/`https`. Both behaviors are right, and the pair of names invites a
-   student to use the first as a guard for the second.
+4. **`url.is_valid` and `url.open` now agree.** Since 1.6.4 `is_valid` is true
+   only for a complete `http`/`https` address with a host name — the same set
+   that `open` accepts, so the first works as a guard for the second. One
+   difference remains: `is_valid` does not promise that the address exists or
+   answers.
 5. **A dead handler is invisible.** A route registered with a handler that never
    sends anything is legal; the client waits. Duplicate registration is caught
    (§10), the empty handler is not.
