@@ -473,8 +473,10 @@ each — folders, file names, sizes, colours, the time zone), then **comments
 addressed to the user** («<--- В панели «Файлы» слева создайте папку…», «Нажмите
 «Запустить»»), then `main()`, which starts with `console.clear()`, reports every
 step and ends with «Готово: …» plus the current time from `time.now(TIMEZONE)`,
-so a second run is visibly different from the first. Adapting a recipe means
-editing the settings block only.
+so a second run is visibly different from the first. On the page the time in
+the baked output is shown as the template `ГГГГ-ММ-ДД ЧЧ:ММ:СС` — a real stamp
+would change the site on every rebuild. Adapting a recipe means editing the
+settings block only.
 
 The results are not illustrations: when the site is built, eight of the ten
 programs are executed in order on sample files shipped with the source

@@ -1864,6 +1864,14 @@ ${body}
 `;
 }
 
+/**
+ * Рецепты заканчиваются отметкой времени («Готово: …, 2026-09-27 13:22:18») — у каждого запуска она своя.
+ * В страницу она идёт шаблоном: иначе пересборка сайта из тех же исходников меняла бы docs/, и страж
+ * чистоты CI падал бы при каждом коммите (так и было 2026-09-27). Всё остальное в выводе — дословно.
+ */
+const RECIPE_TIME_STAMP = /\b\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\b/gu;
+const RECIPE_TIME_TEMPLATE = 'ГГГГ-ММ-ДД ЧЧ:ММ:СС';
+
 function recipeFigure(fileName: string, caption: string): string {
   return `<figure class="recipe-result"><img src="results/${encodeURIComponent(fileName)}" alt="${escapeHtml(caption)}" loading="lazy"><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
 }
@@ -1898,7 +1906,7 @@ async function buildRecipesSection(outputRoot: string, version: string): Promise
     } else {
       const result = await runIdyllium(code, { fileSystem, urlOpener: { open(): void {} }, platform: 'web' }, { file: 'main.idyl' });
       if (!result.success) throw new Error(`recipes: программа «${recipe.title}» упала на образцах:\n${result.runtimeError ?? result.compilation.diagnosticsText}`);
-      output = result.output.replace(/\s+$/u, '');
+      output = result.output.replace(/\s+$/u, '').replace(RECIPE_TIME_STAMP, RECIPE_TIME_TEMPLATE);
       executed += 1;
     }
 
@@ -1928,8 +1936,11 @@ async function buildRecipesSection(outputRoot: string, version: string): Promise
     const badge = recipe.webOnly
       ? ' <span class="ui-badge ui-badge--accent" title="Снимок холста делает браузер: в консольном запуске эта программа откажет">только Web IDE</span>'
       : '';
+    const stampNote = output.includes(RECIPE_TIME_TEMPLATE)
+      ? '<p class="recipe-note">Время в последней строке у каждого запуска своё, поэтому здесь оно показано шаблоном.</p>'
+      : '';
     const outputBlock = output
-      ? `<div class="ui-code ui-code--output" data-label="Вывод на образцах">${escapeHtml(output)}</div>`
+      ? `<div class="ui-code ui-code--output" data-label="Вывод на образцах">${escapeHtml(output)}</div>${stampNote}`
       : '';
     const webOnlyNote = recipe.webOnly
       ? `<p class="recipe-note">Сборка сайта проверяет эту программу на компиляцию; выполняется она в Web IDE — там холст умеет отдавать картинку.${previews.length > 0 ? ' Снимки выше сделаны ею же в Web IDE на файлах-образцах.' : ''}</p>`
