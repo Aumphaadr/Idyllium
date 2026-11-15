@@ -1075,13 +1075,21 @@
 
   .ui-toc-link {
     display: block;
-    padding: 6px 0;
+    padding: 6px 8px;
+    border-left: 2px solid transparent;
+    border-radius: var(--radius-4);
     color: var(--color-text-muted);
     font-size: var(--fs-14);
     text-decoration: none;
   }
 
   .ui-toc-link:hover {
+    color: var(--color-accent);
+  }
+
+  .ui-toc-link.is-active {
+    border-left-color: var(--color-accent);
+    background: var(--color-accent-soft);
     color: var(--color-accent);
   }
 

@@ -89,6 +89,9 @@
   };
 
   const els = {};
+  let tocEntries = [];
+  let activeTocLink = null;
+  let tocUpdateFrame = 0;
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -155,6 +158,11 @@
   }
 
   function bindShellEvents() {
+    window.addEventListener('scroll', scheduleTocUpdate, { passive: true });
+    window.addEventListener('resize', scheduleTocUpdate);
+    // Картинки, демо и шрифты могут изменить высоту уже открытого урока.
+    new ResizeObserver(scheduleTocUpdate).observe(els.view);
+
     els.menuToggle.addEventListener('click', () => {
       document.body.classList.toggle('sidebar-open');
     });
@@ -528,6 +536,9 @@
   function renderToc() {
     const headings = [...els.view.querySelectorAll('.lesson-body h2, .lesson-body h3')]
       .filter((heading) => heading.textContent.trim());
+    tocEntries = [];
+    activeTocLink = null;
+    els.toc.scrollTop = 0;
 
     if (headings.length === 0) {
       els.toc.innerHTML = '';
@@ -544,6 +555,50 @@
         <a class="ui-toc-link toc-link" href="#" data-target="${heading.id}">${escapeHtml(heading.textContent.trim())}</a>
       `).join('')}
     `;
+    const links = [...els.toc.querySelectorAll('.toc-link')];
+    tocEntries = headings.map((heading, index) => ({ heading, link: links[index] }));
+    scheduleTocUpdate();
+  }
+
+  function scheduleTocUpdate() {
+    if (tocUpdateFrame) return;
+    tocUpdateFrame = window.requestAnimationFrame(updateTocActiveSection);
+  }
+
+  function updateTocActiveSection() {
+    tocUpdateFrame = 0;
+    if (tocEntries.length === 0 || els.toc.clientHeight === 0) return;
+
+    // Текущая секция продолжается до следующего заголовка, даже когда её
+    // собственный заголовок давно ушёл за экран. Отступ совпадает с якорным.
+    const headerBottom = document.querySelector('.ui-topbar')?.getBoundingClientRect().bottom ?? 0;
+    const anchorOffset = Number.parseFloat(window.getComputedStyle(tocEntries[0].heading).scrollMarginTop) || 0;
+    const readingTop = Math.max(headerBottom, anchorOffset) + 2;
+    let current = tocEntries[0];
+    for (const entry of tocEntries) {
+      if (entry.heading.getBoundingClientRect().top > readingTop) break;
+      current = entry;
+    }
+
+    // Короткую последнюю секцию не всегда можно доскроллить до шапки.
+    if (window.scrollY > 0 && Math.ceil(window.scrollY + window.innerHeight) >= document.documentElement.scrollHeight - 2) {
+      current = tocEntries[tocEntries.length - 1];
+    }
+    if (current.link === activeTocLink) return;
+
+    if (activeTocLink) {
+      activeTocLink.classList.remove('is-active');
+      activeTocLink.removeAttribute('aria-current');
+    }
+    activeTocLink = current.link;
+    activeTocLink.classList.add('is-active');
+    activeTocLink.setAttribute('aria-current', 'location');
+
+    // В длинном оглавлении прокручиваем только aside, не саму страницу.
+    const linkRect = activeTocLink.getBoundingClientRect();
+    const tocRect = els.toc.getBoundingClientRect();
+    if (linkRect.top < tocRect.top) els.toc.scrollTop += linkRect.top - tocRect.top;
+    else if (linkRect.bottom > tocRect.bottom) els.toc.scrollTop += linkRect.bottom - tocRect.bottom;
   }
 
   function flattenLessons(manifest) {
@@ -613,6 +668,7 @@
         Если не помогло, проверьте подключение к интернету.</p>
       </div>
     `;
+    renderToc();
   }
 
   function escapeHtml(value) {
